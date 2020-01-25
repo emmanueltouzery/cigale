@@ -1,3 +1,4 @@
+extern crate gdk;
 extern crate gio;
 extern crate gtk;
 
@@ -33,7 +34,6 @@ fn main() {
 
         button.connect_clicked(move |_| {
             cal_popover.popup();
-            println!("Clicked!");
         });
 
         vbox.add(&button);
@@ -49,12 +49,17 @@ fn main() {
 }
 
 fn fontawesome_image(image_name: &str) -> Image {
-    let img = Image::new_from_file(format!(
-        "/home/emmanuel/home/cigale/{}/{}.svg",
-        FONT_AWESOME_SVGS_ROOT, image_name
-    ));
-    img.set_size_request(80, 80);
-    img
+    Image::new_from_pixbuf(Some(
+        &gdk_pixbuf::Pixbuf::new_from_file_at_size(
+            format!(
+                "/home/emmanuel/home/cigale/{}/{}.svg",
+                FONT_AWESOME_SVGS_ROOT, image_name
+            ),
+            40,
+            40,
+        )
+        .unwrap(),
+    ))
 }
 
 fn event_list() -> gtk::ScrolledWindow {
