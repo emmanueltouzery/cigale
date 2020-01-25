@@ -4,7 +4,11 @@ extern crate gtk;
 use gio::prelude::*;
 use gtk::prelude::*;
 
-use gtk::{Application, ApplicationWindow, Box, Button, Calendar, Popover, TextView};
+const FONT_AWESOME_SVGS_ROOT: &str = "fontawesome-free-5.12.0-desktop/svgs/solid";
+
+use gtk::{
+    Application, ApplicationWindow, Box, Button, Calendar, Image, Label, Popover, ScrolledWindow,
+};
 
 fn main() {
     let application =
@@ -34,12 +38,35 @@ fn main() {
 
         vbox.add(&button);
 
-        let textview = TextView::new();
-        vbox.add(&textview);
+        let event_list = event_list();
+        vbox.pack_start(&event_list, true, true, 0);
         window.add(&vbox);
 
         window.show_all();
     });
 
     application.run(&[]);
+}
+
+fn fontawesome_image(image_name: &str) -> Image {
+    let img = Image::new_from_file(format!(
+        "/home/emmanuel/home/cigale/{}/{}.svg",
+        FONT_AWESOME_SVGS_ROOT, image_name
+    ));
+    img.set_size_request(80, 80);
+    img
+}
+
+fn event_list() -> gtk::ScrolledWindow {
+    let vbox = Box::new(gtk::Orientation::Vertical, 0);
+    vbox.add(&Label::new(Some("hello")));
+    vbox.add(&fontawesome_image("code-branch"));
+    vbox.add(&Label::new(Some("world")));
+    vbox.add(&Label::new(Some("here")));
+    vbox.add(&Label::new(Some("are")));
+    vbox.add(&Label::new(Some("some")));
+    vbox.add(&Label::new(Some("words")));
+    let scrolled_win = ScrolledWindow::new(None::<&gtk::Adjustment>, None::<&gtk::Adjustment>);
+    scrolled_win.add(&vbox);
+    scrolled_win
 }
