@@ -43,6 +43,7 @@ fn main() {
             EventType::Git,
             "12:56".to_string(),
             "Emmanuel Touzery, Jane Doe".to_string(),
+            "Commit message details".to_string(),
             Some("42 messages, lasted 2:30".to_string()),
         )]);
         event_box.pack_start(&event_list, false, true, 0);
@@ -83,6 +84,7 @@ struct Event {
     event_type: EventType,
     event_time: String,
     event_info: String,
+    event_contents: String,
     event_extra_details: Option<String>,
 }
 
@@ -91,12 +93,14 @@ impl Event {
         event_type: EventType,
         event_time: String,
         event_info: String,
+        event_contents: String,
         event_extra_details: Option<String>,
     ) -> Event {
         Event {
             event_type,
             event_time,
             event_info,
+            event_contents,
             event_extra_details,
         }
     }
@@ -118,7 +122,7 @@ fn fontawesome_image(image_name: &str) -> Image {
     ))
 }
 
-fn single_event(event: &Event) -> gtk::Box {
+fn single_event(event: &Event) -> gtk::EventBox {
     let hbox = Box::new(gtk::Orientation::Horizontal, 10);
 
     let vbox_eventtype = Box::new(gtk::Orientation::Vertical, 2);
@@ -146,7 +150,18 @@ fn single_event(event: &Event) -> gtk::Box {
     hbox.set_margin_top(10);
     hbox.set_margin_bottom(10);
 
-    hbox
+    let event_box = gtk::EventBox::new();
+    event_box.add(&hbox);
+
+    event_box
+        .connect("button-press-event", false, |_| {
+            println!("clicked");
+            // println!("clicked on {}", event.event_time);
+            Some(true.to_value())
+        })
+        .unwrap();
+
+    event_box
 }
 
 fn event_list(events: &Vec<Event>) -> gtk::ScrolledWindow {
