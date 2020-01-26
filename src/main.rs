@@ -48,6 +48,8 @@ fn main() {
     application.run(&[]);
 }
 
+// TODO load the icons i'm interested in only once, put them
+// in the binary
 fn fontawesome_image(image_name: &str) -> Image {
     Image::new_from_pixbuf(Some(
         &gdk_pixbuf::Pixbuf::new_from_file_at_size(
@@ -62,10 +64,41 @@ fn fontawesome_image(image_name: &str) -> Image {
     ))
 }
 
+fn single_event() -> gtk::Box {
+    let hbox = Box::new(gtk::Orientation::Horizontal, 10);
+
+    let vbox_eventtype = Box::new(gtk::Orientation::Vertical, 2);
+    vbox_eventtype.add(&fontawesome_image("code-branch"));
+    vbox_eventtype.add(&Label::new(Some("Git")));
+    hbox.add(&vbox_eventtype);
+
+    let vbox_eventdetails = Box::new(gtk::Orientation::Vertical, 2);
+    let vbox_eventtime_and_extra_info = Box::new(gtk::Orientation::Horizontal, 2);
+    let time_label = Label::new(Some(&format!("<b>{}</b>", "12:56")));
+    time_label.set_use_markup(true);
+    time_label.set_halign(gtk::Align::Start);
+    vbox_eventtime_and_extra_info.pack_start(&time_label, true, true, 0);
+    let extra_details_label = Label::new(Some("42 messages, lasted 2:30"));
+    extra_details_label.set_halign(gtk::Align::Start);
+    vbox_eventtime_and_extra_info.pack_end(&extra_details_label, false, false, 0);
+    vbox_eventdetails.pack_start(&vbox_eventtime_and_extra_info, true, true, 5);
+    let details_label = Label::new(Some("Emmanuel Touzery, Jane Doe"));
+    details_label.set_halign(gtk::Align::Start);
+    vbox_eventdetails.pack_start(&details_label, true, false, 5);
+    hbox.pack_start(&vbox_eventdetails, true, true, 5);
+
+    hbox.set_margin_start(10);
+    hbox.set_margin_end(10);
+    hbox.set_margin_top(10);
+    hbox.set_margin_bottom(10);
+
+    hbox
+}
+
 fn event_list() -> gtk::ScrolledWindow {
     let vbox = Box::new(gtk::Orientation::Vertical, 0);
     vbox.add(&Label::new(Some("hello")));
-    vbox.add(&fontawesome_image("code-branch"));
+    vbox.add(&single_event());
     vbox.add(&Label::new(Some("world")));
     vbox.add(&Label::new(Some("here")));
     vbox.add(&Label::new(Some("are")));
