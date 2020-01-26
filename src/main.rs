@@ -1,9 +1,12 @@
 extern crate gdk;
 extern crate gio;
+extern crate glib;
 extern crate gtk;
 
 use gio::prelude::*;
 use gtk::prelude::*;
+
+use std::rc::Rc;
 
 const FONT_AWESOME_SVGS_ROOT: &str = "fontawesome-free-5.12.0-desktop/svgs/solid";
 
@@ -39,15 +42,19 @@ fn main() {
         vbox.add(&button);
 
         let event_box = Box::new(gtk::Orientation::Horizontal, 0);
-        let event_list = event_list(&vec![Event::new(
+        let events = vec![Rc::new(Event::new(
             EventType::Git,
             "12:56".to_string(),
             "Emmanuel Touzery, Jane Doe".to_string(),
             "Commit message details".to_string(),
             Some("42 messages, lasted 2:30".to_string()),
-        )]);
+        ))];
+        let text_view = gtk::TextView::new();
+        let text_buf = text_view.get_buffer().unwrap();
+        let cb = Rc::new(move |evt: &Rc<Event>| text_buf.set_text(evt.event_contents.as_str()));
+        let event_list = event_list(&events, cb);
         event_box.pack_start(&event_list, false, true, 0);
-        event_box.pack_start(&gtk::TextView::new(), true, true, 0);
+        event_box.pack_start(&text_view, true, true, 0);
         vbox.pack_start(&event_box, true, true, 0);
 
         window.add(&vbox);
@@ -122,7 +129,7 @@ fn fontawesome_image(image_name: &str) -> Image {
     ))
 }
 
-fn single_event(event: &Event) -> gtk::EventBox {
+fn single_event<F: 'static + Fn(&Rc<Event>)>(event: &Rc<Event>, clicked: Rc<F>) -> gtk::EventBox {
     let hbox = Box::new(gtk::Orientation::Horizontal, 10);
 
     let vbox_eventtype = Box::new(gtk::Orientation::Vertical, 2);
@@ -154,20 +161,28 @@ fn single_event(event: &Event) -> gtk::EventBox {
     event_box.add(&hbox);
 
     event_box
-        .connect("button-press-event", false, |_| {
-            println!("clicked");
-            // println!("clicked on {}", event.event_time);
-            Some(true.to_value())
-        })
+        .connect_local(
+            // i don't understand the diff between connect and connect_local!!
+            // but connect wants some multithread things that connect_local doesn't require
+            "button-press-event",
+            false,
+            glib::clone!(@strong event => move |_| {
+                clicked(&event);
+                Some(true.to_value())
+            }),
+        )
         .unwrap();
 
     event_box
 }
 
-fn event_list(events: &Vec<Event>) -> gtk::ScrolledWindow {
+fn event_list<F: 'static + Fn(&Rc<Event>)>(
+    events: &Vec<Rc<Event>>,
+    event_selected: Rc<F>,
+) -> gtk::ScrolledWindow {
     let vbox = Box::new(gtk::Orientation::Vertical, 0);
     for event in events {
-        vbox.add(&single_event(event));
+        vbox.add(&single_event(event, event_selected.clone()));
     }
     let scrolled_win = ScrolledWindow::new(None::<&gtk::Adjustment>, None::<&gtk::Adjustment>);
     scrolled_win.add(&vbox);

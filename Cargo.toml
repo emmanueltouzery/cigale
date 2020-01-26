@@ -7,6 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+glib = "0.9.1"
 gdk = "0.12.0"
 gdk-pixbuf = "0.8.0"
 
