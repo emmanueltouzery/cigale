@@ -48,6 +48,52 @@ fn main() {
     application.run(&[]);
 }
 
+trait EventTypeTrait {
+    fn get_desc(&self) -> &str;
+    fn get_icon(&self) -> &str;
+}
+
+enum EventType {
+    Git,
+}
+
+impl EventTypeTrait for EventType {
+    fn get_desc(&self) -> &str {
+        match self {
+            EventType::Git => "Git",
+        }
+    }
+
+    fn get_icon(&self) -> &str {
+        match self {
+            EventType::Git => "code-branch",
+        }
+    }
+}
+
+struct Event {
+    event_type: EventType,
+    event_time: String,
+    event_info: String,
+    event_extra_details: Option<String>,
+}
+
+impl Event {
+    fn new(
+        event_type: EventType,
+        event_time: String,
+        event_info: String,
+        event_extra_details: Option<String>,
+    ) -> Event {
+        Event {
+            event_type,
+            event_time,
+            event_info,
+            event_extra_details,
+        }
+    }
+}
+
 // TODO load the icons i'm interested in only once, put them
 // in the binary
 fn fontawesome_image(image_name: &str) -> Image {
@@ -64,25 +110,25 @@ fn fontawesome_image(image_name: &str) -> Image {
     ))
 }
 
-fn single_event() -> gtk::Box {
+fn single_event(event: &Event) -> gtk::Box {
     let hbox = Box::new(gtk::Orientation::Horizontal, 10);
 
     let vbox_eventtype = Box::new(gtk::Orientation::Vertical, 2);
-    vbox_eventtype.add(&fontawesome_image("code-branch"));
-    vbox_eventtype.add(&Label::new(Some("Git")));
+    vbox_eventtype.add(&fontawesome_image(event.event_type.get_icon()));
+    vbox_eventtype.add(&Label::new(Some(event.event_type.get_desc())));
     hbox.add(&vbox_eventtype);
 
     let vbox_eventdetails = Box::new(gtk::Orientation::Vertical, 2);
     let vbox_eventtime_and_extra_info = Box::new(gtk::Orientation::Horizontal, 2);
-    let time_label = Label::new(Some(&format!("<b>{}</b>", "12:56")));
+    let time_label = Label::new(Some(&format!("<b>{}</b>", event.event_time)));
     time_label.set_use_markup(true);
     time_label.set_halign(gtk::Align::Start);
     vbox_eventtime_and_extra_info.pack_start(&time_label, true, true, 0);
-    let extra_details_label = Label::new(Some("42 messages, lasted 2:30"));
+    let extra_details_label = Label::new(event.event_extra_details.as_ref().map(|t| t.as_str()));
     extra_details_label.set_halign(gtk::Align::Start);
     vbox_eventtime_and_extra_info.pack_end(&extra_details_label, false, false, 0);
     vbox_eventdetails.pack_start(&vbox_eventtime_and_extra_info, true, true, 5);
-    let details_label = Label::new(Some("Emmanuel Touzery, Jane Doe"));
+    let details_label = Label::new(Some(&event.event_info));
     details_label.set_halign(gtk::Align::Start);
     vbox_eventdetails.pack_start(&details_label, true, false, 5);
     hbox.pack_start(&vbox_eventdetails, true, true, 5);
@@ -98,7 +144,12 @@ fn single_event() -> gtk::Box {
 fn event_list() -> gtk::ScrolledWindow {
     let vbox = Box::new(gtk::Orientation::Vertical, 0);
     vbox.add(&Label::new(Some("hello")));
-    vbox.add(&single_event());
+    vbox.add(&single_event(&Event::new(
+        EventType::Git,
+        "12:56".to_string(),
+        "Emmanuel Touzery, Jane Doe".to_string(),
+        Some("42 messages, lasted 2:30".to_string()),
+    )));
     vbox.add(&Label::new(Some("world")));
     vbox.add(&Label::new(Some("here")));
     vbox.add(&Label::new(Some("are")));
