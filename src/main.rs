@@ -38,10 +38,18 @@ fn main() {
 
         vbox.add(&button);
 
-        let event_list = event_list();
-        vbox.pack_start(&event_list, true, true, 0);
-        window.add(&vbox);
+        let event_box = Box::new(gtk::Orientation::Horizontal, 0);
+        let event_list = event_list(&vec![Event::new(
+            EventType::Git,
+            "12:56".to_string(),
+            "Emmanuel Touzery, Jane Doe".to_string(),
+            Some("42 messages, lasted 2:30".to_string()),
+        )]);
+        event_box.pack_start(&event_list, false, true, 0);
+        event_box.pack_start(&gtk::TextView::new(), true, true, 0);
+        vbox.pack_start(&event_box, true, true, 0);
 
+        window.add(&vbox);
         window.show_all();
     });
 
@@ -141,21 +149,13 @@ fn single_event(event: &Event) -> gtk::Box {
     hbox
 }
 
-fn event_list() -> gtk::ScrolledWindow {
+fn event_list(events: &Vec<Event>) -> gtk::ScrolledWindow {
     let vbox = Box::new(gtk::Orientation::Vertical, 0);
-    vbox.add(&Label::new(Some("hello")));
-    vbox.add(&single_event(&Event::new(
-        EventType::Git,
-        "12:56".to_string(),
-        "Emmanuel Touzery, Jane Doe".to_string(),
-        Some("42 messages, lasted 2:30".to_string()),
-    )));
-    vbox.add(&Label::new(Some("world")));
-    vbox.add(&Label::new(Some("here")));
-    vbox.add(&Label::new(Some("are")));
-    vbox.add(&Label::new(Some("some")));
-    vbox.add(&Label::new(Some("words")));
+    for event in events {
+        vbox.add(&single_event(event));
+    }
     let scrolled_win = ScrolledWindow::new(None::<&gtk::Adjustment>, None::<&gtk::Adjustment>);
     scrolled_win.add(&vbox);
+    scrolled_win.set_size_request(320, -1);
     scrolled_win
 }
