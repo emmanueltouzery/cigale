@@ -56,7 +56,9 @@ impl Widget for Win {
                     // will be updated too.
                     text: &self.model.counter.to_string(),
                 },
-                EventListItem {},
+                EventListItem {
+                    Click => Msg::Increment
+                },
                 gtk::Button {
                     clicked => Msg::Decrement,
                     label: "-",
@@ -71,7 +73,7 @@ impl Widget for Win {
 
 /// EventListItem
 
-#[derive(Msg)]
+#[derive(Msg, Clone, Copy)]
 pub enum EventListItemMsg {
     Click,
 }
