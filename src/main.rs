@@ -42,13 +42,22 @@ fn main() {
         vbox.add(&button);
 
         let event_box = Box::new(gtk::Orientation::Horizontal, 0);
-        let events = vec![Rc::new(Event::new(
-            EventType::Git,
-            "12:56".to_string(),
-            "Emmanuel Touzery, Jane Doe".to_string(),
-            "Commit message details".to_string(),
-            Some("42 messages, lasted 2:30".to_string()),
-        ))];
+        let events = vec![
+            Rc::new(Event::new(
+                EventType::Git,
+                "12:56".to_string(),
+                "Emmanuel Touzery, Jane Doe".to_string(),
+                "Commit message details".to_string(),
+                Some("42 messages, lasted 2:30".to_string()),
+            )),
+            Rc::new(Event::new(
+                EventType::Email,
+                "13:42".to_string(),
+                "important email".to_string(),
+                "Hello John, Goodbye John".to_string(),
+                Some("to: John Doe (john@example.com)".to_string()),
+            )),
+        ];
         let text_view = gtk::TextView::new();
         let text_buf = text_view.get_buffer().unwrap();
         let cb = Rc::new(move |evt: &Rc<Event>| text_buf.set_text(evt.event_contents.as_str()));
@@ -71,18 +80,21 @@ trait EventTypeTrait {
 
 enum EventType {
     Git,
+    Email,
 }
 
 impl EventTypeTrait for EventType {
     fn get_desc(&self) -> &str {
         match self {
             EventType::Git => "Git",
+            EventType::Email => "Email",
         }
     }
 
     fn get_icon(&self) -> &str {
         match self {
             EventType::Git => "code-branch",
+            EventType::Email => "envelope",
         }
     }
 }
@@ -186,6 +198,6 @@ fn event_list<F: 'static + Fn(&Rc<Event>)>(
     }
     let scrolled_win = ScrolledWindow::new(None::<&gtk::Adjustment>, None::<&gtk::Adjustment>);
     scrolled_win.add(&vbox);
-    scrolled_win.set_size_request(320, -1);
+    scrolled_win.set_size_request(350, -1);
     scrolled_win
 }
