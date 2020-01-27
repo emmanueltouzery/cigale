@@ -4,6 +4,7 @@ use gtk::prelude::*;
 use gtk::{ImageExt, Inhibit, Window, WindowType};
 use relm::{Relm, Update, Widget};
 use relm_derive::{widget, Msg};
+use EventListItemMsg::Click as EventListItemClick;
 
 const FONT_AWESOME_SVGS_ROOT: &str = "fontawesome-free-5.12.0-desktop/svgs/solid";
 
@@ -20,12 +21,27 @@ pub enum Msg {
 
 pub struct Model {
     counter: u32,
+    events: Vec<Event>,
 }
 
 #[widget]
 impl Widget for Win {
+    fn init_view(&mut self) {
+        self.event_list_item
+            .emit(EventListItemMsg::Set(self.model.events.pop().unwrap()));
+    }
+
     fn model() -> Model {
-        Model { counter: 0 }
+        Model {
+            counter: 0,
+            events: vec![Event::new(
+                EventType::Git,
+                "12:56".to_string(),
+                "Emmanuel Touzery, Jane Doe".to_string(),
+                "Commit message details".to_string(),
+                Some("42 messages, lasted 2:30".to_string()),
+            )],
+        }
     }
 
     fn update(&mut self, event: Msg) {
@@ -56,8 +72,9 @@ impl Widget for Win {
                     // will be updated too.
                     text: &self.model.counter.to_string(),
                 },
+                #[name="event_list_item"]
                 EventListItem {
-                    Click => Msg::Increment
+                    EventListItemClick => Msg::Increment
                 },
                 gtk::Button {
                     clicked => Msg::Decrement,
@@ -73,8 +90,9 @@ impl Widget for Win {
 
 /// EventListItem
 
-#[derive(Msg, Clone, Copy)]
+#[derive(Msg)]
 pub enum EventListItemMsg {
+    Set(Event),
     Click,
 }
 
@@ -88,15 +106,20 @@ impl Widget for EventListItem {
         EventListItemModel {
             event: Event::new(
                 EventType::Git,
-                "12:56".to_string(),
-                "Emmanuel Touzery, Jane Doe".to_string(),
-                "Commit message details".to_string(),
-                Some("42 messages, lasted 2:30".to_string()),
+                String::new(),
+                String::new(),
+                String::new(),
+                Some(String::new()), // should be None
             ),
         }
     }
 
-    fn update(&mut self, event: EventListItemMsg) {}
+    fn update(&mut self, event: EventListItemMsg) {
+        match event {
+            EventListItemMsg::Set(evt) => self.model.event = evt,
+            _ => (),
+        }
+    }
 
     view! {
         gtk::EventBox {
@@ -240,6 +263,7 @@ trait EventTypeTrait {
     fn get_icon(&self) -> &str;
 }
 
+#[derive(Clone, Copy)]
 enum EventType {
     Git,
     Email,
@@ -261,7 +285,7 @@ impl EventTypeTrait for EventType {
     }
 }
 
-struct Event {
+pub struct Event {
     event_type: EventType,
     event_time: String,
     event_info: String,
