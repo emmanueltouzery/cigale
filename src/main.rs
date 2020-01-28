@@ -1,39 +1,50 @@
 use gdk;
-use gdk_pixbuf::Pixbuf;
 use gtk::prelude::*;
-use gtk::{ImageExt, Inhibit, Window, WindowType};
-use relm::{ContainerWidget, Relm, Update, Widget};
+use gtk::{ImageExt, Inhibit};
+use relm::{ContainerWidget, Widget};
 use relm_derive::{widget, Msg};
-use EventListItemMsg::Click as EventListItemClick;
+use EventListItemMsg::EventSelected as EventListItemEventSelected;
 
 const FONT_AWESOME_SVGS_ROOT: &str = "fontawesome-free-5.12.0-desktop/svgs/solid";
-
-use gtk::{
-    Application, ApplicationWindow, Box, Button, Calendar, Image, Label, Popover, ScrolledWindow,
-};
 
 #[derive(Msg)]
 pub enum Msg {
     Decrement,
     Increment,
     Quit,
+    EventSelected(Event),
+    EventSelected2,
 }
 
 pub struct Model {
+    relm: relm::Relm<Win>,
     counter: u32,
     events: Vec<Event>,
+    current_event: Option<Event>,
 }
 
 #[widget]
 impl Widget for Win {
     fn init_view(&mut self) {
+        self.event_pane.set_size_request(350, -1);
         for event in &self.model.events {
-            let _child = self.event_list.add_widget::<EventListItem>(event.clone());
+            let child = self.event_list.add_widget::<EventListItem>(event.clone());
+
+            relm::connect!(child@EventListItemEventSelected(ref event),
+                           self.model.relm, Msg::EventSelected(event.clone()));
         }
+
+        relm::connect!(
+            self.model.relm,
+            self.event_list,
+            connect_row_selected(_, _),
+            Msg::EventSelected2
+        );
     }
 
-    fn model() -> Model {
+    fn model(relm: &relm::Relm<Self>, _: ()) -> Model {
         Model {
+            relm: relm.clone(),
             counter: 0,
             events: vec![
                 Event::new(
@@ -51,6 +62,7 @@ impl Widget for Win {
                     Some("to: John Doe (john@example.com)".to_string()),
                 ),
             ],
+            current_event: None,
         }
     }
 
@@ -61,6 +73,14 @@ impl Widget for Win {
             Msg::Decrement => self.model.counter -= 1,
             Msg::Increment => self.model.counter += 1,
             Msg::Quit => gtk::main_quit(),
+            Msg::EventSelected(ref event) => self.model.current_event = Some(event.clone()),
+            Msg::EventSelected2 => self.model.relm.stream().emit(Msg::EventSelected(
+                self.model
+                    .events
+                    .get(self.event_list.get_selected_row().unwrap().get_index() as usize)
+                    .unwrap()
+                    .clone(),
+            )),
         }
     }
 
@@ -82,19 +102,35 @@ impl Widget for Win {
                     // will be updated too.
                     text: &self.model.counter.to_string(),
                 },
-                gtk::ScrolledWindow {
+                gtk::Box {
+                    orientation: gtk::Orientation::Horizontal,
                     child: {
                         fill: true,
                         expand: true,
                     },
-                    gtk::Box {
-                        #[name="event_list"]
-                        gtk::ListBox {
-                            child: {
-                                fill: true,
-                                expand: true,
+                    #[name="event_pane"]
+                    gtk::ScrolledWindow {
+                        halign: gtk::Align::Start,
+                        gtk::Box {
+                            #[name="event_list"]
+                            gtk::ListBox {
+                                child: {
+                                    fill: true,
+                                    expand: true,
+                                }
                             }
                         }
+                    },
+                    gtk::Label {
+                        child: {
+                            fill: true,
+                            expand: true,
+                        },
+                        markup: self.model
+                            .current_event
+                            .as_ref()
+                            .map(|e| e.event_contents.as_str())
+                            .unwrap_or("No current event")
                     }
                 },
                 gtk::Button {
@@ -113,23 +149,31 @@ impl Widget for Win {
 
 #[derive(Msg)]
 pub enum EventListItemMsg {
-    Set(Event),
     Click,
+    EventSelected(Event),
 }
 
 pub struct EventListItemModel {
+    relm: relm::Relm<EventListItem>,
     event: Event,
 }
 
 #[widget]
 impl Widget for EventListItem {
-    fn model(event: Event) -> EventListItemModel {
-        EventListItemModel { event }
+    fn model(relm: &relm::Relm<Self>, event: Event) -> EventListItemModel {
+        EventListItemModel {
+            relm: relm.clone(),
+            event,
+        }
     }
 
     fn update(&mut self, event: EventListItemMsg) {
         match event {
-            EventListItemMsg::Set(evt) => self.model.event = evt,
+            EventListItemMsg::Click => self
+                .model
+                .relm
+                .stream()
+                .emit(EventListItemMsg::EventSelected(self.model.event.clone())),
             _ => (),
         }
     }
@@ -141,7 +185,6 @@ impl Widget for EventListItem {
                     EventListItemMsg::Click
                 }
                 else {
-                    println!("click");
                     EventListItemMsg::Click
                 }
             }, Inhibit(false)),
