@@ -2,7 +2,7 @@ use gdk;
 use gdk_pixbuf::Pixbuf;
 use gtk::prelude::*;
 use gtk::{ImageExt, Inhibit, Window, WindowType};
-use relm::{Relm, Update, Widget};
+use relm::{ContainerWidget, Relm, Update, Widget};
 use relm_derive::{widget, Msg};
 use EventListItemMsg::Click as EventListItemClick;
 
@@ -27,20 +27,30 @@ pub struct Model {
 #[widget]
 impl Widget for Win {
     fn init_view(&mut self) {
-        self.event_list_item
-            .emit(EventListItemMsg::Set(self.model.events.pop().unwrap()));
+        for event in &self.model.events {
+            let _child = self.event_list.add_widget::<EventListItem>(event.clone());
+        }
     }
 
     fn model() -> Model {
         Model {
             counter: 0,
-            events: vec![Event::new(
-                EventType::Git,
-                "12:56".to_string(),
-                "Emmanuel Touzery, Jane Doe".to_string(),
-                "Commit message details".to_string(),
-                Some("42 messages, lasted 2:30".to_string()),
-            )],
+            events: vec![
+                Event::new(
+                    EventType::Git,
+                    "12:56".to_string(),
+                    "Emmanuel Touzery, Jane Doe".to_string(),
+                    "Commit message details".to_string(),
+                    Some("42 messages, lasted 2:30".to_string()),
+                ),
+                Event::new(
+                    EventType::Email,
+                    "13:42".to_string(),
+                    "important email".to_string(),
+                    "Hello John, Goodbye John".to_string(),
+                    Some("to: John Doe (john@example.com)".to_string()),
+                ),
+            ],
         }
     }
 
@@ -72,9 +82,20 @@ impl Widget for Win {
                     // will be updated too.
                     text: &self.model.counter.to_string(),
                 },
-                #[name="event_list_item"]
-                EventListItem {
-                    EventListItemClick => Msg::Increment
+                gtk::ScrolledWindow {
+                    child: {
+                        fill: true,
+                        expand: true,
+                    },
+                    gtk::Box {
+                        #[name="event_list"]
+                        gtk::ListBox {
+                            child: {
+                                fill: true,
+                                expand: true,
+                            }
+                        }
+                    }
                 },
                 gtk::Button {
                     clicked => Msg::Decrement,
@@ -102,16 +123,8 @@ pub struct EventListItemModel {
 
 #[widget]
 impl Widget for EventListItem {
-    fn model() -> EventListItemModel {
-        EventListItemModel {
-            event: Event::new(
-                EventType::Git,
-                String::new(),
-                String::new(),
-                String::new(),
-                Some(String::new()), // should be None
-            ),
-        }
+    fn model(event: Event) -> EventListItemModel {
+        EventListItemModel { event }
     }
 
     fn update(&mut self, event: EventListItemMsg) {
@@ -285,6 +298,7 @@ impl EventTypeTrait for EventType {
     }
 }
 
+#[derive(Clone)]
 pub struct Event {
     event_type: EventType,
     event_time: String,
