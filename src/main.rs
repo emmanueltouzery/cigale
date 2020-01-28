@@ -10,8 +10,7 @@ pub enum Msg {
     Decrement,
     Increment,
     Quit,
-    EventSelected(Event),
-    EventSelected2,
+    EventSelected,
 }
 
 pub struct Model {
@@ -33,7 +32,7 @@ impl Widget for Win {
             self.model.relm,
             self.event_list,
             connect_row_selected(_, _),
-            Msg::EventSelected2
+            Msg::EventSelected
         );
     }
 
@@ -68,14 +67,15 @@ impl Widget for Win {
             Msg::Decrement => self.model.counter -= 1,
             Msg::Increment => self.model.counter += 1,
             Msg::Quit => gtk::main_quit(),
-            Msg::EventSelected(ref event) => self.model.current_event = Some(event.clone()),
-            Msg::EventSelected2 => self.model.relm.stream().emit(Msg::EventSelected(
-                self.model
-                    .events
-                    .get(self.event_list.get_selected_row().unwrap().get_index() as usize)
-                    .unwrap()
-                    .clone(),
-            )),
+            Msg::EventSelected => {
+                self.model.current_event = Some(
+                    self.model
+                        .events
+                        .get(self.event_list.get_selected_row().unwrap().get_index() as usize)
+                        .unwrap()
+                        .clone(),
+                )
+            }
         }
     }
 
