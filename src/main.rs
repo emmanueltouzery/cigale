@@ -2,6 +2,7 @@ use gtk::prelude::*;
 use gtk::{ImageExt, Inhibit};
 use relm::{ContainerWidget, Widget};
 use relm_derive::{widget, Msg};
+use DatePickerMsg::DayPicked as PickerDayPickedMsg;
 
 const FONT_AWESOME_SVGS_ROOT: &str = "fontawesome-free-5.12.0-desktop/svgs/solid";
 
@@ -9,6 +10,7 @@ const FONT_AWESOME_SVGS_ROOT: &str = "fontawesome-free-5.12.0-desktop/svgs/solid
 pub enum Msg {
     Quit,
     EventSelected,
+    DayChange(u32, u32, u32),
 }
 
 pub struct Model {
@@ -68,6 +70,7 @@ impl Widget for Win {
                         .clone(),
                 )
             }
+            Msg::DayChange(y, m, d) => println!("Day change {} {} {}", y, m, d),
         }
     }
 
@@ -75,6 +78,9 @@ impl Widget for Win {
         gtk::Window {
             gtk::Box {
                 orientation: gtk::Orientation::Vertical,
+                DatePicker {
+                    PickerDayPickedMsg(y,m,d) => Msg::DayChange(y, m, d)
+                },
                 gtk::Box {
                     orientation: gtk::Orientation::Horizontal,
                     child: {
@@ -196,6 +202,76 @@ impl Widget for EventListItem {
                     }
                 }
             }
+        }
+    }
+}
+
+/// DatePicker
+
+#[derive(Msg)]
+pub enum DatePickerMsg {
+    ButtonClicked,
+    DayClicked,
+    DayPicked(u32, u32, u32),
+}
+
+pub struct DatePickerModel {
+    relm: relm::Relm<DatePicker>,
+    calendar_popover: gtk::Popover,
+    calendar: gtk::Calendar,
+}
+
+#[widget]
+impl Widget for DatePicker {
+    fn init_view(&mut self) {
+        self.model
+            .calendar_popover
+            .set_relative_to(Some(&self.calendar_button));
+        self.model.calendar_popover.hide();
+        self.model.calendar_popover.add(&self.model.calendar);
+        self.model.calendar.show();
+        relm::connect!(
+            self.model.relm,
+            self.model.calendar,
+            connect_day_selected(_),
+            DatePickerMsg::DayClicked
+        );
+    }
+    fn model(relm: &relm::Relm<Self>, _: ()) -> DatePickerModel {
+        DatePickerModel {
+            relm: relm.clone(),
+            calendar_popover: gtk::Popover::new(None::<&gtk::Button>),
+            calendar: gtk::Calendar::new(),
+        }
+    }
+
+    fn update(&mut self, event: DatePickerMsg) {
+        match event {
+            DatePickerMsg::ButtonClicked => {
+                if self.model.calendar_popover.is_visible() {
+                    self.model.calendar_popover.popdown()
+                } else {
+                    self.model.calendar_popover.popup()
+                }
+            }
+            DatePickerMsg::DayClicked => {
+                let (y, m, d) = self.model.calendar.get_date();
+                self.model
+                    .relm
+                    .stream()
+                    .emit(DatePickerMsg::DayPicked(y, m, d))
+            }
+            DatePickerMsg::DayPicked(_, _, _) => {}
+        }
+    }
+
+    view! {
+        gtk::Box {
+            #[name="calendar_button"]
+            gtk::Button {
+                label: "hi",
+                clicked => DatePickerMsg::ButtonClicked
+            },
         }
     }
 }
