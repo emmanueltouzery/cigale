@@ -1,3 +1,4 @@
+use chrono::prelude::*;
 use gtk::prelude::*;
 use gtk::{ImageExt, Inhibit};
 use relm::{ContainerWidget, Widget};
@@ -10,7 +11,7 @@ const FONT_AWESOME_SVGS_ROOT: &str = "fontawesome-free-5.12.0-desktop/svgs/solid
 pub enum Msg {
     Quit,
     EventSelected,
-    DayChange(u32, u32, u32),
+    DayChange(Date<Local>),
 }
 
 pub struct Model {
@@ -70,7 +71,7 @@ impl Widget for Win {
                         .clone(),
                 )
             }
-            Msg::DayChange(y, m, d) => println!("Day change {} {} {}", y, m, d),
+            Msg::DayChange(day) => println!("Day change {}", day.format("%A, %Y-%m-%d")),
         }
     }
 
@@ -79,7 +80,7 @@ impl Widget for Win {
             gtk::Box {
                 orientation: gtk::Orientation::Vertical,
                 DatePicker {
-                    PickerDayPickedMsg(y,m,d) => Msg::DayChange(y, m, d)
+                    PickerDayPickedMsg(d) => Msg::DayChange(d)
                 },
                 gtk::Box {
                     orientation: gtk::Orientation::Horizontal,
@@ -151,7 +152,7 @@ impl Widget for EventListItem {
                         padding: 2,
                     },
                     gtk::Image {
-                        from_pixbuf: Some(&fontawesome_image("code-branch"))
+                        from_pixbuf: Some(&fontawesome_image("code-branch", 40))
                     },
                     gtk::Label {
                         text: self.model.event.event_type.get_desc()
@@ -212,13 +213,14 @@ impl Widget for EventListItem {
 pub enum DatePickerMsg {
     ButtonClicked,
     DayClicked,
-    DayPicked(u32, u32, u32),
+    DayPicked(Date<Local>),
 }
 
 pub struct DatePickerModel {
     relm: relm::Relm<DatePicker>,
     calendar_popover: gtk::Popover,
     calendar: gtk::Calendar,
+    date: Date<Local>,
 }
 
 #[widget]
@@ -242,6 +244,7 @@ impl Widget for DatePicker {
             relm: relm.clone(),
             calendar_popover: gtk::Popover::new(None::<&gtk::Button>),
             calendar: gtk::Calendar::new(),
+            date: Local::today(),
         }
     }
 
@@ -259,81 +262,41 @@ impl Widget for DatePicker {
                 self.model
                     .relm
                     .stream()
-                    .emit(DatePickerMsg::DayPicked(y, m, d))
+                    .emit(DatePickerMsg::DayPicked(Local.ymd(y as i32, m + 1, d)))
             }
-            DatePickerMsg::DayPicked(_, _, _) => {}
+            DatePickerMsg::DayPicked(d) => {
+                self.model.date = d;
+                self.model.calendar_popover.popdown();
+            }
         }
     }
 
     view! {
         gtk::Box {
+            orientation: gtk::Orientation::Horizontal,
+            margin_start: 10,
+            margin_end: 10,
+            margin_top: 10,
+            margin_bottom: 10,
+            gtk::Label {
+                child: {
+                    padding: 2,
+                },
+                label: "Day to display:"
+            },
             #[name="calendar_button"]
             gtk::Button {
-                label: "hi",
+                child: {
+                    padding: 2,
+                },
+                always_show_image: true,
+                image: Some(&gtk::Image::new_from_pixbuf(Some(&fontawesome_image("calendar-alt", 16)))),
+                label: self.model.date.format("%A, %Y-%m-%d").to_string().as_str(),
                 clicked => DatePickerMsg::ButtonClicked
             },
         }
     }
 }
-
-// fn main() {
-//     let application =
-//         Application::new(Some("com.github.gtk-rs.examples.basic"), Default::default())
-//             .expect("failed to initialize GTK application");
-
-//     application.connect_activate(|app| {
-//         let window = ApplicationWindow::new(app);
-//         window.set_title("First GTK+ Program");
-//         window.set_default_size(800, 600);
-
-//         let vbox = Box::new(gtk::Orientation::Vertical, 0);
-
-//         let button = Button::new_with_label("Click me!");
-//         button.show();
-
-//         let cal = Calendar::new();
-//         cal.show();
-
-//         let cal_popover = Popover::new(Some(&button));
-//         cal_popover.add(&cal);
-
-//         button.connect_clicked(move |_| {
-//             cal_popover.popup();
-//         });
-
-//         vbox.add(&button);
-
-//         let event_box = Box::new(gtk::Orientation::Horizontal, 0);
-//         let events = vec![
-//             Rc::new(Event::new(
-//                 EventType::Git,
-//                 "12:56".to_string(),
-//                 "Emmanuel Touzery, Jane Doe".to_string(),
-//                 "Commit message details".to_string(),
-//                 Some("42 messages, lasted 2:30".to_string()),
-//             )),
-//             Rc::new(Event::new(
-//                 EventType::Email,
-//                 "13:42".to_string(),
-//                 "important email".to_string(),
-//                 "Hello John, Goodbye John".to_string(),
-//                 Some("to: John Doe (john@example.com)".to_string()),
-//             )),
-//         ];
-//         let text_view = gtk::TextView::new();
-//         let text_buf = text_view.get_buffer().unwrap();
-//         let cb = Rc::new(move |evt: &Rc<Event>| text_buf.set_text(evt.event_contents.as_str()));
-//         let event_list = event_list(&events, cb);
-//         event_box.pack_start(&event_list, false, true, 0);
-//         event_box.pack_start(&text_view, true, true, 0);
-//         vbox.pack_start(&event_box, true, true, 0);
-
-//         window.add(&vbox);
-//         window.show_all();
-//     });
-
-//     application.run(&[]);
-// }
 
 trait EventTypeTrait {
     fn get_desc(&self) -> &str;
@@ -391,14 +354,14 @@ impl Event {
 
 // TODO load the icons i'm interested in only once, put them
 // in the binary
-fn fontawesome_image(image_name: &str) -> gdk_pixbuf::Pixbuf {
+fn fontawesome_image(image_name: &str, size: i32) -> gdk_pixbuf::Pixbuf {
     gdk_pixbuf::Pixbuf::new_from_file_at_size(
         format!(
             "/home/emmanuel/home/cigale/{}/{}.svg",
             FONT_AWESOME_SVGS_ROOT, image_name
         ),
-        40,
-        40,
+        size,
+        size,
     )
     .unwrap()
 }
