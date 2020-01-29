@@ -23,7 +23,6 @@ pub struct Model {
 #[widget]
 impl Widget for Win {
     fn init_view(&mut self) {
-        self.event_pane.set_size_request(350, -1);
         for event in &self.model.events {
             let _child = self.event_list.add_widget::<EventListItem>(event.clone());
         }
@@ -88,9 +87,9 @@ impl Widget for Win {
                         fill: true,
                         expand: true,
                     },
-                    #[name="event_pane"]
                     gtk::ScrolledWindow {
                         halign: gtk::Align::Start,
+                        property_width_request: 350,
                         gtk::Box {
                             #[name="event_list"]
                             gtk::ListBox {
