@@ -43,7 +43,7 @@ impl Widget for Win {
                     EventType::Git,
                     "12:56".to_string(),
                     "Emmanuel Touzery, Jane Doe".to_string(),
-                    "Commit message details".to_string(),
+                    "Commit message <b>details</b>".to_string(),
                     Some("42 messages, lasted 2:30".to_string()),
                 ),
                 Event::new(
@@ -104,7 +104,10 @@ impl Widget for Win {
                         child: {
                             fill: true,
                             expand: true,
+                            padding: 10,
                         },
+                        halign: gtk::Align::Start,
+                        valign: gtk::Align::Start,
                         markup: self.model
                             .current_event
                             .as_ref()
