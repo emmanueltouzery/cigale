@@ -14,14 +14,14 @@ impl EventType for Email {
         "envelope"
     }
 
-    fn get_events(&self, day: &Date<Local>) -> Vec<Event> {
-        vec![Event::new(
+    fn get_events(&self, day: &Date<Local>) -> Result<Vec<Event>, Box<dyn std::error::Error>> {
+        Ok(vec![Event::new(
             self.get_desc(),
             self.get_icon(),
             "13:42".to_string(),
             format!("important email {}", day),
             "Hello John, Goodbye John".to_string(),
             Some("to: John Doe (john@example.com)".to_string()),
-        )]
+        )])
     }
 }

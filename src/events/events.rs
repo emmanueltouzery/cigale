@@ -3,10 +3,10 @@ use chrono::prelude::*;
 pub trait EventType {
     fn get_desc(&self) -> &'static str;
     fn get_icon(&self) -> &'static str;
-    fn get_events(&self, day: &Date<Local>) -> Vec<Event>;
+    fn get_events(&self, day: &Date<Local>) -> Result<Vec<Event>, Box<dyn std::error::Error>>;
 }
 
-pub fn get_all_events(day: &Date<Local>) -> Vec<Event> {
+pub fn get_all_events(day: &Date<Local>) -> Result<Vec<Event>, Box<dyn std::error::Error>> {
     println!("get all events is called! {}", day);
     let git = super::git::Git {
         repoFolder: "/home/emmanuel/projects/bus/afc".to_string(),
@@ -15,9 +15,10 @@ pub fn get_all_events(day: &Date<Local>) -> Vec<Event> {
         mboxFilePath: "".to_string(),
     };
 
-    let mut events = git.get_events(day);
-    events.append(&mut email.get_events(day));
-    events
+    let mut events = git.get_events(day)?;
+    let mut emailEvents = email.get_events(day)?;
+    events.append(&mut emailEvents);
+    Ok(events)
 }
 
 #[derive(Clone)]
