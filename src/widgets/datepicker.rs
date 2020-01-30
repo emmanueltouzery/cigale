@@ -3,12 +3,11 @@ use gtk::prelude::*;
 use relm::Widget;
 use relm_derive::{widget, Msg};
 
-// TODO setting the date & closing the popover when the user changes the month
-
 #[derive(Msg)]
 pub enum DatePickerMsg {
     ButtonClicked,
     DayClicked,
+    MonthChanged,
     DayPicked(Date<Local>),
 }
 
@@ -17,6 +16,16 @@ pub struct DatePickerModel {
     calendar_popover: gtk::Popover,
     calendar: gtk::Calendar,
     date: Date<Local>,
+    // when the user changes month, the calendar
+    // will first emit a month-changed event, then
+    // a day-selected event.
+    // By default the latter would close the popover.
+    // So when we get a month change event, set up
+    // a marker to ignore the upcoming day-selected.
+    //
+    // we want to close the popover only when the
+    // user clicks on a specific day.
+    month_change_ongoing: bool,
 }
 
 #[widget]
@@ -34,6 +43,12 @@ impl Widget for DatePicker {
             connect_day_selected(_),
             DatePickerMsg::DayClicked
         );
+        relm::connect!(
+            self.model.relm,
+            self.model.calendar,
+            connect_month_changed(_),
+            DatePickerMsg::MonthChanged
+        );
     }
     fn model(relm: &relm::Relm<Self>, _: ()) -> DatePickerModel {
         DatePickerModel {
@@ -41,6 +56,7 @@ impl Widget for DatePicker {
             calendar_popover: gtk::Popover::new(None::<&gtk::Button>),
             calendar: gtk::Calendar::new(),
             date: Local::today(),
+            month_change_ongoing: false,
         }
     }
 
@@ -62,7 +78,14 @@ impl Widget for DatePicker {
             }
             DatePickerMsg::DayPicked(d) => {
                 self.model.date = d;
-                self.model.calendar_popover.popdown();
+                if self.model.month_change_ongoing {
+                    self.model.month_change_ongoing = false;
+                } else {
+                    self.model.calendar_popover.popdown();
+                }
+            }
+            DatePickerMsg::MonthChanged => {
+                self.model.month_change_ongoing = true;
             }
         }
     }
