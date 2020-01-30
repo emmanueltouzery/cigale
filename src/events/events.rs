@@ -1,33 +1,29 @@
-pub trait EventTypeTrait {
-    fn get_desc(&self) -> &str;
-    fn get_icon(&self) -> &str;
+use chrono::prelude::*;
+
+pub trait EventType {
+    fn get_desc(&self) -> &'static str;
+    fn get_icon(&self) -> &'static str;
+    fn get_events(&self, day: &Date<Local>) -> Vec<Event>;
 }
 
-#[derive(Clone, Copy)]
-pub enum EventType {
-    Git,
-    Email,
-}
+pub fn get_all_events(day: &Date<Local>) -> Vec<Event> {
+    println!("get all events is called! {}", day);
+    let git = super::git::Git {
+        repoFolder: "/home/emmanuel/projects/bus/afc".to_string(),
+    };
+    let email = super::email::Email {
+        mboxFilePath: "".to_string(),
+    };
 
-impl EventTypeTrait for EventType {
-    fn get_desc(&self) -> &str {
-        match self {
-            EventType::Git => "Git",
-            EventType::Email => "Email",
-        }
-    }
-
-    fn get_icon(&self) -> &str {
-        match self {
-            EventType::Git => "code-branch",
-            EventType::Email => "envelope",
-        }
-    }
+    let mut events = git.get_events(day);
+    events.append(&mut email.get_events(day));
+    events
 }
 
 #[derive(Clone)]
 pub struct Event {
-    pub event_type: EventType,
+    pub event_type_desc: &'static str,
+    pub event_type_icon: &'static str,
     pub event_time: String,
     pub event_info: String,
     pub event_contents: String,
@@ -36,14 +32,16 @@ pub struct Event {
 
 impl Event {
     pub fn new(
-        event_type: EventType,
+        event_type_desc: &'static str,
+        event_type_icon: &'static str,
         event_time: String,
         event_info: String,
         event_contents: String,
         event_extra_details: Option<String>,
     ) -> Event {
         Event {
-            event_type,
+            event_type_desc,
+            event_type_icon,
             event_time,
             event_info,
             event_contents,

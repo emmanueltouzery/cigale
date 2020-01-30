@@ -1,4 +1,4 @@
-use crate::events::events::{Event, EventTypeTrait};
+use crate::events::events::Event;
 use gtk::prelude::*;
 use relm::Widget;
 use relm_derive::{widget, Msg};
@@ -32,10 +32,10 @@ impl Widget for EventListItem {
                 },
                 gtk::Image {
                     from_pixbuf: Some(&crate::icons::fontawesome_image(
-                        self.model.event.event_type.get_icon(), 40))
+                        self.model.event.event_type_icon, 40))
                 },
                 gtk::Label {
-                    text: self.model.event.event_type.get_desc()
+                    text: self.model.event.event_type_desc
                 },
             },
             gtk::Box {

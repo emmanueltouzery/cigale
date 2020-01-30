@@ -3,6 +3,8 @@ use gtk::prelude::*;
 use relm::Widget;
 use relm_derive::{widget, Msg};
 
+// TODO setting the date & closing the popover when the user changes the month
+
 #[derive(Msg)]
 pub enum DatePickerMsg {
     ButtonClicked,

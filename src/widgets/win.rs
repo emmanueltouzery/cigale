@@ -1,7 +1,7 @@
 use super::datepicker::DatePickerMsg::DayPicked as DatePickerDayPickedMsg;
 use super::datepicker::*;
 use super::event::EventListItem;
-use crate::events::events::{Event, EventType};
+use crate::events::events::Event;
 use chrono::prelude::*;
 use gtk::prelude::*;
 use relm::{ContainerWidget, Widget};
@@ -23,9 +23,7 @@ pub struct Model {
 #[widget]
 impl Widget for Win {
     fn init_view(&mut self) {
-        for event in &self.model.events {
-            let _child = self.event_list.add_widget::<EventListItem>(event.clone());
-        }
+        self.update_events();
 
         relm::connect!(
             self.model.relm,
@@ -38,23 +36,17 @@ impl Widget for Win {
     fn model(relm: &relm::Relm<Self>, _: ()) -> Model {
         Model {
             relm: relm.clone(),
-            events: vec![
-                Event::new(
-                    EventType::Git,
-                    "12:56".to_string(),
-                    "Emmanuel Touzery, Jane Doe".to_string(),
-                    "Commit message <b>details</b>".to_string(),
-                    Some("42 messages, lasted 2:30".to_string()),
-                ),
-                Event::new(
-                    EventType::Email,
-                    "13:42".to_string(),
-                    "important email".to_string(),
-                    "Hello John, Goodbye John".to_string(),
-                    Some("to: John Doe (john@example.com)".to_string()),
-                ),
-            ],
+            events: crate::events::events::get_all_events(&Local::today()),
             current_event: None,
+        }
+    }
+
+    fn update_events(&self) {
+        for child in self.event_list.get_children() {
+            self.event_list.remove(&child);
+        }
+        for event in &self.model.events {
+            let _child = self.event_list.add_widget::<EventListItem>(event.clone());
         }
     }
 
@@ -62,15 +54,18 @@ impl Widget for Win {
         match event {
             Msg::Quit => gtk::main_quit(),
             Msg::EventSelected => {
-                self.model.current_event = Some(
-                    self.model
-                        .events
-                        .get(self.event_list.get_selected_row().unwrap().get_index() as usize)
-                        .unwrap()
-                        .clone(),
-                )
+                let selected_index_maybe = self
+                    .event_list
+                    .get_selected_row()
+                    .map(|r| r.get_index() as usize);
+                self.model.current_event = selected_index_maybe
+                    .and_then(|idx| self.model.events.get(idx))
+                    .map(|evt| evt.clone());
             }
-            Msg::DayChange(day) => println!("Day change {}", day.format("%A, %Y-%m-%d")),
+            Msg::DayChange(day) => {
+                self.model.events = crate::events::events::get_all_events(&day);
+                self.update_events();
+            }
         }
     }
 
