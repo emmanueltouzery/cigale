@@ -18,6 +18,7 @@ impl EventType for Git {
     }
 
     fn get_events(&self, day: &Date<Local>) -> Result<Vec<Event>, Box<dyn std::error::Error>> {
+        std::thread::sleep(std::time::Duration::from_millis(3000));
         if day < &Local.ymd(2020, 1, 1) {
             return Err(Box::<dyn std::error::Error>::from("too old"));
         }

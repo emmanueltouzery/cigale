@@ -4,7 +4,7 @@ use super::event::EventListItem;
 use crate::events::events::Event;
 use chrono::prelude::*;
 use gtk::prelude::*;
-use relm::{ContainerWidget, Widget};
+use relm::{Channel, ContainerWidget, Widget};
 use relm_derive::{widget, Msg};
 
 #[derive(Msg)]
@@ -12,11 +12,13 @@ pub enum Msg {
     Quit,
     EventSelected,
     DayChange(Date<Local>),
+    GotEvents(Result<Vec<Event>, String>),
 }
 
 pub struct Model {
     relm: relm::Relm<Win>,
-    events: Result<Vec<Event>, Box<dyn std::error::Error>>,
+    // events will be None while we're loading
+    events: Option<Result<Vec<Event>, String>>,
     current_event: Option<Event>,
 }
 
@@ -34,24 +36,39 @@ impl Widget for Win {
     }
 
     fn model(relm: &relm::Relm<Self>, _: ()) -> Model {
+        Win::fetch_events(relm, &Local::today());
         Model {
             relm: relm.clone(),
-            events: crate::events::events::get_all_events(&Local::today()),
+            events: None,
             current_event: None,
         }
     }
 
-    fn update_events(&self) {
+    fn fetch_events(relm: &relm::Relm<Self>, day: &Date<Local>) {
+        let dday = day.clone();
+        let stream = relm.stream().clone();
+        let (_channel, sender) = Channel::new(move |events| {
+            stream.emit(Msg::GotEvents(events));
+        });
+        std::thread::spawn(move || {
+            sender
+                .send(crate::events::events::get_all_events(&dday).map_err(|e| e.to_string()))
+                .unwrap_or_else(|err| println!("Thread communication error: {}", err));
+        });
+    }
+
+    fn update_events(&mut self) {
+        self.model.current_event = None;
         for child in self.event_list.get_children() {
             self.event_list.remove(&child);
         }
         match &self.model.events {
-            Ok(events) => {
+            Some(Ok(events)) => {
                 for event in events {
                     let _child = self.event_list.add_widget::<EventListItem>(event.clone());
                 }
             }
-            Err(err) => {
+            Some(Err(err)) => {
                 let info_contents = self
                     .info_bar
                     .get_content_area()
@@ -64,6 +81,7 @@ impl Widget for Win {
                 info_contents.add(&gtk::Label::new(Some(err.to_string().as_str())));
                 info_contents.show_all();
             }
+            None => {}
         }
     }
 
@@ -71,7 +89,7 @@ impl Widget for Win {
         match event {
             Msg::Quit => gtk::main_quit(),
             Msg::EventSelected => match &self.model.events {
-                Ok(events) => {
+                Some(Ok(events)) => {
                     let selected_index_maybe = self
                         .event_list
                         .get_selected_row()
@@ -80,10 +98,15 @@ impl Widget for Win {
                         .and_then(|idx| events.get(idx))
                         .map(|evt| evt.clone());
                 }
-                Err(_) => {}
+                _ => {}
             },
             Msg::DayChange(day) => {
-                self.model.events = crate::events::events::get_all_events(&day);
+                self.model.events = None;
+                self.update_events();
+                Win::fetch_events(&self.model.relm, &day);
+            }
+            Msg::GotEvents(events) => {
+                self.model.events = Some(events);
                 self.update_events();
             }
         }
@@ -93,12 +116,20 @@ impl Widget for Win {
         gtk::Window {
             gtk::Box {
                 orientation: gtk::Orientation::Vertical,
-                DatePicker {
-                    DatePickerDayPickedMsg(d) => Msg::DayChange(d)
+                gtk::Box {
+                    orientation: gtk::Orientation::Horizontal,
+                    DatePicker {
+                        DatePickerDayPickedMsg(d) => Msg::DayChange(d)
+                    },
+                    gtk::Spinner {
+                        property_active: self.model.events.is_none()
+                    }
                 },
                 #[name="info_bar"]
                 gtk::InfoBar {
-                    revealed: self.model.events.is_err(),
+                    revealed: self.model.events.as_ref()
+                                               .filter(|r| r.is_err())
+                                               .is_some(),
                     message_type: gtk::MessageType::Error,
                 },
                 gtk::Box {
