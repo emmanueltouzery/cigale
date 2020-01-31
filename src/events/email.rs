@@ -1,11 +1,11 @@
-use super::events::{Event, EventType};
+use super::events::{Event, EventProvider};
 use chrono::prelude::*;
 
 pub struct Email {
     pub mboxFilePath: String, // Path
 }
 
-impl EventType for Email {
+impl EventProvider for Email {
     fn get_desc(&self) -> &'static str {
         "Email"
     }

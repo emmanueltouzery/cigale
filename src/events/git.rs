@@ -1,4 +1,4 @@
-use super::events::{Event, EventType};
+use super::events::{Event, EventProvider};
 use chrono::prelude::*;
 
 // git2 revwalk
@@ -8,7 +8,7 @@ pub struct Git {
     pub repoFolder: String, // Path
 }
 
-impl EventType for Git {
+impl EventProvider for Git {
     fn get_desc(&self) -> &'static str {
         "Git"
     }

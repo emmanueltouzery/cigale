@@ -1,6 +1,6 @@
 use chrono::prelude::*;
 
-pub trait EventType {
+pub trait EventProvider {
     fn get_desc(&self) -> &'static str;
     fn get_icon(&self) -> &'static str;
     fn get_events(&self, day: &Date<Local>) -> Result<Vec<Event>, Box<dyn std::error::Error>>;
