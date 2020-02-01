@@ -25,6 +25,10 @@ pub struct Model {
 #[widget]
 impl Widget for Win {
     fn init_view(&mut self) {
+        match self.load_style() {
+            Err(err) => println!("Error loading the CSS: {}", err),
+            _ => {}
+        }
         self.update_events();
 
         relm::connect!(
@@ -42,6 +46,20 @@ impl Widget for Win {
             events: None,
             current_event: None,
         }
+    }
+
+    fn load_style(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let screen = self.window.get_screen().unwrap();
+        let css = gtk::CssProvider::new();
+
+        // TODO embed the css in the binary?
+        let mut path = std::path::PathBuf::new();
+        path.push("resources");
+        path.push("style.css");
+        let path_str = path.to_str().ok_or("Invalid path")?;
+        css.load_from_path(path_str)?;
+        gtk::StyleContext::add_provider_for_screen(&screen, &css, 0);
+        Ok(())
     }
 
     fn fetch_events(relm: &relm::Relm<Self>, day: &Date<Local>) {
@@ -113,6 +131,7 @@ impl Widget for Win {
     }
 
     view! {
+        #[name="window"]
         gtk::Window {
             gtk::Box {
                 orientation: gtk::Orientation::Vertical,
@@ -159,6 +178,7 @@ impl Widget for Win {
                         },
                         halign: gtk::Align::Start,
                         valign: gtk::Align::Start,
+                        line_wrap: true,
                         markup: self.model
                             .current_event
                             .as_ref()

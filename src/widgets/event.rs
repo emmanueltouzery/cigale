@@ -12,6 +12,15 @@ pub struct EventListItemModel {
 
 #[widget]
 impl Widget for EventListItem {
+    fn init_view(&mut self) {
+        self.event_type_label
+            .get_style_context()
+            .add_class("event_provider_name");
+        self.event_time_label
+            .get_style_context()
+            .add_class("event_time");
+    }
+
     fn model(event: Event) -> EventListItemModel {
         EventListItemModel { event }
     }
@@ -27,15 +36,17 @@ impl Widget for EventListItem {
             margin_bottom: 10,
             gtk::Box {
                 orientation: gtk::Orientation::Vertical,
+                valign: gtk::Align::Center,
                 child: {
-                    padding: 2,
+                    padding: 3,
                 },
                 gtk::Image {
                     from_pixbuf: Some(&crate::icons::fontawesome_image(
-                        self.model.event.event_type_icon, 40))
+                        self.model.event.event_type_icon, 32))
                 },
+                #[name="event_type_label"]
                 gtk::Label {
-                    text: self.model.event.event_type_desc
+                    text: self.model.event.event_type_desc,
                 },
             },
             gtk::Box {
@@ -52,14 +63,15 @@ impl Widget for EventListItem {
                         pack_type: gtk::PackType::Start,
                         expand: true,
                         fill: true,
-                        padding: 5,
                     },
+                    #[name="event_time_label"]
                     gtk::Label {
                         child: {
                             pack_type: gtk::PackType::Start,
+                            padding: 3,
                         },
                         // text: format!("<b>{}</b>", event.event_time) // doesn't compile
-                        label: ("<b>".to_string() + &self.model.event.event_time + "</b>").as_str(),
+                        label: ("<b>".to_string() + &self.model.event.event_time.format("%H:%M").to_string() + "</b>").as_str(),
                         use_markup: true,
                         // text: self.model.event.event_time.as_str(),
                         halign: gtk::Align::Start
@@ -67,9 +79,11 @@ impl Widget for EventListItem {
                     gtk::Label {
                         child: {
                             pack_type: gtk::PackType::End,
+                            padding: 3,
                         },
                         text: self.model.event.event_extra_details.as_ref().unwrap().as_str(),
-                        halign: gtk::Align::Start
+                        halign: gtk::Align::Start,
+                        ellipsize: pango::EllipsizeMode::End
                     },
                 },
                 gtk::Label {
@@ -79,7 +93,8 @@ impl Widget for EventListItem {
                         padding: 5
                     },
                     text: self.model.event.event_info.as_str(),
-                    halign: gtk::Align::Start
+                    halign: gtk::Align::Start,
+                    ellipsize: pango::EllipsizeMode::End
                 }
             }
         }

@@ -62,7 +62,7 @@ impl EventProvider for Git {
                 Event::new(
                     self.get_desc(),
                     self.get_icon(),
-                    commit_date.time().to_string(),
+                    commit_date.time(),
                     c.summary().unwrap_or("").to_string(),
                     c.message().unwrap_or("").to_string(),
                     Some("42 messages, lasted 2:30".to_string()),

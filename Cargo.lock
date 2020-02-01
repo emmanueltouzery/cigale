@@ -94,6 +94,7 @@ dependencies = [
  "gdk-pixbuf 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "git2 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gtk 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pango 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "relm 0.18.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "relm-derive 0.18.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

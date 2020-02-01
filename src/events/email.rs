@@ -18,7 +18,7 @@ impl EventProvider for Email {
         Ok(vec![Event::new(
             self.get_desc(),
             self.get_icon(),
-            "13:42".to_string(),
+            NaiveTime::from_hms(13, 42, 0),
             format!("important email {}", day),
             "Hello John, Goodbye John".to_string(),
             Some("to: John Doe (john@example.com)".to_string()),
