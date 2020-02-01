@@ -81,7 +81,7 @@ impl Widget for EventListItem {
                             pack_type: gtk::PackType::End,
                             padding: 3,
                         },
-                        text: self.model.event.event_extra_details.as_ref().unwrap().as_str(),
+                        text: self.model.event.event_extra_details.as_ref().unwrap_or(&"".to_string()).as_str(),
                         halign: gtk::Align::Start,
                         ellipsize: pango::EllipsizeMode::End
                     },
