@@ -9,7 +9,8 @@ pub trait EventProvider {
 pub fn get_all_events(day: &Date<Local>) -> Result<Vec<Event>, Box<dyn std::error::Error>> {
     println!("get all events is called! {}", day);
     let git = super::git::Git {
-        repoFolder: "/home/emmanuel/projects/bus/afc".to_string(),
+        repo_folder: "/home/emmanuel/projects/bus/afc".to_string(),
+        commit_author: "Emmanuel Touzery".to_string(),
     };
     let email = super::email::Email {
         mboxFilePath: "".to_string(),
