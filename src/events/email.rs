@@ -2,7 +2,7 @@ use super::events::{Event, EventProvider};
 use chrono::prelude::*;
 
 pub struct Email {
-    pub mboxFilePath: String, // Path
+    pub mbox_file_path: String, // Path
 }
 
 impl EventProvider for Email {

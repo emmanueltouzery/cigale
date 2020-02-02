@@ -7,18 +7,17 @@ pub trait EventProvider {
 }
 
 pub fn get_all_events(day: &Date<Local>) -> Result<Vec<Event>, Box<dyn std::error::Error>> {
-    println!("get all events is called! {}", day);
     let git = super::git::Git {
         repo_folder: "/home/emmanuel/projects/bus/afc".to_string(),
         commit_author: "Emmanuel Touzery".to_string(),
     };
     let email = super::email::Email {
-        mboxFilePath: "".to_string(),
+        mbox_file_path: "".to_string(),
     };
 
     let mut events = git.get_events(day)?;
-    let mut emailEvents = email.get_events(day)?;
-    events.append(&mut emailEvents);
+    let mut email_events = email.get_events(day)?;
+    events.append(&mut email_events);
     Ok(events)
 }
 
