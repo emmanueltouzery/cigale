@@ -38,7 +38,7 @@ impl Git {
         // not done here. i want to get the list of files and copy the
         // getcommitExtraInfo algo from the cigale haskell version.
         let mut files_touched = vec![];
-        let mut file_cb = |diff_delta: git2::DiffDelta<'_>, count| {
+        let mut file_cb = |diff_delta: git2::DiffDelta<'_>, _count| {
             if let Some(path) = diff_delta.new_file().path() {
                 files_touched.push(path.to_owned());
             }
@@ -53,28 +53,27 @@ impl Git {
 
     // common prefix to all the files
     fn get_files_root(files: &Vec<std::path::PathBuf>) -> String {
-        let paths_for_each_file: Vec<Vec<char>> = files
+        let paths_for_each_file: Vec<Vec<&str>> = files
             .iter()
-            .filter_map(|f| f.to_str())
-            .map(|s| s.chars().collect())
+            .filter_map(|f| f.iter().map(|c| c.to_str()).collect())
             .collect();
         let shortest_path = paths_for_each_file
             .iter()
             .map(|chars| chars.len())
             .min()
             .unwrap_or(0);
-        let mut common_prefix = "".to_string();
+        let mut common_prefix = vec![];
         for idx in 0..shortest_path {
-            let first_chr = paths_for_each_file[0][idx];
+            let first_component = paths_for_each_file[0][idx];
             if !paths_for_each_file
                 .iter()
-                .all(|chars| chars[idx] == first_chr)
+                .all(|chars| chars[idx] == first_component)
             {
                 break;
             }
-            common_prefix.push(first_chr);
+            common_prefix.push(first_component);
         }
-        common_prefix
+        common_prefix.join("/")
     }
 }
 
