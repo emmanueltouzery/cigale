@@ -170,20 +170,50 @@ impl Widget for Win {
                             }
                         }
                     },
-                    gtk::Label {
+                    gtk::Box {
+                        orientation: gtk::Orientation::Vertical,
+                        valign: gtk::Align::Start,
                         child: {
                             fill: true,
                             expand: true,
-                            padding: 10,
                         },
-                        halign: gtk::Align::Start,
-                        valign: gtk::Align::Start,
-                        line_wrap: true,
-                        markup: self.model
-                            .current_event
-                            .as_ref()
-                            .map(|e| e.event_contents.as_str())
-                            .unwrap_or("No current event")
+                        gtk::Label {
+                            child: {
+                                padding: 10,
+                                fill: true,
+                                expand: true,
+                            },
+                            halign: gtk::Align::Start,
+                            valign: gtk::Align::Start,
+                            line_wrap: true,
+                            markup: self.model
+                                        .current_event
+                                        .as_ref()
+                                        .map(|e| e.event_contents_header.as_str())
+                                        .unwrap_or("No current event")
+                        },
+                        gtk::ScrolledWindow {
+                            child: {
+                                expand: true,
+                            },
+                            propagate_natural_height: true,
+                            gtk::Box {
+                                gtk::Label {
+                                    child: {
+                                        fill: true,
+                                        expand: true,
+                                        padding: 10,
+                                    },
+                                    halign: gtk::Align::Start,
+                                    valign: gtk::Align::Start,
+                                    markup: self.model
+                                                .current_event
+                                                .as_ref()
+                                                .map(|e| e.event_contents_body.as_str())
+                                                .unwrap_or("")
+                                }
+                            }
+                        }
                     }
                 },
             },

@@ -21,6 +21,7 @@ impl EventProvider for Email {
             NaiveTime::from_hms(13, 42, 0),
             format!("important email {}", day),
             "Hello John, Goodbye John".to_string(),
+            "".to_string(),
             Some("to: John Doe (john@example.com)".to_string()),
         )])
     }

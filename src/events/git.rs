@@ -90,13 +90,12 @@ impl EventProvider for Git {
             .map(|c| {
                 let commit_date = Git::git2_time_to_datetime(c.time());
                 let diff = Git::get_commit_diff(&repo, &c);
-                let contents_base =
+                let contents_header =
                     "<big><b>".to_owned() + &c.message().unwrap_or("").to_string() + "</b></big>";
                 let (contents, extra_details) = match diff {
-                    None => (contents_base, None),
+                    None => ("".to_string(), None),
                     Some(d) => (
-                        contents_base
-                            + "\n<span font-family=\"monospace\">"
+                        "<span font-family=\"monospace\">".to_owned()
                             + &Git::get_commit_full_diffstr(&d).unwrap_or("".to_string())
                             + "</span>",
                         Git::get_commit_extra_info(&d),
@@ -107,6 +106,7 @@ impl EventProvider for Git {
                     self.get_icon(),
                     commit_date.time(),
                     c.summary().unwrap_or("").to_string(),
+                    contents_header,
                     contents,
                     extra_details,
                 )

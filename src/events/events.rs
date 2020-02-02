@@ -28,7 +28,8 @@ pub struct Event {
     pub event_type_icon: &'static str,
     pub event_time: NaiveTime,
     pub event_info: String,
-    pub event_contents: String,
+    pub event_contents_header: String,
+    pub event_contents_body: String,
     pub event_extra_details: Option<String>,
 }
 
@@ -38,7 +39,8 @@ impl Event {
         event_type_icon: &'static str,
         event_time: NaiveTime,
         event_info: String,
-        event_contents: String,
+        event_contents_header: String,
+        event_contents_body: String,
         event_extra_details: Option<String>,
     ) -> Event {
         Event {
@@ -46,7 +48,8 @@ impl Event {
             event_type_icon,
             event_time,
             event_info,
-            event_contents,
+            event_contents_header,
+            event_contents_body,
             event_extra_details,
         }
     }
