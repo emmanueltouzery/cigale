@@ -14,7 +14,7 @@ relm-derive = "0.18.0"
 chrono = "0.4"
 git2 = "0.11.0"
 pango = "0.7.0"
-
+mailparse = "0.10.3"
 
 [dependencies.gtk]
 version = "0.7.0"

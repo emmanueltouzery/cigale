@@ -12,7 +12,8 @@ pub fn get_all_events(day: &Date<Local>) -> Result<Vec<Event>, Box<dyn std::erro
         commit_author: "Emmanuel Touzery".to_string(),
     };
     let email = super::email::Email {
-        mbox_file_path: "".to_string(),
+        mbox_file_path: "/home/emmanuel/.thunderbird/sm8eskm1.default/Mail/mail.lecip-its.com/Sent"
+            .to_string(),
     };
 
     let mut events = git.get_events(day)?;
