@@ -1,4 +1,4 @@
-From: a
+From a
 hi b
-From: b
+From b
 bye a

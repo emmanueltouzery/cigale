@@ -7,11 +7,11 @@ use std::result::Result;
 
 const BUF_SIZE: u64 = 4096;
 
-// let mut separator_bytes = "\nFrom: ".to_string().into_bytes();
+// let mut separator_bytes = "\nFrom ".to_string().into_bytes();
 // separator_bytes.reverse();
 // could use lazy_static! but a dependency for that...
-const SEPARATOR_BYTES: [u8; 7] = [
-    ' ' as u8, ':' as u8, 'm' as u8, 'o' as u8, 'r' as u8, 'F' as u8, '\n' as u8,
+const SEPARATOR_BYTES: [u8; 6] = [
+    ' ' as u8, 'm' as u8, 'o' as u8, 'r' as u8, 'F' as u8, '\n' as u8,
 ];
 
 pub struct Email {
@@ -81,6 +81,7 @@ impl Email {
                 }
             }
             email_contents.extend(cur_buf.iter());
+            parsing_state.bytes_left -= cur_buf.len() as u64;
         }
     }
 }
@@ -95,6 +96,8 @@ impl EventProvider for Email {
     }
 
     fn get_events(&self, day: &Date<Local>) -> Result<Vec<Event>, Box<dyn std::error::Error>> {
+        let day_start = day.and_hms(0, 0, 0);
+        let next_day_start = day_start + chrono::Duration::days(1);
         let mut buf = vec![0; BUF_SIZE as usize];
         let file = File::open(&self.mbox_file_path)?;
         // i "double buffer". probably OK.
@@ -105,13 +108,28 @@ impl EventProvider for Email {
             bytes_left: cur_pos_end,
         };
 
-        let email_bytes = Email::read_next_mail(&mut buf, &mut parsing_state)?;
-        let email_contents = mailparse::parse_mail(&email_bytes)?;
-        println!("{}", email_contents.headers[0].get_key()?);
-        println!("{}", email_contents.headers[0].get_value()?);
-        println!("{}", email_contents.get_body()?);
-        for subpart in &email_contents.subparts {
-            println!("{}", subpart.get_body()?);
+        loop {
+            let email_bytes = Email::read_next_mail(&mut buf, &mut parsing_state)?;
+            let email_contents = mailparse::parse_mail(&email_bytes)?;
+            let email_date = email_contents
+                .headers
+                .iter()
+                // TODO change to Result::contains when it stabilizes
+                .find(|h| h.get_key().ok() == Some("Date".to_string()))
+                .and_then(|h| h.get_value().ok())
+                .and_then(|d_str| DateTime::parse_from_rfc2822(&d_str).ok());
+            println!("{}", email_date.unwrap());
+
+            if email_date
+                .filter(|d| d < &DateTime::from(day_start)) // the from is to convert the TZ
+                .is_some()
+            {
+                break;
+            }
+            // println!("{}", email_contents.get_body()?);
+            // for subpart in &email_contents.subparts {
+            //     println!("{}", subpart.get_body()?);
+            // }
         }
 
         Ok(vec![Event::new(
@@ -138,9 +156,9 @@ fn it_can_extract_two_short_emails() {
     };
 
     let email = Email::read_next_mail(&mut buf, &mut parsing_state).unwrap();
-    assert_eq!("From: b\nbye a\n", String::from_utf8(email).unwrap());
-    assert_eq!(12, parsing_state.bytes_left);
+    assert_eq!("From b\nbye a\n", String::from_utf8(email).unwrap());
+    assert_eq!(11, parsing_state.bytes_left);
 
     let email2 = Email::read_next_mail(&mut buf, &mut parsing_state).unwrap();
-    assert_eq!("From: a\nhi b", String::from_utf8(email2).unwrap());
+    assert_eq!("From a\nhi b", String::from_utf8(email2).unwrap());
 }
