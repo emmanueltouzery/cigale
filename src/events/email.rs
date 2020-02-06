@@ -84,6 +84,25 @@ impl Email {
             parsing_state.bytes_left -= cur_buf.len() as u64;
         }
     }
+
+    fn get_header_val(headers: &Vec<mailparse::MailHeader>, header_name: &str) -> Option<String> {
+        headers
+            .iter()
+            // TODO change to Result::contains when it stabilizes
+            .find(|h| h.get_key().ok() == Some(header_name.to_string()))
+            .and_then(|h| h.get_value().ok())
+    }
+
+    fn parse_email_headers_date(headers: &Vec<mailparse::MailHeader>) -> Option<DateTime<Local>> {
+        Email::get_header_val(headers, "Date").and_then(|d_str| Email::parse_email_date(&d_str))
+    }
+
+    fn parse_email_date(dt_str: &str) -> Option<DateTime<Local>> {
+        DateTime::parse_from_rfc2822(&dt_str)
+            .ok()
+            .map(|d| DateTime::from(d))
+            .or_else(|| Local.datetime_from_str(dt_str, "%b %d %T %Y").ok())
+    }
 }
 
 impl EventProvider for Email {
@@ -107,40 +126,61 @@ impl EventProvider for Email {
             reader: &mut reader,
             bytes_left: cur_pos_end,
         };
+        let mut email_bytes;
+        let mut email_date;
 
+        // first skip emails which are newer than the date i'm interested in.
+        // it's ok to just read headers for now (I just want the date)
         loop {
-            let email_bytes = Email::read_next_mail(&mut buf, &mut parsing_state)?;
-            let email_contents = mailparse::parse_mail(&email_bytes)?;
-            let email_date = email_contents
-                .headers
-                .iter()
-                // TODO change to Result::contains when it stabilizes
-                .find(|h| h.get_key().ok() == Some("Date".to_string()))
-                .and_then(|h| h.get_value().ok())
-                .and_then(|d_str| DateTime::parse_from_rfc2822(&d_str).ok());
-            println!("{}", email_date.unwrap());
+            email_bytes = Email::read_next_mail(&mut buf, &mut parsing_state)?; // TODO stop reading when i'm out of emails
 
+            let (email_headers, _) = mailparse::parse_headers(&email_bytes)?;
+            email_date = Email::parse_email_headers_date(&email_headers);
+
+            // TODO i should skip if i can't parse the date, or something
             if email_date
-                .filter(|d| d < &DateTime::from(day_start)) // the from is to convert the TZ
+                .filter(|d| d < &DateTime::from(next_day_start)) // the from is to convert the TZ
                 .is_some()
             {
+                // first date before my end date
                 break;
             }
-            // println!("{}", email_contents.get_body()?);
-            // for subpart in &email_contents.subparts {
-            //     println!("{}", subpart.get_body()?);
-            // }
         }
 
-        Ok(vec![Event::new(
-            self.get_desc(),
-            self.get_icon(),
-            NaiveTime::from_hms(13, 42, 0),
-            format!("important email {}", day),
-            "Hello John, Goodbye John".to_string(),
-            "".to_string(),
-            Some("to: John Doe (john@example.com)".to_string()),
-        )])
+        // now read the emails i'm interested in.
+        // i'll read one-too-many email bodies (and I'll read
+        // a header for the second time right now) but no biggie
+        let mut result = vec![];
+        loop {
+            let email_contents = mailparse::parse_mail(&email_bytes)?;
+            let email_date = Email::parse_email_headers_date(&email_contents.headers);
+            if email_date.is_none()
+                || email_date
+                    .filter(|d| d < &DateTime::from(day_start)) // the from is to convert the TZ
+                    .is_some()
+            {
+                // first date before my start date
+                break;
+            }
+            let message = if email_contents.subparts.len() > 1 {
+                email_contents.subparts[0].get_body()? // TODO check the mimetype, i want text, not html
+            } else {
+                email_contents.get_body()?
+            };
+            result.push(Event::new(
+                self.get_desc(),
+                self.get_icon(),
+                email_date.unwrap().time(),
+                Email::get_header_val(&email_contents.headers, "Subject")
+                    .unwrap_or("-".to_string()),
+                message,
+                "??".to_string(), // TODO
+                Email::get_header_val(&email_contents.headers, "To"),
+            ));
+            email_bytes = Email::read_next_mail(&mut buf, &mut parsing_state)?; // TODO stop reading when i'm out of emails
+        }
+
+        Ok(result)
     }
 }
 
@@ -162,3 +202,29 @@ fn it_can_extract_two_short_emails() {
     let email2 = Email::read_next_mail(&mut buf, &mut parsing_state).unwrap();
     assert_eq!("From a\nhi b", String::from_utf8(email2).unwrap());
 }
+
+#[test]
+fn it_parses_multiple_email_date_formats() {
+    // TODO complete these tests, plus this doesn't pass
+    let expected = DateTime::<Local>::from(Utc.ymd(2013, 9, 27).and_hms(19, 46, 35));
+    assert_eq!(
+        expected,
+        Email::parse_email_date("Sep 27 20:46:35 2013").unwrap()
+    );
+    assert_eq!(
+        expected,
+        Email::parse_email_date("Fri, 27 Sep 2013 20:46:35 +0100").unwrap()
+    );
+}
+// assertEqual "test zoned" expected (parseEmailDate "")
+// assertEqual "test zoned" expected (parseEmailDate "Fri Sep 27 20:46:35 2013")
+// assertEqual "test extra space" expected1 (parseEmailDate "Mon Nov  3 07:54:09 2014")
+// assertEqual "test another" expected2 (parseEmailDate "Tue, 9 Dec 2014 06:27:27 +0100 (CET)")
+// assertEqual "yet another" expected3 (parseEmailDate "Wed, 1 Jul 2015 08:22:43 +0200")
+// assertEqual "really??" expected4 (parseEmailDate "Wed, 11 Nov 2015 14:00:51 GMT")
+//     where
+//         expected = LocalTime (fromGregorian 2013 9 27) (TimeOfDay 20 46 35)
+//         expected1 = LocalTime (fromGregorian 2014 11 3) (TimeOfDay 7 54 9)
+//         expected2 = LocalTime (fromGregorian 2014 12 9) (TimeOfDay 6 27 27)
+//         expected3 = LocalTime (fromGregorian 2015 07 1) (TimeOfDay 8 22 43)
+//         expected4 = LocalTime (fromGregorian 2015 11 11) (TimeOfDay 14 0 51)
