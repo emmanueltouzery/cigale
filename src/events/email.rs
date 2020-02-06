@@ -1,4 +1,4 @@
-use super::events::{Event, EventProvider};
+use super::events::{Event, EventBody, EventProvider};
 use chrono::prelude::*;
 use std::error::Error;
 use std::fs::File;
@@ -173,8 +173,8 @@ impl EventProvider for Email {
                 email_date.unwrap().time(),
                 Email::get_header_val(&email_contents.headers, "Subject")
                     .unwrap_or("-".to_string()),
-                message,
                 "??".to_string(), // TODO
+                EventBody::PlainText(message),
                 Email::get_header_val(&email_contents.headers, "To"),
             ));
             email_bytes = Email::read_next_mail(&mut buf, &mut parsing_state)?; // TODO stop reading when i'm out of emails

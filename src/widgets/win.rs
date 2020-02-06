@@ -206,7 +206,9 @@ impl Widget for Win {
                                     },
                                     halign: gtk::Align::Start,
                                     valign: gtk::Align::Start,
-                                    markup: self.model
+                                    use_markup: self.model.current_event.as_ref()
+                                                  .filter(|e| e.event_contents_body.is_markup()).is_some(),
+                                    text: self.model
                                                 .current_event
                                                 .as_ref()
                                                 .map(|e| e.event_contents_body.as_str())

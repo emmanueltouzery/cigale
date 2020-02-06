@@ -23,13 +23,35 @@ pub fn get_all_events(day: &Date<Local>) -> Result<Vec<Event>, Box<dyn std::erro
 }
 
 #[derive(Clone)]
+pub enum EventBody {
+    PlainText(String),
+    Markup(String),
+}
+
+impl EventBody {
+    pub fn is_markup(&self) -> bool {
+        match self {
+            EventBody::Markup(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn as_str(&self) -> &str {
+        match self {
+            EventBody::Markup(str) => &str,
+            EventBody::PlainText(str) => &str,
+        }
+    }
+}
+
+#[derive(Clone)]
 pub struct Event {
     pub event_type_desc: &'static str,
     pub event_type_icon: &'static str,
     pub event_time: NaiveTime,
     pub event_info: String,
     pub event_contents_header: String,
-    pub event_contents_body: String,
+    pub event_contents_body: EventBody,
     pub event_extra_details: Option<String>,
 }
 
@@ -40,7 +62,7 @@ impl Event {
         event_time: NaiveTime,
         event_info: String,
         event_contents_header: String,
-        event_contents_body: String,
+        event_contents_body: EventBody,
         event_extra_details: Option<String>,
     ) -> Event {
         Event {

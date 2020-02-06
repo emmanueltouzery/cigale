@@ -1,4 +1,4 @@
-use super::events::{Event, EventProvider};
+use super::events::{Event, EventBody, EventProvider};
 use chrono::prelude::*;
 use git2::{Commit, Repository};
 
@@ -138,7 +138,7 @@ impl EventProvider for Git {
                     commit_date.time(),
                     c.summary().unwrap_or("").to_string(),
                     contents_header,
-                    contents,
+                    EventBody::Markup(contents),
                     extra_details,
                 )
             })
