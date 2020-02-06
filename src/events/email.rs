@@ -167,13 +167,14 @@ impl EventProvider for Email {
             } else {
                 email_contents.get_body()?
             };
+            let email_subject = Email::get_header_val(&email_contents.headers, "Subject")
+                .unwrap_or("-".to_string());
             result.push(Event::new(
                 self.get_desc(),
                 self.get_icon(),
                 email_date.unwrap().time(),
-                Email::get_header_val(&email_contents.headers, "Subject")
-                    .unwrap_or("-".to_string()),
-                "??".to_string(), // TODO
+                email_subject.clone(),
+                format!("<big><b>{}</b></big>", email_subject),
                 EventBody::PlainText(message),
                 Email::get_header_val(&email_contents.headers, "To"),
             ));
