@@ -78,14 +78,6 @@ impl Git {
 }
 
 impl EventProvider for Git {
-    fn get_desc(&self) -> &'static str {
-        "Git"
-    }
-
-    fn get_icon(&self) -> &'static str {
-        "code-branch"
-    }
-
     fn get_events(&self, day: &Date<Local>) -> Result<Vec<Event>, Box<dyn std::error::Error>> {
         let day_start = day.and_hms(0, 0, 0);
         let next_day_start = day_start + chrono::Duration::days(1);
@@ -133,8 +125,8 @@ impl EventProvider for Git {
                     ),
                 };
                 Event::new(
-                    self.get_desc(),
-                    self.get_icon(),
+                    "Git",
+                    "code-branch",
                     commit_date.time(),
                     c.summary().unwrap_or("").to_string(),
                     contents_header,

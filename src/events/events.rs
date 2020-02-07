@@ -1,8 +1,6 @@
 use chrono::prelude::*;
 
 pub trait EventProvider {
-    fn get_desc(&self) -> &'static str;
-    fn get_icon(&self) -> &'static str;
     fn get_events(&self, day: &Date<Local>) -> Result<Vec<Event>, Box<dyn std::error::Error>>;
 }
 
@@ -19,6 +17,7 @@ pub fn get_all_events(day: &Date<Local>) -> Result<Vec<Event>, Box<dyn std::erro
     let mut events = git.get_events(day)?;
     let mut email_events = email.get_events(day)?;
     events.append(&mut email_events);
+    events.sort_by_key(|e| e.event_time);
     Ok(events)
 }
 

@@ -28,15 +28,18 @@ impl Email {
     fn read_next_mail(
         buf: &mut Vec<u8>,
         parsing_state: &mut ParsingState,
-    ) -> Result<Vec<u8>, Box<dyn Error>> {
+    ) -> Result<Option<Vec<u8>>, Box<dyn Error>> {
         let mut email_contents: Vec<u8> = vec![];
         let mut separator_idx = 0;
 
         loop {
+            if parsing_state.bytes_left == 0 {
+                return Ok(None);
+            }
             let cur_buf = if parsing_state.bytes_left as usize > buf.len() {
-                &mut buf[0..]
+                &mut buf[0..] // can fill in the whole buffer
             } else {
-                &mut buf[0..parsing_state.bytes_left as usize]
+                &mut buf[0..parsing_state.bytes_left as usize] // less than BUF_SIZE left to read
             };
             parsing_state
                 .reader
@@ -46,7 +49,7 @@ impl Email {
             parsing_state
                 .reader
                 .seek(SeekFrom::Current(-(cur_buf.len() as i64)))?;
-            cur_buf.reverse();
+            cur_buf.reverse(); // we'll read from end to beginning
 
             for i in 0..cur_buf.len() {
                 let cur = cur_buf[i];
@@ -67,12 +70,13 @@ impl Email {
                     email_contents.extend(cur_buf[0..(i + 1)].iter());
                 }
                 if matches {
+                    // found the marker for the beginning of the email
                     email_contents.reverse();
                     parsing_state.bytes_left -= (i + 1) as u64;
                     parsing_state
                         .reader
                         .seek(SeekFrom::Start(parsing_state.bytes_left))?;
-                    return Ok(email_contents);
+                    return Ok(Some(email_contents));
                 }
                 if byte_matches {
                     separator_idx += 1;
@@ -103,18 +107,85 @@ impl Email {
             .map(|d| DateTime::from(d))
             .or_else(|| Local.datetime_from_str(dt_str, "%b %d %T %Y").ok())
     }
+
+    // skip emails which are newer than the date i'm interested in.
+    // remember we're reading from the end.
+    // it's ok to just read headers for now (I just want the date)
+    fn find_first_mail_sent_before(
+        buf: &mut Vec<u8>,
+        parsing_state: &mut ParsingState,
+        next_day_start: &DateTime<Local>,
+    ) -> Result<Option<(Vec<u8>, DateTime<Local>)>, Box<dyn Error>> {
+        loop {
+            let email_bytes = Email::read_next_mail(buf, parsing_state)?;
+            let email_headers = email_bytes
+                .as_ref()
+                .map(|bytes| mailparse::parse_headers(bytes))
+                .transpose()?;
+            let email_date = email_headers.and_then(|h| Email::parse_email_headers_date(&h.0));
+            match email_date {
+                None => {
+                    return Ok(None); // no more emails
+                }
+                // the DateTime::from is to convert the TZ
+                Some(date) if date < DateTime::from(*next_day_start) => {
+                    // first date before my end date
+                    return Ok(Some((email_bytes.unwrap(), date)));
+                }
+                Some(_) => {} // email, but after my end date
+            }
+        }
+    }
+
+    fn email_to_event(
+        email_contents: &mailparse::ParsedMail,
+        email_date: &DateTime<Local>,
+    ) -> Result<Event, Box<dyn Error>> {
+        let message = if email_contents.subparts.len() > 1 {
+            email_contents.subparts[0].get_body()? // TODO check the mimetype, i want text, not html
+        } else {
+            email_contents.get_body()?
+        };
+        let email_subject =
+            Email::get_header_val(&email_contents.headers, "Subject").unwrap_or("-".to_string());
+        Ok(Event::new(
+            "Email",
+            "envelope",
+            email_date.time(),
+            email_subject.clone(),
+            format!("<big><b>{}</b></big>", email_subject),
+            EventBody::PlainText(message),
+            Email::get_header_val(&email_contents.headers, "To"),
+        ))
+    }
+
+    fn read_emails_until_day_start(
+        buf: &mut Vec<u8>,
+        day_start: &DateTime<Local>,
+        parsing_state: &mut ParsingState,
+    ) -> Result<Vec<Event>, Box<dyn Error>> {
+        // now read the emails i'm interested in.
+        // i'll read one-too-many email bodies (and I'll read
+        // a header for the second time right now) but no biggie
+        let mut result = vec![];
+        loop {
+            match Email::read_next_mail(buf, parsing_state)? {
+                None => return Ok(result),
+                Some(email_bytes) => {
+                    let email_contents = mailparse::parse_mail(&email_bytes)?;
+                    let email_date = Email::parse_email_headers_date(&email_contents.headers);
+                    match email_date.filter(|d| d >= day_start) {
+                        None => return Ok(result),
+                        Some(d) => result.push(Email::email_to_event(&email_contents, &d)?),
+                    }
+                }
+            }
+        }
+    }
 }
 
 impl EventProvider for Email {
-    fn get_desc(&self) -> &'static str {
-        "Email"
-    }
-
-    fn get_icon(&self) -> &'static str {
-        "envelope"
-    }
-
-    fn get_events(&self, day: &Date<Local>) -> Result<Vec<Event>, Box<dyn std::error::Error>> {
+    fn get_events(&self, day: &Date<Local>) -> Result<Vec<Event>, Box<dyn Error>> {
         let day_start = day.and_hms(0, 0, 0);
         let next_day_start = day_start + chrono::Duration::days(1);
         let mut buf = vec![0; BUF_SIZE as usize];
@@ -126,62 +197,27 @@ impl EventProvider for Email {
             reader: &mut reader,
             bytes_left: cur_pos_end,
         };
-        let mut email_bytes;
-        let mut email_date;
-
-        // first skip emails which are newer than the date i'm interested in.
-        // it's ok to just read headers for now (I just want the date)
-        loop {
-            email_bytes = Email::read_next_mail(&mut buf, &mut parsing_state)?; // TODO stop reading when i'm out of emails
-
-            let (email_headers, _) = mailparse::parse_headers(&email_bytes)?;
-            email_date = Email::parse_email_headers_date(&email_headers);
-
-            // TODO i should skip if i can't parse the date, or something
-            if email_date
-                .filter(|d| d < &DateTime::from(next_day_start)) // the from is to convert the TZ
-                .is_some()
-            {
-                // first date before my end date
-                break;
+        // we go from the end. so we first search for an email sent
+        // _before_ the end date we're interested in.
+        let first_mail =
+            Email::find_first_mail_sent_before(&mut buf, &mut parsing_state, &next_day_start)?;
+        if let Some((email_bytes, email_date)) = first_mail {
+            if email_date < day_start {
+                // no emails match
+                return Ok(vec![]);
             }
-        }
-
-        // now read the emails i'm interested in.
-        // i'll read one-too-many email bodies (and I'll read
-        // a header for the second time right now) but no biggie
-        let mut result = vec![];
-        loop {
             let email_contents = mailparse::parse_mail(&email_bytes)?;
-            let email_date = Email::parse_email_headers_date(&email_contents.headers);
-            if email_date.is_none()
-                || email_date
-                    .filter(|d| d < &DateTime::from(day_start)) // the from is to convert the TZ
-                    .is_some()
-            {
-                // first date before my start date
-                break;
-            }
-            let message = if email_contents.subparts.len() > 1 {
-                email_contents.subparts[0].get_body()? // TODO check the mimetype, i want text, not html
-            } else {
-                email_contents.get_body()?
-            };
-            let email_subject = Email::get_header_val(&email_contents.headers, "Subject")
-                .unwrap_or("-".to_string());
-            result.push(Event::new(
-                self.get_desc(),
-                self.get_icon(),
-                email_date.unwrap().time(),
-                email_subject.clone(),
-                format!("<big><b>{}</b></big>", email_subject),
-                EventBody::PlainText(message),
-                Email::get_header_val(&email_contents.headers, "To"),
-            ));
-            email_bytes = Email::read_next_mail(&mut buf, &mut parsing_state)?; // TODO stop reading when i'm out of emails
+            // read until the first email sent before
+            // the start date we're interested in.
+            let mut emails =
+                Email::read_emails_until_day_start(&mut buf, &day_start, &mut parsing_state)?;
+            // add the first email now (append is faster than prepend, and sorting is done later)
+            emails.push(Email::email_to_event(&email_contents, &email_date)?);
+            Ok(emails)
+        } else {
+            // no emails match
+            Ok(vec![])
         }
-
-        Ok(result)
     }
 }
 
@@ -196,12 +232,19 @@ fn it_can_extract_two_short_emails() {
         bytes_left: cur_pos_end,
     };
 
-    let email = Email::read_next_mail(&mut buf, &mut parsing_state).unwrap();
+    let email = Email::read_next_mail(&mut buf, &mut parsing_state)
+        .unwrap()
+        .unwrap();
     assert_eq!("From b\nbye a\n", String::from_utf8(email).unwrap());
     assert_eq!(11, parsing_state.bytes_left);
 
-    let email2 = Email::read_next_mail(&mut buf, &mut parsing_state).unwrap();
+    let email2 = Email::read_next_mail(&mut buf, &mut parsing_state)
+        .unwrap()
+        .unwrap();
     assert_eq!("From a\nhi b", String::from_utf8(email2).unwrap());
+
+    let email3 = Email::read_next_mail(&mut buf, &mut parsing_state).unwrap();
+    assert_eq!(true, email3.is_none());
 }
 
 #[test]

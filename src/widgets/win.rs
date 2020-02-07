@@ -186,6 +186,7 @@ impl Widget for Win {
                             halign: gtk::Align::Start,
                             valign: gtk::Align::Start,
                             line_wrap: true,
+                            selectable: true,
                             markup: self.model
                                         .current_event
                                         .as_ref()
@@ -206,6 +207,7 @@ impl Widget for Win {
                                     },
                                     halign: gtk::Align::Start,
                                     valign: gtk::Align::Start,
+                                    selectable: true,
                                     use_markup: self.model.current_event.as_ref()
                                                   .filter(|e| e.event_contents_body.is_markup()).is_some(),
                                     text: self.model
