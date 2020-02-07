@@ -169,6 +169,9 @@ impl Email {
         // a header for the second time right now) but no biggie
         let mut result = vec![];
         loop {
+            // the nest match doesn't look too great to my haskeller's eyes,
+            // but i tried to carry the value through options,
+            // as is done in find_first_mail_sent_before(), and it looked worse.
             match Email::read_next_mail(buf, parsing_state)? {
                 None => return Ok(result),
                 Some(email_bytes) => {
