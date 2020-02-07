@@ -6,3 +6,8 @@
 .event_time {
   font-size: 16px;
 }
+
+.event_header_label {
+  font-size: 20px;
+  font-weight: bold;
+}

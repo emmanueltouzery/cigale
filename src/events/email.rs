@@ -153,7 +153,7 @@ impl Email {
             "envelope",
             email_date.time(),
             email_subject.clone(),
-            format!("<big><b>{}</b></big>", email_subject),
+            email_subject,
             EventBody::PlainText(message),
             Email::get_header_val(&email_contents.headers, "To"),
         ))

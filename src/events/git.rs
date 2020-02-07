@@ -113,8 +113,7 @@ impl EventProvider for Git {
             .map(|c| {
                 let commit_date = Git::git2_time_to_datetime(c.time());
                 let diff = Git::get_commit_diff(&repo, &c);
-                let contents_header =
-                    "<big><b>".to_owned() + &c.message().unwrap_or("").to_string() + "</b></big>";
+                let contents_header = c.message().unwrap_or("").to_string();
                 let (contents, extra_details) = match diff {
                     None => ("".to_string(), None),
                     Some(d) => (

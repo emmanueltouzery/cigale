@@ -29,6 +29,10 @@ impl Widget for Win {
             Err(err) => println!("Error loading the CSS: {}", err),
             _ => {}
         }
+
+        self.header_label
+            .get_style_context()
+            .add_class("event_header_label");
         self.update_events();
 
         relm::connect!(
@@ -177,6 +181,7 @@ impl Widget for Win {
                             fill: true,
                             expand: true,
                         },
+                        #[name="header_label"]
                         gtk::Label {
                             child: {
                                 padding: 10,
