@@ -199,7 +199,13 @@ impl Widget for Win {
                             },
                             propagate_natural_height: true,
                             gtk::Box {
+                                // two labels: one in case we have markup, one in case we have plain text.
+                                // I used to have a single label for both,  using use_markup and text, and it worked,
+                                // but there was no guarantee on the other in which both fields were updated. If the text
+                                // was updated before 'use_markup', i could get text interpreted as markup which was not markup,
+                                // then GtkLabel would fail and never recover displaying markup.
                                 gtk::Label {
+                                    // text label, not used when we display markup
                                     child: {
                                         fill: true,
                                         expand: true,
@@ -208,13 +214,33 @@ impl Widget for Win {
                                     halign: gtk::Align::Start,
                                     valign: gtk::Align::Start,
                                     selectable: true,
-                                    use_markup: self.model.current_event.as_ref()
-                                                  .filter(|e| e.event_contents_body.is_markup()).is_some(),
+                                    visible: self.model.current_event.as_ref()
+                                                .filter(|e| e.event_contents_body.is_markup())
+                                                .is_none(),
                                     text: self.model
                                                 .current_event
                                                 .as_ref()
+                                                 .filter(|e| !e.event_contents_body.is_markup())
                                                 .map(|e| e.event_contents_body.as_str())
-                                                .unwrap_or("")
+                                                .unwrap_or(""),
+                                },
+                                gtk::Label {
+                                    // markup label, not used when we display text
+                                    child: {
+                                        fill: true,
+                                        expand: true,
+                                        padding: 10,
+                                    },
+                                    halign: gtk::Align::Start,
+                                    valign: gtk::Align::Start,
+                                    selectable: true,
+                                    visible: self.model.current_event.as_ref()
+                                                .filter(|e| e.event_contents_body.is_markup())
+                                                .is_some(),
+                                    markup: self.model.current_event.as_ref()
+                                                .filter(|e| e.event_contents_body.is_markup())
+                                                .map(|e| e.event_contents_body.as_str())
+                                                .unwrap_or(""),
                                 }
                             }
                         }
