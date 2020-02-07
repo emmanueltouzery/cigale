@@ -180,11 +180,12 @@ impl Widget for Win {
                         child: {
                             fill: true,
                             expand: true,
+                            padding: 10, // horizontal padding for the label
                         },
                         #[name="header_label"]
                         gtk::Label {
                             child: {
-                                padding: 10,
+                                padding: 10, // vertical padding for the label
                                 fill: true,
                                 expand: true,
                             },
