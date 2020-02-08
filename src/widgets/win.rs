@@ -1,6 +1,8 @@
 use super::datepicker::DatePickerMsg::DayPicked as DatePickerDayPickedMsg;
 use super::datepicker::*;
 use super::event::EventListItem;
+use crate::config::Config;
+use crate::events::events;
 use crate::events::events::Event;
 use chrono::prelude::*;
 use gtk::prelude::*;
@@ -16,6 +18,7 @@ pub enum Msg {
 }
 
 pub struct Model {
+    config: Config,
     relm: relm::Relm<Win>,
     // events will be None while we're loading
     events: Option<Result<Vec<Event>, String>>,
@@ -43,9 +46,10 @@ impl Widget for Win {
         );
     }
 
-    fn model(relm: &relm::Relm<Self>, _: ()) -> Model {
-        Win::fetch_events(relm, &Local::today());
+    fn model(relm: &relm::Relm<Self>, config: Config) -> Model {
+        Win::fetch_events(&config, relm, &Local::today());
         Model {
+            config: config,
             relm: relm.clone(),
             events: None,
             current_event: None,
@@ -66,15 +70,16 @@ impl Widget for Win {
         Ok(())
     }
 
-    fn fetch_events(relm: &relm::Relm<Self>, day: &Date<Local>) {
+    fn fetch_events(config: &Config, relm: &relm::Relm<Self>, day: &Date<Local>) {
         let dday = day.clone();
         let stream = relm.stream().clone();
         let (_channel, sender) = Channel::new(move |events| {
             stream.emit(Msg::GotEvents(events));
         });
+        let c = config.clone();
         std::thread::spawn(move || {
             sender
-                .send(crate::events::events::get_all_events(&dday).map_err(|e| e.to_string()))
+                .send(events::get_all_events(c, &dday).map_err(|e| e.to_string()))
                 .unwrap_or_else(|err| println!("Thread communication error: {}", err));
         });
     }
@@ -125,7 +130,7 @@ impl Widget for Win {
             Msg::DayChange(day) => {
                 self.model.events = None;
                 self.update_events();
-                Win::fetch_events(&self.model.relm, &day);
+                Win::fetch_events(&self.model.config, &self.model.relm, &day);
             }
             Msg::GotEvents(events) => {
                 self.model.events = Some(events);

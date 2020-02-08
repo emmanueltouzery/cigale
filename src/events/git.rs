@@ -5,6 +5,7 @@ use git2::{Commit, Repository};
 // git2 revwalk
 // https://github.com/rust-lang/git2-rs/blob/master/examples/log.rs
 
+#[derive(serde_derive::Deserialize, serde_derive::Serialize, Clone, Debug)]
 pub struct Git {
     pub repo_folder: String, // Path
     pub commit_author: String,

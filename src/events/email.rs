@@ -14,6 +14,7 @@ const SEPARATOR_BYTES: [u8; 6] = [
     ' ' as u8, 'm' as u8, 'o' as u8, 'r' as u8, 'F' as u8, '\n' as u8,
 ];
 
+#[derive(serde_derive::Deserialize, serde_derive::Serialize, Clone, Debug)]
 pub struct Email {
     pub mbox_file_path: String, // Path
 }

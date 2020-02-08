@@ -1,22 +1,37 @@
 use chrono::prelude::*;
+use std::error::Error;
 
-pub trait EventProvider {
+pub trait EventProvider: Sync {
     fn get_events(&self, day: &Date<Local>) -> Result<Vec<Event>, Box<dyn std::error::Error>>;
 }
 
-pub fn get_all_events(day: &Date<Local>) -> Result<Vec<Event>, Box<dyn std::error::Error>> {
-    let git = super::git::Git {
-        repo_folder: "/home/emmanuel/projects/bus/afc".to_string(),
-        commit_author: "Emmanuel Touzery".to_string(),
-    };
-    let email = super::email::Email {
-        mbox_file_path: "/home/emmanuel/.thunderbird/sm8eskm1.default/Mail/mail.lecip-its.com/Sent"
-            .to_string(),
-    };
+// fn fold_events<T: EventProvider>(
+//     acc: &mut Vec<Event>,
+//     event_provider: (&String, &T),
+// ) -> Result<Vec<Event>, Box<dyn Error>> {
+//     acc.append(&mut ep.get_events(day)?);
+//     Ok(acc)
+// }
 
-    let mut events = git.get_events(day)?;
-    let mut email_events = email.get_events(day)?;
-    events.append(&mut email_events);
+pub fn get_all_events(
+    config: crate::config::Config,
+    day: &Date<Local>,
+) -> Result<Vec<Event>, Box<dyn Error>> {
+    // TODO copy/paste. Tried with fold_events higher up, but failed so far.
+    let mut events = config.git.iter().try_fold(
+        Vec::new(),
+        |mut acc, (ref _name, ref ep)| -> Result<Vec<Event>, Box<dyn Error>> {
+            acc.append(&mut ep.get_events(day)?);
+            Ok(acc)
+        },
+    )?;
+    events.append(&mut config.email.iter().try_fold(
+        Vec::new(),
+        |mut acc, (ref _name, ref ep)| -> Result<Vec<Event>, Box<dyn Error>> {
+            acc.append(&mut ep.get_events(day)?);
+            Ok(acc)
+        },
+    )?);
     events.sort_by_key(|e| e.event_time);
     Ok(events)
 }

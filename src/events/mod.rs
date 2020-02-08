@@ -1,3 +1,3 @@
-mod email;
+pub mod email;
 pub mod events;
-mod git;
+pub mod git;
