@@ -2,7 +2,7 @@ use chrono::prelude::*;
 use std::error::Error;
 
 pub trait EventProvider: Sync {
-    fn get_events(&self, day: &Date<Local>) -> Result<Vec<Event>, Box<dyn std::error::Error>>;
+    fn get_events(&self, day: &Date<Local>) -> Result<Vec<Event>, Box<dyn Error>>;
 }
 
 // fn fold_events<T: EventProvider>(
@@ -18,6 +18,7 @@ pub fn get_all_events(
     day: &Date<Local>,
 ) -> Result<Vec<Event>, Box<dyn Error>> {
     // TODO copy/paste. Tried with fold_events higher up, but failed so far.
+    // maybe a macro?
     let mut events = config.git.iter().try_fold(
         Vec::new(),
         |mut acc, (ref _name, ref ep)| -> Result<Vec<Event>, Box<dyn Error>> {
