@@ -101,9 +101,31 @@ impl Email {
         Email::get_header_val(headers, "Date").and_then(|d_str| Email::parse_email_date(&d_str))
     }
 
+    // some date strings end with " (CET)" timezone specifiers, but rust
+    // format strings can't parse that:
+    // %Z _Formatting only_: Local time zone name.
+    // often we don't need them, so drop them.
+    // this function is dumb, will dump the final 6 bytes if the
+    // string is long enough. don't want to add a regex lib
+    // dependency, don't feel like doing it more precisely.
+    fn drop_string_tz_if_present(dt_str: &str) -> &str {
+        if dt_str.len() > 6 {
+            &dt_str[..(dt_str.len() - 6)]
+        } else {
+            dt_str
+        }
+    }
+
     fn parse_email_date(dt_str: &str) -> Option<DateTime<Local>> {
         DateTime::parse_from_rfc2822(&dt_str)
             .ok()
+            .or_else(|| {
+                DateTime::parse_from_str(
+                    Email::drop_string_tz_if_present(dt_str),
+                    "%a, %-d %b %Y %T %z",
+                )
+                .ok()
+            })
             .map(|d| DateTime::from(d))
             .or_else(|| Local.datetime_from_str(dt_str, "%b %d %T %Y").ok())
             .or_else(|| Local.datetime_from_str(dt_str, "%a %b %e %T %Y").ok())
@@ -268,13 +290,17 @@ fn it_parses_multiple_email_date_formats() {
         expected2,
         Email::parse_email_date("Mon Nov  3 07:54:09 2014").unwrap() // notice the extra space
     );
+    let expected2 = FixedOffset::east(3600).ymd(2014, 11, 3).and_hms(7, 54, 9);
+    assert_eq!(
+        expected2,
+        Email::parse_email_date("Mon, 3 Nov 2014 07:54:09 +0100 (CET)").unwrap()
+    );
+    assert_eq!(
+        expected2,
+        Email::parse_email_date("Mon, 3 Nov 2014 07:54:09 +0100").unwrap()
+    );
+    assert_eq!(
+        expected,
+        Email::parse_email_date("Fri, 27 Sep 2013 18:46:35 GMT").unwrap()
+    );
 }
-// assertEqual "test another" expected2 (parseEmailDate "Tue, 9 Dec 2014 06:27:27 +0100 (CET)")
-// assertEqual "yet another" expected3 (parseEmailDate "Wed, 1 Jul 2015 08:22:43 +0200")
-// assertEqual "really??" expected4 (parseEmailDate "Wed, 11 Nov 2015 14:00:51 GMT")
-//     where
-//         expected = LocalTime (fromGregorian 2013 9 27) (TimeOfDay 20 46 35)
-//         expected1 = LocalTime (fromGregorian 2014 11 3) (TimeOfDay 7 54 9)
-//         expected2 = LocalTime (fromGregorian 2014 12 9) (TimeOfDay 6 27 27)
-//         expected3 = LocalTime (fromGregorian 2015 07 1) (TimeOfDay 8 22 43)
-//         expected4 = LocalTime (fromGregorian 2015 11 11) (TimeOfDay 14 0 51)
