@@ -37,20 +37,7 @@ impl Email {
             if parsing_state.bytes_left == 0 {
                 return Ok(None);
             }
-            let cur_buf = if parsing_state.bytes_left as usize > buf.len() {
-                &mut buf[0..] // can fill in the whole buffer
-            } else {
-                &mut buf[0..parsing_state.bytes_left as usize] // less than BUF_SIZE left to read
-            };
-            parsing_state
-                .reader
-                .seek(SeekFrom::Current(-(cur_buf.len() as i64)))?;
-            parsing_state.reader.read_exact(cur_buf)?;
-            // reading moved us back after the buffer => get back where we were
-            parsing_state
-                .reader
-                .seek(SeekFrom::Current(-(cur_buf.len() as i64)))?;
-            cur_buf.reverse(); // we'll read from end to beginning
+            let cur_buf = Email::read_into_buffer(buf, parsing_state)?;
 
             for i in 0..cur_buf.len() {
                 let cur = cur_buf[i];
@@ -88,6 +75,27 @@ impl Email {
             email_contents.extend(cur_buf.iter());
             parsing_state.bytes_left -= cur_buf.len() as u64;
         }
+    }
+
+    fn read_into_buffer<'a>(
+        buf: &'a mut Vec<u8>,
+        parsing_state: &mut ParsingState,
+    ) -> Result<&'a [u8], Box<dyn Error>> {
+        let cur_buf = if parsing_state.bytes_left as usize > buf.len() {
+            &mut buf[0..] // can fill in the whole buffer
+        } else {
+            &mut buf[0..parsing_state.bytes_left as usize] // less than BUF_SIZE left to read
+        };
+        parsing_state
+            .reader
+            .seek(SeekFrom::Current(-(cur_buf.len() as i64)))?;
+        parsing_state.reader.read_exact(cur_buf)?;
+        // reading moved us back after the buffer => get back where we were
+        parsing_state
+            .reader
+            .seek(SeekFrom::Current(-(cur_buf.len() as i64)))?;
+        cur_buf.reverse(); // we'll read from end to beginning
+        Ok(cur_buf)
     }
 
     fn get_header_val(headers: &Vec<mailparse::MailHeader>, header_name: &str) -> Option<String> {
