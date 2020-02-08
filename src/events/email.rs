@@ -275,7 +275,6 @@ fn it_can_extract_two_short_emails() {
 
 #[test]
 fn it_parses_multiple_email_date_formats() {
-    // TODO complete these tests, plus this doesn't pass
     let expected = FixedOffset::east(7200).ymd(2013, 9, 27).and_hms(20, 46, 35);
     assert_eq!(
         expected,
