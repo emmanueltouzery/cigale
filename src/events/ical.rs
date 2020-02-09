@@ -78,25 +78,48 @@ impl Ical {
         result: &mut Vec<Event>,
     ) {
         let start = Ical::get_property_value(&event, "DTSTART");
+        let end = Ical::get_property_value(&event, "DTEND");
         let summary =
             Ical::get_property_value_any(&event, &vec!["SUMMARY", "DESCRIPTION", "LOCATION"]);
-        match (start.and_then(Ical::parse_ical_date), summary) {
-            (Some(st), Some(summ)) => {
+        match (
+            start.and_then(Ical::parse_ical_date),
+            end.and_then(Ical::parse_ical_date),
+            summary,
+        ) {
+            (Some(st), end_dt, Some(summ)) => {
                 if st >= *day_start && st < *next_day_start {
-                    let summary = summ.replace("\\,", ",");
-                    result.push(Event::new(
-                        "Ical",
-                        "calendar-alt",
-                        st.time(),
-                        summary.to_string(),
-                        summary.to_string(),
-                        EventBody::PlainText("".to_string()),
-                        None,
-                    ))
+                    result.push(Ical::to_event(summ, st, end_dt));
                 }
             }
             _ => println!("Skipping event without start or summary: {:?}", event),
         }
+    }
+
+    fn to_event(summ: &String, st: DateTime<Local>, end_dt: Option<DateTime<Local>>) -> Event {
+        let summary = summ.replace("\\,", ",");
+        let extra_info = end_dt.map(|e| {
+            let duration = e - st;
+            format!(
+                "End: {}; duration: {}:{:02}",
+                e.format("%H:%M"),
+                duration.num_hours(),
+                duration.num_minutes()
+            )
+        });
+        Event::new(
+            "Ical",
+            "calendar-alt",
+            st.time(),
+            summary.to_string(),
+            summary.to_string(),
+            EventBody::PlainText(
+                extra_info
+                    .as_ref()
+                    .map(|i| i.clone())
+                    .unwrap_or("".to_string()),
+            ),
+            extra_info,
+        )
     }
 }
 
