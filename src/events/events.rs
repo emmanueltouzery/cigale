@@ -33,6 +33,13 @@ pub fn get_all_events(
             Ok(acc)
         },
     )?);
+    events.append(&mut config.ical.iter().try_fold(
+        Vec::new(),
+        |mut acc, (ref _name, ref ep)| -> Result<Vec<Event>, Box<dyn Error>> {
+            acc.append(&mut ep.get_events(day)?);
+            Ok(acc)
+        },
+    )?);
     events.sort_by_key(|e| e.event_time);
     Ok(events)
 }
