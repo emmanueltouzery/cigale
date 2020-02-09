@@ -47,7 +47,7 @@ impl Widget for Win {
     }
 
     fn model(relm: &relm::Relm<Self>, config: Config) -> Model {
-        Win::fetch_events(&config, relm, &Local::today());
+        Win::fetch_events(&config, relm, &Local::today().pred());
         Model {
             config: config,
             relm: relm.clone(),

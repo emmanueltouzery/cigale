@@ -51,11 +51,16 @@ impl Widget for DatePicker {
         );
     }
     fn model(relm: &relm::Relm<Self>, _: ()) -> DatePickerModel {
+        let date = Local::today().pred();
+        let cal = gtk::Calendar::new();
+        cal.set_property_year(date.year());
+        cal.set_property_month(date.month() as i32 - 1);
+        cal.set_property_day(date.day() as i32);
         DatePickerModel {
             relm: relm.clone(),
             calendar_popover: gtk::Popover::new(None::<&gtk::Button>),
-            calendar: gtk::Calendar::new(),
-            date: Local::today(),
+            calendar: cal,
+            date: date,
             month_change_ongoing: false,
         }
     }
