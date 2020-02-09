@@ -70,6 +70,34 @@ impl Ical {
         file.write_all(r.as_bytes())?;
         Ok(r)
     }
+
+    fn add_event_if_in_range(
+        event: &IcalEvent,
+        day_start: &DateTime<Local>,
+        next_day_start: &DateTime<Local>,
+        result: &mut Vec<Event>,
+    ) {
+        let start = Ical::get_property_value(&event, "DTSTART");
+        let summary =
+            Ical::get_property_value_any(&event, &vec!["SUMMARY", "DESCRIPTION", "LOCATION"]);
+        match (start.and_then(Ical::parse_ical_date), summary) {
+            (Some(st), Some(summ)) => {
+                if st >= *day_start && st < *next_day_start {
+                    let summary = summ.replace("\\,", ",");
+                    result.push(Event::new(
+                        "Ical",
+                        "calendar-alt",
+                        st.time(),
+                        summary.to_string(),
+                        summary.to_string(),
+                        EventBody::PlainText("".to_string()),
+                        None,
+                    ))
+                }
+            }
+            _ => println!("Skipping event without start or summary: {:?}", event),
+        }
+    }
 }
 
 impl EventProvider for Ical {
@@ -89,29 +117,12 @@ impl EventProvider for Ical {
             match line {
                 Ok(l) => {
                     for event in l.events {
-                        // for event in line.unwrap().events {
-                        let start = Ical::get_property_value(&event, "DTSTART");
-                        let summary = Ical::get_property_value_any(
+                        Ical::add_event_if_in_range(
                             &event,
-                            &vec!["SUMMARY", "DESCRIPTION", "LOCATION"],
+                            &day_start,
+                            &next_day_start,
+                            &mut result,
                         );
-                        match (start.and_then(Ical::parse_ical_date), summary) {
-                            (Some(st), Some(summ)) => {
-                                if st >= day_start && st < next_day_start {
-                                    let summary = summ.replace("\\,", ",");
-                                    result.push(Event::new(
-                                        "Ical",
-                                        "calendar-alt",
-                                        st.time(),
-                                        summary.to_string(),
-                                        summary.to_string(),
-                                        EventBody::PlainText("".to_string()),
-                                        None,
-                                    ))
-                                }
-                            }
-                            _ => println!("Skipping event without start or summary: {:?}", event),
-                        }
                     }
                 }
                 Err(_) => {
