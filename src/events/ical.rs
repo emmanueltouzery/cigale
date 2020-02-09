@@ -65,7 +65,6 @@ impl Ical {
     }
 
     fn fetch_ical(ical_url: &String) -> Result<String, Box<dyn Error>> {
-        // need two lines like that for the auto-conversion of error types to be done by the ? operator
         let r = reqwest::blocking::get(ical_url)?.text()?;
         let mut file = File::create(Ical::get_cache_path()?)?;
         file.write_all(r.as_bytes())?;
