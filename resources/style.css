@@ -20,3 +20,8 @@
   padding-left: 10px;
   margin-bottom: 5px;
 }
+
+.event_source_config_label {
+  opacity: 0.6;
+  font-weight: bold;
+}
