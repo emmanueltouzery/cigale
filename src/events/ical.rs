@@ -3,7 +3,6 @@ use crate::config::Config;
 use chrono::prelude::*;
 use ical::parser::ical::component::IcalEvent;
 use std::collections::HashMap;
-use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::PathBuf;

@@ -40,7 +40,11 @@ impl Widget for Win {
         path.push("style.css");
         let path_str = path.to_str().ok_or("Invalid path")?;
         css.load_from_path(path_str)?;
-        gtk::StyleContext::add_provider_for_screen(&screen, &css, 0);
+        gtk::StyleContext::add_provider_for_screen(
+            &screen,
+            &css,
+            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+        );
         Ok(())
     }
 
