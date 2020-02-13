@@ -1,4 +1,5 @@
 use super::events::EventView;
+use super::eventsources::EventSources;
 use crate::config::Config;
 use gtk::prelude::*;
 use relm::Widget;
@@ -77,7 +78,7 @@ impl Widget for Win {
                             icon_name: Some("view-list-symbolic")
                         },
                     },
-                    gtk::Box {
+                    EventSources(self.model.config.clone()) {
                         child: {
                             icon_name: Some("document-properties-symbolic")
                         },

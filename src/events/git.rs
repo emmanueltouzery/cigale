@@ -1,12 +1,14 @@
-use super::events::{Event, EventBody, EventProvider};
+use super::events::{ConfigType, Event, EventBody, EventProvider, Result};
+use crate::config::Config;
 use chrono::prelude::*;
 use git2::{Commit, Repository};
+use std::collections::HashMap;
 
 // git2 revwalk
 // https://github.com/rust-lang/git2-rs/blob/master/examples/log.rs
 
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Clone, Debug)]
-pub struct Git {
+pub struct GitConfig {
     pub repo_folder: String, // Path
     pub commit_author: String,
 }
@@ -78,11 +80,53 @@ impl Git {
     }
 }
 
+pub struct Git;
+const REPO_FOLDER_KEY: &'static str = "Repository folder";
+const COMMIT_AUTHOR_KEY: &'static str = "Commit Author";
+
 impl EventProvider for Git {
-    fn get_events(&self, day: &Date<Local>) -> Result<Vec<Event>, Box<dyn std::error::Error>> {
+    fn get_config_fields(&self) -> Vec<(&'static str, ConfigType)> {
+        vec![
+            (REPO_FOLDER_KEY, ConfigType::Path),
+            (COMMIT_AUTHOR_KEY, ConfigType::Text),
+        ]
+    }
+
+    fn name(&self) -> &'static str {
+        "Git"
+    }
+
+    fn get_config_names<'a>(&self, config: &'a Config) -> Vec<&'a String> {
+        config.git.keys().collect()
+    }
+
+    fn get_config_values(
+        &self,
+        config: &Config,
+        config_name: &str,
+    ) -> HashMap<&'static str, String> {
+        let mut h = HashMap::new();
+        h.insert(
+            REPO_FOLDER_KEY,
+            config.git[config_name].repo_folder.to_string(),
+        );
+        h.insert(
+            COMMIT_AUTHOR_KEY,
+            config.git[config_name].commit_author.to_string(),
+        );
+        h
+    }
+
+    fn get_events(
+        &self,
+        config: &Config,
+        config_name: &str,
+        day: &Date<Local>,
+    ) -> Result<Vec<Event>> {
+        let git_config = &config.git[config_name];
         let day_start = day.and_hms(0, 0, 0);
         let next_day_start = day_start + chrono::Duration::days(1);
-        let repo = Repository::open(&self.repo_folder)?;
+        let repo = Repository::open(&git_config.repo_folder)?;
         let mut revwalk = repo.revwalk()?;
         revwalk.set_sorting(/*git2::Sort::REVERSE |*/ git2::Sort::TIME);
         revwalk.push_head()?;
@@ -105,7 +149,7 @@ impl EventProvider for Git {
             .filter(|c| {
                 let commit_date = Git::git2_time_to_datetime(c.time());
                 // TODO move to option.contains when it stabilizes https://github.com/rust-lang/rust/issues/62358
-                commit_date < next_day_start && c.author().name() == Some(&self.commit_author)
+                commit_date < next_day_start && c.author().name() == Some(&git_config.commit_author)
             })
             .collect();
         commits.reverse();

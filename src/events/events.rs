@@ -1,45 +1,65 @@
+use super::email::Email;
+use super::git::Git;
+use super::ical::Ical;
+use crate::config::Config;
 use chrono::prelude::*;
+use std::collections::HashMap;
 use std::error::Error;
 
-pub trait EventProvider: Sync {
-    fn get_events(&self, day: &Date<Local>) -> Result<Vec<Event>, Box<dyn Error>>;
+pub enum ConfigType {
+    Text,
+    Path,
 }
 
-// fn fold_events<T: EventProvider>(
-//     acc: &mut Vec<Event>,
-//     event_provider: (&String, &T),
-// ) -> Result<Vec<Event>, Box<dyn Error>> {
-//     acc.append(&mut ep.get_events(day)?);
-//     Ok(acc)
-// }
+pub type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
-pub fn get_all_events(
-    config: crate::config::Config,
+pub trait EventProvider: Sync {
+    // TODO this could get derived automatically through a procedural macro
+    fn get_config_fields(&self) -> Vec<(&'static str, ConfigType)>;
+
+    fn get_config_names<'a>(&self, config: &'a Config) -> Vec<&'a String>;
+
+    // TODO this could get derived automatically through a procedural macro
+    fn get_config_values(
+        &self,
+        config: &Config,
+        config_name: &str,
+    ) -> HashMap<&'static str, String>;
+
+    fn name(&self) -> &'static str;
+
+    fn get_events(
+        &self,
+        config: &Config,
+        config_name: &str,
+        day: &Date<Local>,
+    ) -> Result<Vec<Event>>;
+}
+
+pub fn get_event_providers() -> Vec<Box<dyn EventProvider>> {
+    vec![Box::new(Git), Box::new(Email), Box::new(Ical)]
+}
+
+fn get_events_for_event_provider(
+    config: &Config,
+    ep: &Box<dyn EventProvider>,
     day: &Date<Local>,
-) -> Result<Vec<Event>, Box<dyn Error>> {
-    // TODO copy/paste. Tried with fold_events higher up, but failed so far.
-    // maybe a macro?
-    let mut events = config.git.iter().try_fold(
-        Vec::new(),
-        |mut acc, (ref _name, ref ep)| -> Result<Vec<Event>, Box<dyn Error>> {
-            acc.append(&mut ep.get_events(day)?);
-            Ok(acc)
-        },
-    )?;
-    events.append(&mut config.email.iter().try_fold(
-        Vec::new(),
-        |mut acc, (ref _name, ref ep)| -> Result<Vec<Event>, Box<dyn Error>> {
-            acc.append(&mut ep.get_events(day)?);
-            Ok(acc)
-        },
-    )?);
-    events.append(&mut config.ical.iter().try_fold(
-        Vec::new(),
-        |mut acc, (ref _name, ref ep)| -> Result<Vec<Event>, Box<dyn Error>> {
-            acc.append(&mut ep.get_events(day)?);
-            Ok(acc)
-        },
-    )?);
+) -> Result<Vec<Event>> {
+    ep.get_config_names(&config)
+        .iter()
+        .map(|name| ep.get_events(&config, name, day))
+        .collect::<Result<Vec<Vec<Event>>>>()
+        .map(|es| es.into_iter().flatten().collect())
+}
+
+pub fn get_all_events(config: Config, day: &Date<Local>) -> Result<Vec<Event>> {
+    let mut events: Vec<Event> = get_event_providers()
+        .iter()
+        .map(|ep| get_events_for_event_provider(&config, ep, day))
+        .collect::<Result<Vec<Vec<Event>>>>()?
+        .into_iter()
+        .flatten()
+        .collect();
     events.sort_by_key(|e| e.event_time);
     Ok(events)
 }

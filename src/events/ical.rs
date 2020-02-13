@@ -1,14 +1,15 @@
-use super::events::{Event, EventBody, EventProvider};
+use super::events::{ConfigType, Event, EventBody, EventProvider, Result};
+use crate::config::Config;
 use chrono::prelude::*;
 use ical::parser::ical::component::IcalEvent;
+use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::PathBuf;
-use std::result::Result;
 
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Clone, Debug)]
-pub struct Ical {
+pub struct IcalConfig {
     pub ical_url: String,
 }
 
@@ -43,12 +44,12 @@ impl Ical {
             })
     }
 
-    fn get_cache_path() -> Result<PathBuf, Box<dyn Error>> {
+    fn get_cache_path() -> Result<PathBuf> {
         let config_folder = crate::config::config_folder()?;
         Ok(config_folder.join("ical-cache.ical"))
     }
 
-    fn get_cached_ical(date: &DateTime<Local>) -> Result<Option<String>, Box<dyn Error>> {
+    fn get_cached_ical(date: &DateTime<Local>) -> Result<Option<String>> {
         let cache_file = Ical::get_cache_path()?;
         if !cache_file.exists() {
             return Ok(None);
@@ -64,7 +65,7 @@ impl Ical {
         }
     }
 
-    fn fetch_ical(ical_url: &String) -> Result<String, Box<dyn Error>> {
+    fn fetch_ical(ical_url: &String) -> Result<String> {
         let r = reqwest::blocking::get(ical_url)?.text()?;
         let mut file = File::create(Ical::get_cache_path()?)?;
         file.write_all(r.as_bytes())?;
@@ -123,13 +124,45 @@ impl Ical {
     }
 }
 
+const URL_KEY: &'static str = "Ical URL";
+
+pub struct Ical;
+
 impl EventProvider for Ical {
-    fn get_events(&self, day: &Date<Local>) -> Result<Vec<Event>, Box<dyn Error>> {
+    fn get_config_fields(&self) -> Vec<(&'static str, ConfigType)> {
+        vec![(URL_KEY, ConfigType::Text)]
+    }
+
+    fn name(&self) -> &'static str {
+        "Ical"
+    }
+
+    fn get_config_names<'a>(&self, config: &'a Config) -> Vec<&'a String> {
+        config.ical.keys().collect()
+    }
+
+    fn get_config_values(
+        &self,
+        config: &Config,
+        config_name: &str,
+    ) -> HashMap<&'static str, String> {
+        let mut h = HashMap::new();
+        h.insert(URL_KEY, config.ical[config_name].ical_url.to_string());
+        h
+    }
+
+    fn get_events(
+        &self,
+        config: &Config,
+        config_name: &str,
+        day: &Date<Local>,
+    ) -> Result<Vec<Event>> {
+        let ical_config = &config.ical[config_name];
         let day_start = day.and_hms(0, 0, 0);
         let next_day_start = day_start + chrono::Duration::days(1);
         let ical_text = match Ical::get_cached_ical(&next_day_start)? {
             Some(t) => Ok(t),
-            None => Ical::fetch_ical(&self.ical_url),
+            None => Ical::fetch_ical(&ical_config.ical_url),
         }?;
         let bytes = ical_text.as_bytes();
         let reader = ical::IcalParser::new(std::io::BufReader::new(bytes));

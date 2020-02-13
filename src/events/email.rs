@@ -1,9 +1,10 @@
-use super::events::{Event, EventBody, EventProvider};
+use super::events::{ConfigType, Event, EventBody, EventProvider, Result};
+use crate::config::Config;
 use chrono::prelude::*;
+use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
 use std::io::*;
-use std::result::Result;
 
 const BUF_SIZE: u64 = 4096;
 
@@ -15,7 +16,7 @@ const SEPARATOR_BYTES: [u8; 6] = [
 ];
 
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Clone, Debug)]
-pub struct Email {
+pub struct EmailConfig {
     pub mbox_file_path: String, // Path
 }
 
@@ -29,7 +30,7 @@ impl Email {
     fn read_next_mail(
         buf: &mut Vec<u8>,
         parsing_state: &mut ParsingState,
-    ) -> Result<Option<Vec<u8>>, Box<dyn Error>> {
+    ) -> Result<Option<Vec<u8>>> {
         let mut email_contents: Vec<u8> = vec![];
         let mut separator_idx = 0;
 
@@ -80,7 +81,7 @@ impl Email {
     fn read_into_buffer<'a>(
         buf: &'a mut Vec<u8>,
         parsing_state: &mut ParsingState,
-    ) -> Result<&'a [u8], Box<dyn Error>> {
+    ) -> Result<&'a [u8]> {
         let cur_buf = if parsing_state.bytes_left as usize > buf.len() {
             &mut buf[0..] // can fill in the whole buffer
         } else {
@@ -147,7 +148,7 @@ impl Email {
         buf: &mut Vec<u8>,
         parsing_state: &mut ParsingState,
         next_day_start: &DateTime<Local>,
-    ) -> Result<Option<(Vec<u8>, DateTime<Local>)>, Box<dyn Error>> {
+    ) -> Result<Option<(Vec<u8>, DateTime<Local>)>> {
         loop {
             let email_bytes = Email::read_next_mail(buf, parsing_state)?;
             let email_headers = email_bytes
@@ -172,7 +173,7 @@ impl Email {
     fn email_to_event(
         email_contents: &mailparse::ParsedMail,
         email_date: &DateTime<Local>,
-    ) -> Result<Event, Box<dyn Error>> {
+    ) -> Result<Event> {
         let message = if email_contents.subparts.len() > 1 {
             email_contents.subparts[0].get_body()? // TODO check the mimetype, i want text, not html
         } else {
@@ -195,7 +196,7 @@ impl Email {
         buf: &mut Vec<u8>,
         day_start: &DateTime<Local>,
         parsing_state: &mut ParsingState,
-    ) -> Result<Vec<Event>, Box<dyn Error>> {
+    ) -> Result<Vec<Event>> {
         // now read the emails i'm interested in.
         // i'll read one-too-many email bodies (and I'll read
         // a header for the second time right now) but no biggie
@@ -219,12 +220,47 @@ impl Email {
     }
 }
 
+pub struct Email;
+
+const MBOX_FILE_PATH_KEY: &'static str = "Mbox file path";
+
 impl EventProvider for Email {
-    fn get_events(&self, day: &Date<Local>) -> Result<Vec<Event>, Box<dyn Error>> {
+    fn get_config_fields(&self) -> Vec<(&'static str, ConfigType)> {
+        vec![(MBOX_FILE_PATH_KEY, ConfigType::Path)]
+    }
+
+    fn name(&self) -> &'static str {
+        "Email"
+    }
+
+    fn get_config_names<'a>(&self, config: &'a Config) -> Vec<&'a String> {
+        config.email.keys().collect()
+    }
+
+    fn get_config_values(
+        &self,
+        config: &Config,
+        config_name: &str,
+    ) -> HashMap<&'static str, String> {
+        let mut h = HashMap::new();
+        h.insert(
+            MBOX_FILE_PATH_KEY,
+            config.email[config_name].mbox_file_path.to_string(),
+        );
+        h
+    }
+
+    fn get_events(
+        &self,
+        config: &Config,
+        config_name: &str,
+        day: &Date<Local>,
+    ) -> Result<Vec<Event>> {
+        let email_config = &config.email[config_name];
         let day_start = day.and_hms(0, 0, 0);
         let next_day_start = day_start + chrono::Duration::days(1);
         let mut buf = vec![0; BUF_SIZE as usize];
-        let file = File::open(&self.mbox_file_path)?;
+        let file = File::open(&email_config.mbox_file_path)?;
         // i "double buffer". probably OK.
         let mut reader = BufReader::new(file);
         let cur_pos_end = reader.seek(SeekFrom::End(0))?;

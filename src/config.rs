@@ -5,9 +5,9 @@ use std::*;
 
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Clone, Debug)]
 pub struct Config {
-    pub git: HashMap<String, crate::events::git::Git>,
-    pub email: HashMap<String, crate::events::email::Email>,
-    pub ical: HashMap<String, crate::events::ical::Ical>,
+    pub git: HashMap<String, crate::events::git::GitConfig>,
+    pub email: HashMap<String, crate::events::email::EmailConfig>,
+    pub ical: HashMap<String, crate::events::ical::IcalConfig>,
 }
 
 pub fn read_config() -> Result<Config, Box<dyn error::Error>> {
