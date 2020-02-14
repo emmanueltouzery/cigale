@@ -65,7 +65,11 @@ impl Ical {
     }
 
     fn fetch_ical(ical_url: &String) -> Result<String> {
-        let r = minreq::get(ical_url).send()?.as_str()?.to_string();
+        let r = minreq::get(ical_url)
+            .with_timeout(30)
+            .send()?
+            .as_str()?
+            .to_string();
         let mut file = File::create(Ical::get_cache_path()?)?;
         file.write_all(r.as_bytes())?;
         Ok(r)
