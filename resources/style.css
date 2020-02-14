@@ -25,3 +25,11 @@
   opacity: 0.6;
   font-weight: bold;
 }
+
+.items_frame {
+  background-color: white;
+}
+
+.item_list {
+  background-color: @theme_bg_color;
+}

@@ -38,6 +38,9 @@ impl Widget for EventSourceListItem {
         self.event_source_name
             .get_style_context()
             .add_class("event_source_name");
+        self.items_frame
+            .get_style_context()
+            .add_class("items_frame");
     }
 
     fn model(model: EventSourceListItemModel) -> EventSourceListItemModel {
@@ -47,23 +50,29 @@ impl Widget for EventSourceListItem {
     fn update(&mut self, _event: EventSourceListItemMsg) {}
 
     view! {
-        #[name="items_box"]
-        gtk::Grid {
-            orientation: gtk::Orientation::Vertical,
-            margin_start: 10,
-            margin_end: 10,
-            margin_top: 10,
-            margin_bottom: 5,
-            row_spacing: 5,
-            column_spacing: 10,
-            #[name="event_source_name"]
-            gtk::Label {
-                cell: {
-                    width: 2
+        #[name="items_frame"]
+        gtk::Frame {
+            margin_start: 20,
+            margin_end: 20,
+            margin_top: 20,
+            #[name="items_box"]
+            gtk::Grid {
+                orientation: gtk::Orientation::Vertical,
+                margin_start: 10,
+                margin_end: 10,
+                margin_top: 10,
+                margin_bottom: 5,
+                row_spacing: 5,
+                column_spacing: 10,
+                #[name="event_source_name"]
+                gtk::Label {
+                    cell: {
+                        width: 2
+                    },
+                    text: (self.model.event_provider_name.to_string() + " - " + &self.model.config_name).as_str(),
+                    xalign: 0.0,
                 },
-                text: (self.model.event_provider_name.to_string() + " - " + &self.model.config_name).as_str(),
-                xalign: 0.0,
-            },
+            }
         }
     }
 }

@@ -16,6 +16,9 @@ pub struct Model {
 #[widget]
 impl Widget for EventSources {
     fn init_view(&mut self) {
+        self.eventsources_list
+            .get_style_context()
+            .add_class("item_list");
         self.update_eventsources();
     }
 
@@ -46,6 +49,14 @@ impl Widget for EventSources {
                 );
             }
         }
+        for child in self.eventsources_list.get_children() {
+            // don't want the row background color to change when we hover
+            // it with the mouse (activatable), or the focus dotted lines
+            // around the rows to be drawn, for aesthetic reasons.
+            let row = child.dynamic_cast::<gtk::ListBoxRow>().unwrap();
+            row.set_activatable(false);
+            row.set_can_focus(false);
+        }
     }
 
     view! {
@@ -53,6 +64,7 @@ impl Widget for EventSources {
            orientation: gtk::Orientation::Vertical,
            #[name="eventsources_list"]
            gtk::ListBox {
+               selection_mode: gtk::SelectionMode::None,
                child: {
                    fill: true,
                    expand: true,
