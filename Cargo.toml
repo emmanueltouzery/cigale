@@ -19,7 +19,7 @@ toml = "0.5.6"
 dirs = "2.0.2"
 serde = "1.0.104"
 serde_derive = "1.0.104"
-reqwest = { version = "0.10.1", features = ["blocking"] }
+minreq = { version = "2.0.3", features = ["https"] }
 
 [dependencies.ical]
 version = "0.6.0"
