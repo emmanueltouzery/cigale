@@ -28,6 +28,8 @@ pub trait EventProvider: Sync {
 
     fn name(&self) -> &'static str;
 
+    fn default_icon(&self) -> &'static str;
+
     fn get_events(
         &self,
         config: &Config,

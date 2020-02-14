@@ -140,6 +140,10 @@ impl EventProvider for Ical {
         "Ical"
     }
 
+    fn default_icon(&self) -> &'static str {
+        "calendar-alt"
+    }
+
     fn get_config_names<'a>(&self, config: &'a Config) -> Vec<&'a String> {
         config.ical.keys().collect()
     }

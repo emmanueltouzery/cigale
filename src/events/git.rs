@@ -96,6 +96,10 @@ impl EventProvider for Git {
         "Git"
     }
 
+    fn default_icon(&self) -> &'static str {
+        "code-branch"
+    }
+
     fn get_config_names<'a>(&self, config: &'a Config) -> Vec<&'a String> {
         config.git.keys().collect()
     }

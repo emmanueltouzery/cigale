@@ -7,6 +7,7 @@ use std::collections::HashMap;
 pub enum EventSourceListItemMsg {}
 
 pub struct EventSourceListItemModel {
+    pub event_provider_icon: &'static str,
     pub event_provider_name: &'static str,
     pub config_name: String,
     pub event_source: HashMap<&'static str, String>,
@@ -65,12 +66,21 @@ impl Widget for EventSourceListItem {
                 row_spacing: 5,
                 column_spacing: 10,
                 #[name="event_source_name"]
-                gtk::Label {
+                gtk::Box {
+                    orientation: gtk::Orientation::Horizontal,
                     cell: {
                         width: 2
                     },
-                    text: (self.model.event_provider_name.to_string() + " - " + &self.model.config_name).as_str(),
-                    xalign: 0.0,
+                    gtk::Image {
+                        from_pixbuf: Some(&crate::icons::fontawesome_image(
+                            self.model.event_provider_icon, 16)),
+                    },
+                    gtk::Label {
+                        margin_start: 5,
+                        text: (self.model.event_provider_name.to_string()
+                               + " - " + &self.model.config_name).as_str(),
+                        xalign: 0.0,
+                    }
                 },
             }
         }

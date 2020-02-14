@@ -43,6 +43,7 @@ impl Widget for EventSources {
                 let _child = self.eventsources_list.add_widget::<EventSourceListItem>(
                     EventSourceListItemModel {
                         event_provider_name: event_provider.name(),
+                        event_provider_icon: event_provider.default_icon(),
                         config_name: event_config_name.to_string(),
                         event_source: event_config.clone(),
                     },

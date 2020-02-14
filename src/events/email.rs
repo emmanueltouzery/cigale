@@ -232,6 +232,10 @@ impl EventProvider for Email {
         "Email"
     }
 
+    fn default_icon(&self) -> &'static str {
+        "envelope"
+    }
+
     fn get_config_names<'a>(&self, config: &'a Config) -> Vec<&'a String> {
         config.email.keys().collect()
     }
