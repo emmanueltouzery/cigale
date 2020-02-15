@@ -1,20 +1,20 @@
 use super::events::EventView;
 use super::eventsources::EventSources;
+use super::wintitlebar::WinTitleBar;
 use crate::config::Config;
 use gtk::prelude::*;
-use relm::Widget;
+use relm::{Component, Widget};
 use relm_derive::{widget, Msg};
 
 #[derive(Msg)]
 pub enum Msg {
     Quit,
-    ScreenChanged,
 }
 
 pub struct Model {
     relm: relm::Relm<Win>,
     config: Config,
-    displaying_event_sources: bool,
+    titlebar: Component<WinTitleBar>,
 }
 
 #[widget]
@@ -24,25 +24,19 @@ impl Widget for Win {
             Err(err) => println!("Error loading the CSS: {}", err),
             _ => {}
         }
-
-        self.main_window_stack_switcher
-            .set_stack(Some(&self.main_window_stack));
-        self.new_event_source_btn
-            .get_style_context()
-            .add_class("suggested-action");
-        relm::connect!(
-            self.model.relm,
-            self.main_window_stack,
-            connect_property_visible_child_name_notify(_),
-            Msg::ScreenChanged
-        );
+        self.model
+            .titlebar
+            .emit(super::wintitlebar::Msg::MainWindowStackReady(
+                self.main_window_stack.clone(),
+            ));
     }
 
     fn model(relm: &relm::Relm<Self>, config: Config) -> Model {
+        let titlebar = relm::init::<WinTitleBar>(()).expect("win title bar init");
         Model {
             relm: relm.clone(),
             config,
-            displaying_event_sources: false,
+            titlebar,
         }
     }
 
@@ -67,63 +61,27 @@ impl Widget for Win {
     fn update(&mut self, event: Msg) {
         match event {
             Msg::Quit => gtk::main_quit(),
-            Msg::ScreenChanged => {
-                self.model.displaying_event_sources = self
-                    .main_window_stack
-                    .get_visible_child_name()
-                    .as_ref()
-                    .map(|s| s.as_str())
-                    == Some("event-sources");
-                self.header_bar.set_subtitle(
-                    Some("Event Sources").filter(|_| self.model.displaying_event_sources),
-                );
-                self.new_event_source_btn
-                    .set_visible(self.model.displaying_event_sources);
-            }
         }
     }
 
     view! {
         #[name="window"]
         gtk::Window {
-            decorated: false, // we have a custom header bar with tabs
-            gtk::Box {
-                orientation: gtk::Orientation::Vertical,
-                #[name="header_bar"]
-                gtk::HeaderBar {
-                    #[name="new_event_source_btn"]
-                    gtk::Button {
-                        label: "New",
-                        visible:false
-                    },
-                    show_close_button: true,
-                    title: Some("Cigale"),
-                    #[name="main_window_stack_switcher"]
-                    gtk::StackSwitcher {
-                        child: {
-                            pack_type: gtk::PackType::End
-                        }
-                    }
-                },
-                #[name="main_window_stack"]
-                gtk::Stack {
+            titlebar: Some(self.model.titlebar.widget()),
+            #[name="main_window_stack"]
+            gtk::Stack {
+                EventView(self.model.config.clone()) {
                     child: {
-                        fill: true,
-                        expand: true,
+                        name: Some("events"),
+                        icon_name: Some("view-list-symbolic")
                     },
-                    EventView(self.model.config.clone()) {
-                        child: {
-                            name: Some("events"),
-                            icon_name: Some("view-list-symbolic")
-                        },
-                    },
-                    EventSources(self.model.config.clone()) {
-                        child: {
-                            name: Some("event-sources"),
-                            icon_name: Some("document-properties-symbolic")
-                        },
-                    }
                 },
+                EventSources(self.model.config.clone()) {
+                    child: {
+                        name: Some("event-sources"),
+                        icon_name: Some("document-properties-symbolic")
+                    },
+                }
             },
             // Use a tuple when you want to both send a message and return a value to
             // the GTK+ callback.
