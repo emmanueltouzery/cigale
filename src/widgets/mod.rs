@@ -1,3 +1,4 @@
+mod addeventsourcewin;
 mod datepicker;
 mod event;
 mod events;

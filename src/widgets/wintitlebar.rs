@@ -1,17 +1,20 @@
+use super::addeventsourcewin::AddEventSourceWin;
 use gtk::prelude::*;
-use relm::Widget;
+use relm::{init, Component, Widget};
 use relm_derive::{widget, Msg};
 
 #[derive(Msg)]
 pub enum Msg {
     ScreenChanged,
     MainWindowStackReady(gtk::Stack),
+    NewEventSourceClick,
 }
 
 pub struct Model {
     relm: relm::Relm<WinTitleBar>,
     displaying_event_sources: bool,
     main_window_stack: Option<gtk::Stack>,
+    add_event_source_win: Option<Component<AddEventSourceWin>>,
 }
 
 #[widget]
@@ -27,6 +30,7 @@ impl Widget for WinTitleBar {
             relm: relm.clone(),
             displaying_event_sources: false,
             main_window_stack: None,
+            add_event_source_win: None,
         }
     }
 
@@ -59,6 +63,25 @@ impl Widget for WinTitleBar {
                 self.new_event_source_btn
                     .set_visible(self.model.displaying_event_sources);
             }
+            Msg::NewEventSourceClick => {
+                self.model.add_event_source_win = Some(
+                    init::<AddEventSourceWin>(())
+                        .expect("error initializing the add event source modal"),
+                );
+                let main_win = self
+                    .model
+                    .main_window_stack
+                    .as_ref()
+                    .unwrap()
+                    .get_toplevel()
+                    .and_then(|w| w.dynamic_cast::<gtk::Window>().ok());
+                self.model
+                    .add_event_source_win
+                    .as_ref()
+                    .unwrap()
+                    .widget()
+                    .set_transient_for(main_win.as_ref());
+            }
         }
     }
 
@@ -68,7 +91,8 @@ impl Widget for WinTitleBar {
             #[name="new_event_source_btn"]
             gtk::Button {
                 label: "New",
-                visible:false
+                visible:false,
+                clicked() => Msg::NewEventSourceClick,
             },
             show_close_button: true,
             title: Some("Cigale"),
