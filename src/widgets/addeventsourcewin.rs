@@ -159,11 +159,16 @@ impl Widget for AddEventSourceWin {
             .map(|r| r.get_index() as usize)
             .unwrap();
         let provider = &crate::events::events::get_event_providers()[selected_index];
-        let grid = gtk::GridBuilder::new().build();
         let mut i = 0;
         for field in provider.get_config_fields() {
-            grid.attach(&gtk::LabelBuilder::new().label(field.0).build(), 0, i, 1, 1);
-            grid.attach(
+            self.config_fields_grid.attach(
+                &gtk::LabelBuilder::new().label(field.0).build(),
+                0,
+                i,
+                1,
+                1,
+            );
+            self.config_fields_grid.attach(
                 &match field.1 {
                     ConfigType::Text => gtk::Entry::new().upcast::<gtk::Widget>(),
                     ConfigType::Path => {
@@ -178,8 +183,7 @@ impl Widget for AddEventSourceWin {
             );
             i += 1;
         }
-        grid.show_all();
-        self.wizard_stack.add_named(&grid, "step2");
+        self.config_fields_grid.show_all();
     }
 
     view! {
@@ -195,7 +199,15 @@ impl Widget for AddEventSourceWin {
                         #[name="provider_list"]
                         gtk::ListBox {}
                     },
-                }
+                    #[name="config_fields_grid"]
+                    gtk::Grid {
+                        row_spacing: 5,
+                        column_spacing: 10,
+                        child: {
+                            name: Some("step2")
+                        }
+                    }
+                },
         }
     }
 }
