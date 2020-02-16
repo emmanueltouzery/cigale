@@ -1,3 +1,4 @@
+use crate::events::events::ConfigType;
 use gtk::prelude::*;
 use relm::{init, Component, ContainerWidget, Widget};
 use relm_derive::{widget, Msg};
@@ -28,6 +29,7 @@ impl Widget for TitleBar {
 
     fn update(&mut self, msg: HeaderMsg) {
         match msg {
+            HeaderMsg::Next => self.next_btn.set_label("Add"),
             _ => {}
         }
     }
@@ -143,8 +145,41 @@ impl Widget for AddEventSourceWin {
     fn update(&mut self, msg: Msg) {
         match msg {
             Msg::Close => self.window.close(),
-            Msg::Next => self.wizard_stack.set_visible_child_name("step2"),
+            Msg::Next => {
+                self.populate_second_step();
+                self.wizard_stack.set_visible_child_name("step2")
+            }
         }
+    }
+
+    fn populate_second_step(&mut self) {
+        let selected_index = self
+            .provider_list
+            .get_selected_row()
+            .map(|r| r.get_index() as usize)
+            .unwrap();
+        let provider = &crate::events::events::get_event_providers()[selected_index];
+        let grid = gtk::GridBuilder::new().build();
+        let mut i = 0;
+        for field in provider.get_config_fields() {
+            grid.attach(&gtk::LabelBuilder::new().label(field.0).build(), 0, i, 1, 1);
+            grid.attach(
+                &match field.1 {
+                    ConfigType::Text => gtk::Entry::new().upcast::<gtk::Widget>(),
+                    ConfigType::Path => {
+                        gtk::FileChooserButton::new("Pick file", gtk::FileChooserAction::Open)
+                            .upcast::<gtk::Widget>()
+                    }
+                },
+                1,
+                i,
+                1,
+                1,
+            );
+            i += 1;
+        }
+        grid.show_all();
+        self.wizard_stack.add_named(&grid, "step2");
     }
 
     view! {
@@ -160,12 +195,6 @@ impl Widget for AddEventSourceWin {
                         #[name="provider_list"]
                         gtk::ListBox {}
                     },
-                    gtk::Label {
-                        child: {
-                            name: Some("step2")
-                        },
-                        text: "second step"
-                    }
                 }
         }
     }
