@@ -253,6 +253,20 @@ impl EventProvider for Email {
         h
     }
 
+    fn add_config_values(
+        &self,
+        config: &mut Config,
+        config_name: String,
+        mut config_values: HashMap<&'static str, String>,
+    ) {
+        config.email.insert(
+            config_name,
+            EmailConfig {
+                mbox_file_path: config_values.remove(MBOX_FILE_PATH_KEY).unwrap(),
+            },
+        );
+    }
+
     fn get_events(
         &self,
         config: &Config,

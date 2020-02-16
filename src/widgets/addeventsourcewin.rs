@@ -2,6 +2,7 @@ use crate::events::events::ConfigType;
 use gtk::prelude::*;
 use relm::{init, Component, ContainerWidget, Widget};
 use relm_derive::{widget, Msg};
+use std::collections::HashMap;
 
 /// titlebar
 
@@ -101,11 +102,13 @@ impl Widget for ProviderItem {
 pub enum Msg {
     Close,
     Next,
+    AddConfig((String, HashMap<&'static str, String>)),
 }
 
 pub struct Model {
     relm: relm::Relm<AddEventSourceWin>,
     titlebar: Component<TitleBar>,
+    entry_components: Option<HashMap<&'static str, gtk::Widget>>,
 }
 
 #[widget]
@@ -143,6 +146,21 @@ impl Widget for AddEventSourceWin {
         Model {
             relm: relm.clone(),
             titlebar: init::<TitleBar>(()).expect("Error building the titlebar"),
+            entry_components: None,
+        }
+    }
+
+    fn get_entry_val(entry: &gtk::Widget) -> String {
+        let text_entry = entry.clone().dynamic_cast::<gtk::Entry>().ok();
+        match text_entry {
+            Some(e) => e.get_text().unwrap().to_string(),
+            None => entry
+                .clone()
+                .dynamic_cast::<gtk::FileChooserButton>()
+                .unwrap()
+                .get_filename()
+                .and_then(|f| f.to_str().map(|s| s.to_string()))
+                .unwrap_or("".to_string()),
         }
     }
 
@@ -150,9 +168,28 @@ impl Widget for AddEventSourceWin {
         match msg {
             Msg::Close => self.window.close(),
             Msg::Next => {
-                self.populate_second_step();
-                self.wizard_stack.set_visible_child_name("step2")
+                if self.model.entry_components.is_some() {
+                    let entry_values = self
+                        .model
+                        .entry_components
+                        .as_ref()
+                        .unwrap()
+                        .iter()
+                        .map(|(k, v)| (*k, AddEventSourceWin::get_entry_val(v)))
+                        .collect();
+                    self.model.relm.stream().emit(Msg::AddConfig((
+                        self.provider_name_entry
+                            .get_text()
+                            .map(|t| t.to_string())
+                            .unwrap_or("".to_string()),
+                        entry_values,
+                    )));
+                } else {
+                    self.populate_second_step();
+                    self.wizard_stack.set_visible_child_name("step2");
+                }
             }
+            Msg::AddConfig(_) => {}
         }
     }
 
@@ -173,7 +210,8 @@ impl Widget for AddEventSourceWin {
             1,
             1,
         );
-        let mut i = 0;
+        let mut i = 1;
+        let mut entry_components = HashMap::new();
         for field in provider.get_config_fields() {
             self.config_fields_grid.attach(
                 &gtk::LabelBuilder::new().label(field.0).build(),
@@ -182,21 +220,18 @@ impl Widget for AddEventSourceWin {
                 1,
                 1,
             );
-            self.config_fields_grid.attach(
-                &match field.1 {
-                    ConfigType::Text => gtk::Entry::new().upcast::<gtk::Widget>(),
-                    ConfigType::Path => {
-                        gtk::FileChooserButton::new("Pick file", gtk::FileChooserAction::Open)
-                            .upcast::<gtk::Widget>()
-                    }
-                },
-                2,
-                i,
-                1,
-                1,
-            );
+            let entry_widget = &match field.1 {
+                ConfigType::Text => gtk::Entry::new().upcast::<gtk::Widget>(),
+                ConfigType::Path => {
+                    gtk::FileChooserButton::new("Pick file", gtk::FileChooserAction::Open)
+                        .upcast::<gtk::Widget>()
+                }
+            };
+            entry_components.insert(field.0, entry_widget.clone());
+            self.config_fields_grid.attach(entry_widget, 2, i, 1, 1);
             i += 1;
         }
+        self.model.entry_components = Some(entry_components);
         self.config_fields_grid.show_all();
     }
 
@@ -223,6 +258,24 @@ impl Widget for AddEventSourceWin {
                         column_spacing: 10,
                         child: {
                             name: Some("step2")
+                        },
+                        gtk::Label {
+                            label: "Provider name:",
+                            cell: {
+                                left_attach: 1,
+                                top_attach: 0,
+                                width: 1,
+                                height: 1
+                            }
+                        },
+                        #[name="provider_name_entry"]
+                        gtk::Entry {
+                            cell: {
+                                left_attach: 2,
+                                top_attach: 0,
+                                width: 1,
+                                height: 1
+                            }
                         }
                     }
                 },

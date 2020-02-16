@@ -121,6 +121,21 @@ impl EventProvider for Git {
         h
     }
 
+    fn add_config_values(
+        &self,
+        config: &mut Config,
+        config_name: String,
+        mut config_values: HashMap<&'static str, String>,
+    ) {
+        config.git.insert(
+            config_name,
+            GitConfig {
+                repo_folder: config_values.remove(REPO_FOLDER_KEY).unwrap(),
+                commit_author: config_values.remove(COMMIT_AUTHOR_KEY).unwrap(),
+            },
+        );
+    }
+
     fn get_events(
         &self,
         config: &Config,

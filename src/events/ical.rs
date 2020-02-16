@@ -158,6 +158,20 @@ impl EventProvider for Ical {
         h
     }
 
+    fn add_config_values(
+        &self,
+        config: &mut Config,
+        config_name: String,
+        mut config_values: HashMap<&'static str, String>,
+    ) {
+        config.ical.insert(
+            config_name,
+            IcalConfig {
+                ical_url: config_values.remove(URL_KEY).unwrap(),
+            },
+        );
+    }
+
     fn get_events(
         &self,
         config: &Config,

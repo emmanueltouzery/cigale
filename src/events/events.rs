@@ -26,6 +26,13 @@ pub trait EventProvider: Sync {
         config_name: &str,
     ) -> HashMap<&'static str, String>;
 
+    fn add_config_values(
+        &self,
+        config: &mut Config,
+        config_name: String,
+        config_values: HashMap<&'static str, String>,
+    );
+
     fn name(&self) -> &'static str;
 
     fn default_icon(&self) -> &'static str;

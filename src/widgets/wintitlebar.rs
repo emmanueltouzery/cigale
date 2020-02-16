@@ -1,13 +1,16 @@
 use super::addeventsourcewin::AddEventSourceWin;
+use super::addeventsourcewin::Msg as AddEventSourceWinMsg;
 use gtk::prelude::*;
 use relm::{init, Component, Widget};
 use relm_derive::{widget, Msg};
+use std::collections::HashMap;
 
 #[derive(Msg)]
 pub enum Msg {
     ScreenChanged,
     MainWindowStackReady(gtk::Stack),
     NewEventSourceClick,
+    AddConfig((String, HashMap<&'static str, String>)),
 }
 
 pub struct Model {
@@ -68,6 +71,9 @@ impl Widget for WinTitleBar {
                     init::<AddEventSourceWin>(())
                         .expect("error initializing the add event source modal"),
                 );
+                let src = self.model.add_event_source_win.as_ref().unwrap();
+                relm::connect!(src@AddEventSourceWinMsg::AddConfig((ref name, ref cfg)),
+                               self.model.relm, Msg::AddConfig((name.clone(), cfg.clone())));
                 let main_win = self
                     .model
                     .main_window_stack
@@ -82,6 +88,7 @@ impl Widget for WinTitleBar {
                     .widget()
                     .set_transient_for(main_win.as_ref());
             }
+            Msg::AddConfig((name, contents)) => println!("Add {} => {:?}", name, contents),
         }
     }
 
