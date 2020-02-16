@@ -70,16 +70,11 @@ impl Widget for EventSources {
     }
 
     view! {
-       gtk::Box {
-           orientation: gtk::Orientation::Vertical,
-           #[name="eventsources_list"]
-           gtk::ListBox {
-               selection_mode: gtk::SelectionMode::None,
-               child: {
-                   fill: true,
-                   expand: true,
-               }
-           }
-       }
+        gtk::ScrolledWindow {
+            #[name="eventsources_list"]
+            gtk::ListBox {
+                selection_mode: gtk::SelectionMode::None,
+            }
+        }
     }
 }
