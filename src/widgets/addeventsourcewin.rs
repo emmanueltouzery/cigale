@@ -77,6 +77,10 @@ impl Widget for ProviderItem {
     view! {
         gtk::Box {
             orientation: gtk::Orientation::Horizontal,
+            margin_top: 5,
+            margin_bottom: 5,
+            margin_start: 5,
+            margin_end: 5,
             gtk::Image {
                 child: {
                     padding: 10,
@@ -159,11 +163,21 @@ impl Widget for AddEventSourceWin {
             .map(|r| r.get_index() as usize)
             .unwrap();
         let provider = &crate::events::events::get_event_providers()[selected_index];
+        self.config_fields_grid.attach(
+            &gtk::Image::new_from_pixbuf(Some(&crate::icons::fontawesome_image(
+                provider.default_icon(),
+                32,
+            ))),
+            0,
+            0,
+            1,
+            1,
+        );
         let mut i = 0;
         for field in provider.get_config_fields() {
             self.config_fields_grid.attach(
                 &gtk::LabelBuilder::new().label(field.0).build(),
-                0,
+                1,
                 i,
                 1,
                 1,
@@ -176,7 +190,7 @@ impl Widget for AddEventSourceWin {
                             .upcast::<gtk::Widget>()
                     }
                 },
-                1,
+                2,
                 i,
                 1,
                 1,
@@ -191,7 +205,7 @@ impl Widget for AddEventSourceWin {
         gtk::Window {
             delete_event(_, _) => (Msg::Close, Inhibit(false)),
             property_width_request: 350,
-            property_height_request: 250,
+            property_height_request: 200,
             titlebar: Some(self.model.titlebar.widget()),
                 #[name="wizard_stack"]
                 gtk::Stack {
@@ -201,6 +215,10 @@ impl Widget for AddEventSourceWin {
                     },
                     #[name="config_fields_grid"]
                     gtk::Grid {
+                        margin_top: 20,
+                        margin_bottom: 10,
+                        margin_start: 10,
+                        margin_end: 10,
                         row_spacing: 5,
                         column_spacing: 10,
                         child: {
