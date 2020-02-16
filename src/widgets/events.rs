@@ -5,8 +5,7 @@ use crate::config::Config;
 use crate::events::events::Event;
 use chrono::prelude::*;
 use gtk::prelude::*;
-use relm::ContainerWidget;
-use relm::{Channel, Widget};
+use relm::{Channel, ContainerWidget, Widget};
 use relm_derive::{widget, Msg};
 
 #[derive(Msg)]
