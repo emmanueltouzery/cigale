@@ -1,4 +1,4 @@
-use crate::events::events::ConfigType;
+use crate::events::events::{ConfigType, EventProvider};
 use gtk::prelude::*;
 use relm::{init, Component, ContainerWidget, Widget};
 use relm_derive::{widget, Msg};
@@ -102,7 +102,7 @@ impl Widget for ProviderItem {
 pub enum Msg {
     Close,
     Next,
-    AddConfig((String, HashMap<&'static str, String>)),
+    AddConfig((&'static str, String, HashMap<&'static str, String>)),
 }
 
 pub struct Model {
@@ -177,7 +177,10 @@ impl Widget for AddEventSourceWin {
                         .iter()
                         .map(|(k, v)| (*k, AddEventSourceWin::get_entry_val(v)))
                         .collect();
+                    let ep = &crate::events::events::get_event_providers()
+                        [self.get_provider_index_if_step2()];
                     self.model.relm.stream().emit(Msg::AddConfig((
+                        ep.name(),
                         self.provider_name_entry
                             .get_text()
                             .map(|t| t.to_string())
@@ -193,13 +196,16 @@ impl Widget for AddEventSourceWin {
         }
     }
 
-    fn populate_second_step(&mut self) {
-        let selected_index = self
-            .provider_list
+    fn get_provider_index_if_step2(&self) -> usize {
+        self.provider_list
             .get_selected_row()
             .map(|r| r.get_index() as usize)
-            .unwrap();
-        let provider = &crate::events::events::get_event_providers()[selected_index];
+            .unwrap()
+    }
+
+    fn populate_second_step(&mut self) {
+        let provider =
+            &crate::events::events::get_event_providers()[self.get_provider_index_if_step2()];
         self.config_fields_grid.attach(
             &gtk::Image::new_from_pixbuf(Some(&crate::icons::fontawesome_image(
                 provider.default_icon(),

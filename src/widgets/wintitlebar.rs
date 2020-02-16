@@ -10,7 +10,7 @@ pub enum Msg {
     ScreenChanged,
     MainWindowStackReady(gtk::Stack),
     NewEventSourceClick,
-    AddConfig((String, HashMap<&'static str, String>)),
+    AddConfig((&'static str, String, HashMap<&'static str, String>)),
 }
 
 pub struct Model {
@@ -72,8 +72,8 @@ impl Widget for WinTitleBar {
                         .expect("error initializing the add event source modal"),
                 );
                 let src = self.model.add_event_source_win.as_ref().unwrap();
-                relm::connect!(src@AddEventSourceWinMsg::AddConfig((ref name, ref cfg)),
-                               self.model.relm, Msg::AddConfig((name.clone(), cfg.clone())));
+                relm::connect!(src@AddEventSourceWinMsg::AddConfig((ref providername, ref name, ref cfg)),
+                               self.model.relm, Msg::AddConfig((providername, name.clone(), cfg.clone())));
                 let main_win = self
                     .model
                     .main_window_stack
@@ -88,7 +88,7 @@ impl Widget for WinTitleBar {
                     .widget()
                     .set_transient_for(main_win.as_ref());
             }
-            Msg::AddConfig((name, contents)) => println!("Add {} => {:?}", name, contents),
+            Msg::AddConfig(_) => {}
         }
     }
 

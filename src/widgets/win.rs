@@ -1,14 +1,17 @@
 use super::events::EventView;
 use super::eventsources::EventSources;
+use super::wintitlebar::Msg as WinTitleBarMsg;
 use super::wintitlebar::WinTitleBar;
 use crate::config::Config;
 use gtk::prelude::*;
 use relm::{Component, Widget};
 use relm_derive::{widget, Msg};
+use std::collections::HashMap;
 
 #[derive(Msg)]
 pub enum Msg {
     Quit,
+    AddConfig((&'static str, String, HashMap<&'static str, String>)),
 }
 
 pub struct Model {
@@ -24,11 +27,12 @@ impl Widget for Win {
             Err(err) => println!("Error loading the CSS: {}", err),
             _ => {}
         }
-        self.model
-            .titlebar
-            .emit(super::wintitlebar::Msg::MainWindowStackReady(
-                self.main_window_stack.clone(),
-            ));
+        let titlebar = &self.model.titlebar;
+        titlebar.emit(super::wintitlebar::Msg::MainWindowStackReady(
+            self.main_window_stack.clone(),
+        ));
+        relm::connect!(titlebar@WinTitleBarMsg::AddConfig((ref providername, ref name, ref cfg)),
+                               self.model.relm, Msg::AddConfig((providername, name.clone(), cfg.clone())));
     }
 
     fn model(relm: &relm::Relm<Self>, config: Config) -> Model {
@@ -61,6 +65,15 @@ impl Widget for Win {
     fn update(&mut self, event: Msg) {
         match event {
             Msg::Quit => gtk::main_quit(),
+            Msg::AddConfig((providername, name, contents)) => {
+                let providers = &crate::events::events::get_event_providers();
+                let ep = providers
+                    .iter()
+                    .find(|ep| ep.name() == providername)
+                    .unwrap();
+                ep.add_config_values(&mut self.model.config, name, contents);
+                println!("{:?}", self.model.config);
+            }
         }
     }
 
