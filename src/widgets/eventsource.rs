@@ -4,7 +4,9 @@ use relm_derive::{widget, Msg};
 use std::collections::HashMap;
 
 #[derive(Msg)]
-pub enum EventSourceListItemMsg {}
+pub enum EventSourceListItemMsg {
+    ActionsClicked,
+}
 
 pub struct EventSourceListItemModel {
     pub event_provider_icon: &'static str,
@@ -48,7 +50,11 @@ impl Widget for EventSourceListItem {
         model
     }
 
-    fn update(&mut self, _event: EventSourceListItemMsg) {}
+    fn update(&mut self, event: EventSourceListItemMsg) {
+        match event {
+            EventSourceListItemMsg::ActionsClicked => {}
+        }
+    }
 
     view! {
         #[name="items_frame"]
@@ -82,6 +88,18 @@ impl Widget for EventSourceListItem {
                         xalign: 0.0,
                     }
                 },
+                gtk::Button {
+                    always_show_image: true,
+                    image: Some(&gtk::Image::new_from_pixbuf(
+                        Some(&crate::icons::fontawesome_image("cog", 12)))), // emblem-system-symbolic
+                    hexpand: true,
+                    halign: gtk::Align::End,
+                    cell: {
+                        left_attach: 2,
+                        top_attach: 0,
+                    },
+                    clicked() => EventSourceListItemMsg::ActionsClicked,
+                }
             }
         }
     }
