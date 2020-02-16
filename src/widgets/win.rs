@@ -72,7 +72,25 @@ impl Widget for Win {
                     .find(|ep| ep.name() == providername)
                     .unwrap();
                 ep.add_config_values(&mut self.model.config, name, contents);
-                println!("{:?}", self.model.config);
+                crate::config::save_config(&self.model.config).unwrap_or_else(|e| {
+                    let dialog = gtk::MessageDialog::new(
+                        Some(&self.window),
+                        gtk::DialogFlags::all(),
+                        gtk::MessageType::Error,
+                        gtk::ButtonsType::Close,
+                        &format!("Error saving the configuration: {}", e),
+                    );
+                    let _r = dialog.run();
+                    dialog.destroy();
+                });
+                self.event_sources
+                    .stream()
+                    .emit(super::eventsources::Msg::ConfigUpdate(
+                        self.model.config.clone(),
+                    ));
+                self.events
+                    .stream()
+                    .emit(super::events::Msg::ConfigUpdate(self.model.config.clone()));
             }
         }
     }
@@ -83,12 +101,14 @@ impl Widget for Win {
             titlebar: Some(self.model.titlebar.widget()),
             #[name="main_window_stack"]
             gtk::Stack {
+                #[name="events"]
                 EventView(self.model.config.clone()) {
                     child: {
                         name: Some("events"),
                         icon_name: Some("view-list-symbolic")
                     },
                 },
+                #[name="event_sources"]
                 EventSources(self.model.config.clone()) {
                     child: {
                         name: Some("event-sources"),

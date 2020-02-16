@@ -6,7 +6,9 @@ use relm::Widget;
 use relm_derive::{widget, Msg};
 
 #[derive(Msg)]
-pub enum Msg {}
+pub enum Msg {
+    ConfigUpdate(Config),
+}
 
 pub struct Model {
     config: Config,
@@ -29,7 +31,14 @@ impl Widget for EventSources {
         }
     }
 
-    fn update(&mut self, _event: Msg) {}
+    fn update(&mut self, event: Msg) {
+        match event {
+            Msg::ConfigUpdate(cfg) => {
+                self.model.config = cfg;
+                self.update_eventsources();
+            }
+        }
+    }
 
     fn update_eventsources(&mut self) {
         for child in self.eventsources_list.get_children() {

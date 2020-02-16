@@ -1,5 +1,7 @@
+use crate::events::events::Result;
 use std::collections::hash_map::*;
-use std::io::Read;
+use std::fs::File;
+use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::*;
 
@@ -10,9 +12,13 @@ pub struct Config {
     pub ical: HashMap<String, crate::events::ical::IcalConfig>,
 }
 
-pub fn read_config() -> Result<Config, Box<dyn error::Error>> {
+fn config_path() -> Result<PathBuf> {
     let config_folder = config_folder()?;
-    let config_file = config_folder.join("config.toml");
+    Ok(config_folder.join("config.toml"))
+}
+
+pub fn read_config() -> Result<Config> {
+    let config_file = config_path()?;
     if !config_file.is_file() {
         return Ok(Config {
             git: HashMap::new(),
@@ -21,14 +27,20 @@ pub fn read_config() -> Result<Config, Box<dyn error::Error>> {
         });
     }
     let mut contents = String::new();
-    std::fs::File::open(config_file)?.read_to_string(&mut contents)?;
+    File::open(config_file)?.read_to_string(&mut contents)?;
     toml::from_str(&contents).map_err(|e| {
         // TODO verbose.. https://www.reddit.com/r/rust/comments/esueur/returning_trait_objects/
         Box::new(e) as Box<dyn error::Error>
     })
 }
 
-pub fn config_folder() -> Result<PathBuf, Box<dyn error::Error>> {
+pub fn save_config(config: &Config) -> Result<()> {
+    let mut file = File::create(config_path()?)?;
+    let r = file.write_all(toml::to_string_pretty(config)?.as_bytes())?;
+    Ok(r)
+}
+
+pub fn config_folder() -> Result<PathBuf> {
     let home_dir = dirs::home_dir().expect("Can't find your home folder?");
     let config_folder = home_dir.join(".cigale");
     if !config_folder.is_dir() {

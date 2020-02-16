@@ -13,6 +13,7 @@ pub enum Msg {
     EventSelected,
     DayChange(Date<Local>),
     GotEvents(Result<Vec<Event>, String>),
+    ConfigUpdate(Config),
 }
 
 pub struct Model {
@@ -112,6 +113,10 @@ impl Widget for EventView {
             }
             Msg::GotEvents(events) => {
                 self.model.events = Some(events);
+                self.update_events();
+            }
+            Msg::ConfigUpdate(config) => {
+                self.model.config = config;
                 self.update_events();
             }
         }

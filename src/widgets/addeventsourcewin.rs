@@ -1,4 +1,4 @@
-use crate::events::events::{ConfigType, EventProvider};
+use crate::events::events::ConfigType;
 use gtk::prelude::*;
 use relm::{init, Component, ContainerWidget, Widget};
 use relm_derive::{widget, Msg};
