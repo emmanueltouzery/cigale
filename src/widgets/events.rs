@@ -71,7 +71,12 @@ impl Widget for EventView {
                 for child in info_contents.get_children() {
                     info_contents.remove(&child);
                 }
-                info_contents.add(&gtk::Label::new(Some(err.to_string().as_str())));
+                info_contents.add(
+                    &gtk::LabelBuilder::new()
+                        .label(err.to_string().as_str())
+                        .ellipsize(pango::EllipsizeMode::End)
+                        .build(),
+                );
                 info_contents.show_all();
             }
             None => {}
