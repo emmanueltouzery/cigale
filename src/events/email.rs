@@ -253,6 +253,10 @@ impl EventProvider for Email {
         h
     }
 
+    fn remove_config(&self, config: &mut Config, config_name: String) {
+        config.email.remove(&config_name);
+    }
+
     fn add_config_values(
         &self,
         config: &mut Config,

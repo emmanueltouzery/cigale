@@ -1,8 +1,10 @@
 use super::events::EventView;
 use super::eventsources::EventSources;
+use super::eventsources::Msg as EventSourcesMsg;
 use super::wintitlebar::Msg as WinTitleBarMsg;
 use super::wintitlebar::WinTitleBar;
 use crate::config::Config;
+use crate::events::events::EventProvider;
 use gtk::prelude::*;
 use relm::{Component, Widget};
 use relm_derive::{widget, Msg};
@@ -11,7 +13,8 @@ use std::collections::HashMap;
 #[derive(Msg)]
 pub enum Msg {
     Quit,
-    AddConfig((&'static str, String, HashMap<&'static str, String>)),
+    AddConfig(&'static str, String, HashMap<&'static str, String>),
+    RemoveEventSource(&'static str, String),
 }
 
 pub struct Model {
@@ -31,8 +34,11 @@ impl Widget for Win {
         titlebar.emit(super::wintitlebar::Msg::MainWindowStackReady(
             self.main_window_stack.clone(),
         ));
-        relm::connect!(titlebar@WinTitleBarMsg::AddConfig((ref providername, ref name, ref cfg)),
-                               self.model.relm, Msg::AddConfig((providername, name.clone(), cfg.clone())));
+        relm::connect!(titlebar@WinTitleBarMsg::AddConfig(ref providername, ref name, ref cfg),
+                               self.model.relm, Msg::AddConfig(providername, name.clone(), cfg.clone()));
+        let event_sources = &self.event_sources;
+        relm::connect!(event_sources@EventSourcesMsg::RemoveEventSource(ref providername, ref name),
+                               self.model.relm, Msg::RemoveEventSource(providername, name.clone()));
     }
 
     fn model(relm: &relm::Relm<Self>, config: Config) -> Model {
@@ -62,35 +68,51 @@ impl Widget for Win {
         Ok(())
     }
 
+    fn get_event_provider_by_name<'a>(
+        providers: &'a Vec<Box<dyn EventProvider>>,
+        providername: &'static str,
+    ) -> &'a Box<dyn EventProvider> {
+        providers
+            .iter()
+            .find(|ep| ep.name() == providername)
+            .unwrap()
+    }
+
+    fn save_config(&self) {
+        crate::config::save_config(&self.model.config).unwrap_or_else(|e| {
+            let dialog = gtk::MessageDialog::new(
+                Some(&self.window),
+                gtk::DialogFlags::all(),
+                gtk::MessageType::Error,
+                gtk::ButtonsType::Close,
+                &format!("Error saving the configuration: {}", e),
+            );
+            let _r = dialog.run();
+            dialog.destroy();
+        });
+        self.event_sources
+            .stream()
+            .emit(super::eventsources::Msg::ConfigUpdate(
+                self.model.config.clone(),
+            ));
+        self.events
+            .stream()
+            .emit(super::events::Msg::ConfigUpdate(self.model.config.clone()));
+    }
+
     fn update(&mut self, event: Msg) {
+        let providers = &crate::events::events::get_event_providers();
         match event {
             Msg::Quit => gtk::main_quit(),
-            Msg::AddConfig((providername, name, contents)) => {
-                let providers = &crate::events::events::get_event_providers();
-                let ep = providers
-                    .iter()
-                    .find(|ep| ep.name() == providername)
-                    .unwrap();
+            Msg::AddConfig(providername, name, contents) => {
+                let ep = Win::get_event_provider_by_name(providers, providername);
                 ep.add_config_values(&mut self.model.config, name, contents);
-                crate::config::save_config(&self.model.config).unwrap_or_else(|e| {
-                    let dialog = gtk::MessageDialog::new(
-                        Some(&self.window),
-                        gtk::DialogFlags::all(),
-                        gtk::MessageType::Error,
-                        gtk::ButtonsType::Close,
-                        &format!("Error saving the configuration: {}", e),
-                    );
-                    let _r = dialog.run();
-                    dialog.destroy();
-                });
-                self.event_sources
-                    .stream()
-                    .emit(super::eventsources::Msg::ConfigUpdate(
-                        self.model.config.clone(),
-                    ));
-                self.events
-                    .stream()
-                    .emit(super::events::Msg::ConfigUpdate(self.model.config.clone()));
+                self.save_config();
+            }
+            Msg::RemoveEventSource(providername, name) => {
+                let ep = Win::get_event_provider_by_name(providers, providername);
+                ep.remove_config(&mut self.model.config, name);
+                self.save_config();
             }
         }
     }

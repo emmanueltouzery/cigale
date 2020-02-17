@@ -102,7 +102,7 @@ impl Widget for ProviderItem {
 pub enum Msg {
     Close,
     Next,
-    AddConfig((&'static str, String, HashMap<&'static str, String>)),
+    AddConfig(&'static str, String, HashMap<&'static str, String>),
 }
 
 pub struct Model {
@@ -179,20 +179,20 @@ impl Widget for AddEventSourceWin {
                         .collect();
                     let ep = &crate::events::events::get_event_providers()
                         [self.get_provider_index_if_step2()];
-                    self.model.relm.stream().emit(Msg::AddConfig((
+                    self.model.relm.stream().emit(Msg::AddConfig(
                         ep.name(),
                         self.provider_name_entry
                             .get_text()
                             .map(|t| t.to_string())
                             .unwrap_or("".to_string()),
                         entry_values,
-                    )));
+                    ));
                 } else {
                     self.populate_second_step();
                     self.wizard_stack.set_visible_child_name("step2");
                 }
             }
-            Msg::AddConfig(_) => {}
+            Msg::AddConfig(_, _, _) => {}
         }
     }
 

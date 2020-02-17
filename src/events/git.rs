@@ -136,6 +136,10 @@ impl EventProvider for Git {
         );
     }
 
+    fn remove_config(&self, config: &mut Config, config_name: String) {
+        config.git.remove(&config_name);
+    }
+
     fn get_events(
         &self,
         config: &Config,

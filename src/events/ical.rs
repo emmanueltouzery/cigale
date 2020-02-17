@@ -158,6 +158,10 @@ impl EventProvider for Ical {
         h
     }
 
+    fn remove_config(&self, config: &mut Config, config_name: String) {
+        config.ical.remove(&config_name);
+    }
+
     fn add_config_values(
         &self,
         config: &mut Config,

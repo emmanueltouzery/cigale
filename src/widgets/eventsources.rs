@@ -8,6 +8,8 @@ use relm_derive::{widget, Msg};
 #[derive(Msg)]
 pub enum Msg {
     ConfigUpdate(Config),
+    ActionsClicked(gtk::Button, &'static str, String),
+    RemoveEventSource(&'static str, String),
 }
 
 pub struct Model {
@@ -39,6 +41,35 @@ impl Widget for EventSources {
                 self.model.config = cfg;
                 self.update_eventsources();
             }
+            Msg::ActionsClicked(btn, ep_name, config_name) => {
+                // the actions button for an event source was clicked
+                // display the popover with actions (remove, edit...)
+                let popover = &self.model.eventsource_action_popover;
+                popover.popdown();
+
+                for child in popover.get_children() {
+                    popover.remove(&child);
+                }
+                popover.set_relative_to(Some(&btn));
+                let vbox = gtk::BoxBuilder::new()
+                    .orientation(gtk::Orientation::Vertical)
+                    .build();
+                let remove_btn = gtk::ModelButtonBuilder::new().label("Remove").build();
+                // my parent is listening to that removeeventsource event.
+                relm::connect!(
+                    self.model.relm,
+                    &remove_btn,
+                    connect_clicked(_),
+                    Msg::RemoveEventSource(ep_name, config_name.clone())
+                );
+                vbox.add(&remove_btn);
+                popover.add(&vbox);
+                vbox.show_all();
+                popover.popup();
+            }
+            Msg::RemoveEventSource(_, _) => {
+                // that's meant only for my parent, not for me.
+            }
         }
     }
 
@@ -51,14 +82,23 @@ impl Widget for EventSources {
             for event_config_name in event_provider.get_config_names(&self.model.config) {
                 let event_config =
                     event_provider.get_config_values(&self.model.config, event_config_name);
-                let _child = self.eventsources_list.add_widget::<EventSourceListItem>(
+                let child = self.eventsources_list.add_widget::<EventSourceListItem>(
                     EventSourceListItemInfo {
                         event_provider_name: event_provider.name(),
                         event_provider_icon: event_provider.default_icon(),
                         config_name: event_config_name.to_string(),
                         event_source: event_config.clone(),
-                        eventsource_action_popover: self.model.eventsource_action_popover.clone(),
                     },
+                );
+                let ep_name = event_provider.name();
+                let cfg_name = event_config_name.to_string();
+                // this is a little confusing for me here, but somehow
+                // the child doesn't get notified of an event triggered
+                // there, but I as the parent get notified. So handle it here.
+                relm::connect!(
+                    child@EventSourceListItemMsg::ActionsClicked(ref btn),
+                    self.model.relm,
+                    Msg::ActionsClicked(btn.clone(), ep_name, cfg_name.clone())
                 );
             }
         }

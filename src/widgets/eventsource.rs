@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 #[derive(Msg)]
 pub enum EventSourceListItemMsg {
-    ActionsClicked,
+    ActionsClicked(gtk::Button),
 }
 
 pub struct EventSourceListItemInfo {
@@ -13,7 +13,6 @@ pub struct EventSourceListItemInfo {
     pub event_provider_name: &'static str,
     pub config_name: String,
     pub event_source: HashMap<&'static str, String>,
-    pub eventsource_action_popover: gtk::Popover,
 }
 
 pub struct Model {
@@ -60,21 +59,11 @@ impl Widget for EventSourceListItem {
     }
 
     fn update(&mut self, event: EventSourceListItemMsg) {
-        println!("event");
         match event {
-            EventSourceListItemMsg::ActionsClicked => {
-                println!("show popover");
-                let popover = &self.model.list_item_info.eventsource_action_popover;
-                for child in popover.get_children() {
-                    popover.remove(&child);
-                }
-                popover.set_relative_to(Some(&self.event_source_actions_btn));
-                let vbox = gtk::BoxBuilder::new()
-                    .orientation(gtk::Orientation::Vertical)
-                    .build();
-                vbox.add(&gtk::ModelButtonBuilder::new().label("Remove").build());
-                popover.add(&vbox);
-                popover.popup();
+            EventSourceListItemMsg::ActionsClicked(_) => {
+                // it's confusing to me why this is never called. For sure because
+                // this is created through add_widget<>, but even so...
+                println!("never called");
             }
         }
     }
@@ -122,8 +111,8 @@ impl Widget for EventSourceListItem {
                         left_attach: 2,
                         top_attach: 0,
                     },
-                    clicked => EventSourceListItemMsg::ActionsClicked
-                    // button_release_event(_, _) => (EventSourceListItemMsg::ActionsClicked, Inhibit(false)),
+                    button_release_event(c, _) =>
+                        (EventSourceListItemMsg::ActionsClicked(c.clone()), Inhibit(false))
                 }
             }
         }
