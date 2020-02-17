@@ -109,10 +109,24 @@ impl Widget for Win {
                 ep.add_config_values(&mut self.model.config, name, contents);
                 self.save_config();
             }
-            Msg::RemoveEventSource(providername, name) => {
-                let ep = Win::get_event_provider_by_name(providers, providername);
-                ep.remove_config(&mut self.model.config, name);
-                self.save_config();
+            Msg::RemoveEventSource(ep_name, config_name) => {
+                let dialog = gtk::MessageDialog::new(
+                    Some(&self.window),
+                    gtk::DialogFlags::all(),
+                    gtk::MessageType::Warning,
+                    gtk::ButtonsType::YesNo,
+                    &format!(
+                        "Are you sure you want to remove the event source: {}",
+                        config_name
+                    ),
+                );
+                let r = dialog.run();
+                dialog.destroy();
+                if r == gtk::ResponseType::Yes {
+                    let ep = Win::get_event_provider_by_name(providers, ep_name);
+                    ep.remove_config(&mut self.model.config, config_name);
+                    self.save_config();
+                }
             }
         }
     }
