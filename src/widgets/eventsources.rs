@@ -31,7 +31,9 @@ impl Widget for EventSources {
         Model {
             config: config,
             relm: relm.clone(),
-            eventsource_action_popover: gtk::Popover::new::<gtk::Button>(None),
+            eventsource_action_popover: gtk::PopoverBuilder::new()
+                .position(gtk::PositionType::Bottom)
+                .build(),
         }
     }
 
@@ -52,6 +54,7 @@ impl Widget for EventSources {
                 }
                 popover.set_relative_to(Some(&btn));
                 let vbox = gtk::BoxBuilder::new()
+                    .margin(10)
                     .orientation(gtk::Orientation::Vertical)
                     .build();
                 let remove_btn = gtk::ModelButtonBuilder::new().label("Remove").build();

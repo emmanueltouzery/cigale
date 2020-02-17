@@ -187,6 +187,7 @@ impl Widget for AddEventSourceWin {
                             .unwrap_or("".to_string()),
                         entry_values,
                     ));
+                    self.window.close();
                 } else {
                     self.populate_second_step();
                     self.wizard_stack.set_visible_child_name("step2");
