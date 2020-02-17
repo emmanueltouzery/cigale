@@ -8,18 +8,24 @@ pub enum EventSourceListItemMsg {
     ActionsClicked,
 }
 
-pub struct EventSourceListItemModel {
+pub struct EventSourceListItemInfo {
     pub event_provider_icon: &'static str,
     pub event_provider_name: &'static str,
     pub config_name: String,
     pub event_source: HashMap<&'static str, String>,
+    pub eventsource_action_popover: gtk::Popover,
+}
+
+pub struct Model {
+    relm: relm::Relm<EventSourceListItem>,
+    list_item_info: EventSourceListItemInfo,
 }
 
 #[widget]
 impl Widget for EventSourceListItem {
     fn init_view(&mut self) {
         let mut i = 1;
-        for kv in &self.model.event_source {
+        for kv in &self.model.list_item_info.event_source {
             let desc = gtk::LabelBuilder::new().label(kv.0).xalign(0.0).build();
             desc.get_style_context()
                 .add_class("event_source_config_label");
@@ -46,13 +52,30 @@ impl Widget for EventSourceListItem {
             .add_class("items_frame");
     }
 
-    fn model(model: EventSourceListItemModel) -> EventSourceListItemModel {
-        model
+    fn model(relm: &relm::Relm<Self>, list_item_info: EventSourceListItemInfo) -> Model {
+        Model {
+            relm: relm.clone(),
+            list_item_info,
+        }
     }
 
     fn update(&mut self, event: EventSourceListItemMsg) {
+        println!("event");
         match event {
-            EventSourceListItemMsg::ActionsClicked => {}
+            EventSourceListItemMsg::ActionsClicked => {
+                println!("show popover");
+                let popover = &self.model.list_item_info.eventsource_action_popover;
+                for child in popover.get_children() {
+                    popover.remove(&child);
+                }
+                popover.set_relative_to(Some(&self.event_source_actions_btn));
+                let vbox = gtk::BoxBuilder::new()
+                    .orientation(gtk::Orientation::Vertical)
+                    .build();
+                vbox.add(&gtk::ModelButtonBuilder::new().label("Remove").build());
+                popover.add(&vbox);
+                popover.popup();
+            }
         }
     }
 
@@ -79,15 +102,16 @@ impl Widget for EventSourceListItem {
                     },
                     gtk::Image {
                         from_pixbuf: Some(&crate::icons::fontawesome_image(
-                            self.model.event_provider_icon, 16)),
+                            self.model.list_item_info.event_provider_icon, 16)),
                     },
                     gtk::Label {
                         margin_start: 5,
-                        text: (self.model.event_provider_name.to_string()
-                               + " - " + &self.model.config_name).as_str(),
+                        text: (self.model.list_item_info.event_provider_name.to_string()
+                               + " - " + &self.model.list_item_info.config_name).as_str(),
                         xalign: 0.0,
                     }
                 },
+                #[name="event_source_actions_btn"]
                 gtk::Button {
                     always_show_image: true,
                     image: Some(&gtk::Image::new_from_pixbuf(
@@ -98,7 +122,8 @@ impl Widget for EventSourceListItem {
                         left_attach: 2,
                         top_attach: 0,
                     },
-                    clicked() => EventSourceListItemMsg::ActionsClicked,
+                    clicked => EventSourceListItemMsg::ActionsClicked
+                    // button_release_event(_, _) => (EventSourceListItemMsg::ActionsClicked, Inhibit(false)),
                 }
             }
         }

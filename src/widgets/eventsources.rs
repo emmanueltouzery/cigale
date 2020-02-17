@@ -1,4 +1,4 @@
-use super::eventsource::{EventSourceListItem, EventSourceListItemModel};
+use super::eventsource::{EventSourceListItem, EventSourceListItemInfo, EventSourceListItemMsg};
 use crate::config::Config;
 use gtk::prelude::*;
 use relm::ContainerWidget;
@@ -13,6 +13,7 @@ pub enum Msg {
 pub struct Model {
     config: Config,
     relm: relm::Relm<EventSources>,
+    eventsource_action_popover: gtk::Popover,
 }
 
 #[widget]
@@ -28,6 +29,7 @@ impl Widget for EventSources {
         Model {
             config: config,
             relm: relm.clone(),
+            eventsource_action_popover: gtk::Popover::new::<gtk::Button>(None),
         }
     }
 
@@ -50,11 +52,12 @@ impl Widget for EventSources {
                 let event_config =
                     event_provider.get_config_values(&self.model.config, event_config_name);
                 let _child = self.eventsources_list.add_widget::<EventSourceListItem>(
-                    EventSourceListItemModel {
+                    EventSourceListItemInfo {
                         event_provider_name: event_provider.name(),
                         event_provider_icon: event_provider.default_icon(),
                         config_name: event_config_name.to_string(),
                         event_source: event_config.clone(),
+                        eventsource_action_popover: self.model.eventsource_action_popover.clone(),
                     },
                 );
             }
