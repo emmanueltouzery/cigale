@@ -8,6 +8,8 @@ pub enum DatePickerMsg {
     ButtonClicked,
     DayClicked,
     MonthChanged,
+    NextDay,
+    PreviousDay,
     DayPicked(Date<Local>),
 }
 
@@ -92,6 +94,16 @@ impl Widget for DatePicker {
             DatePickerMsg::MonthChanged => {
                 self.model.month_change_ongoing = true;
             }
+            DatePickerMsg::NextDay => self
+                .model
+                .relm
+                .stream()
+                .emit(DatePickerMsg::DayPicked(self.model.date.succ())),
+            DatePickerMsg::PreviousDay => self
+                .model
+                .relm
+                .stream()
+                .emit(DatePickerMsg::DayPicked(self.model.date.pred())),
         }
     }
 
@@ -108,15 +120,32 @@ impl Widget for DatePicker {
                 },
                 label: "Day to display:"
             },
+            gtk::Button {
+                always_show_image: true,
+                image: Some(&gtk::Image::new_from_pixbuf(
+                    Some(&crate::icons::fontawesome_image("angle-left", 16)))),
+                valign: gtk::Align::Center,
+                relief: gtk::ReliefStyle::None,
+                clicked => DatePickerMsg::PreviousDay
+            },
             #[name="calendar_button"]
             gtk::Button {
                 child: {
                     padding: 2,
                 },
                 always_show_image: true,
-                image: Some(&gtk::Image::new_from_pixbuf(Some(&crate::icons::fontawesome_image("calendar-alt", 16)))),
+                image: Some(&gtk::Image::new_from_pixbuf(
+                    Some(&crate::icons::fontawesome_image("calendar-alt", 16)))),
                 label: self.model.date.format("%A, %Y-%m-%d").to_string().as_str(),
                 clicked => DatePickerMsg::ButtonClicked
+            },
+            gtk::Button {
+                always_show_image: true,
+                image: Some(&gtk::Image::new_from_pixbuf(
+                    Some(&crate::icons::fontawesome_image("angle-right", 16)))),
+                valign: gtk::Align::Center,
+                relief: gtk::ReliefStyle::None,
+                clicked => DatePickerMsg::NextDay
             },
         }
     }
