@@ -277,6 +277,7 @@ impl Widget for AddEventSourceWin {
                         },
                         #[name="provider_name_entry"]
                         gtk::Entry {
+                            hexpand: true,
                             cell: {
                                 left_attach: 2,
                                 top_attach: 0,
