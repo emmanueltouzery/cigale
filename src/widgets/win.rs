@@ -41,7 +41,27 @@ impl Widget for Win {
                                self.model.relm, Msg::RemoveEventSource(providername, name.clone()));
     }
 
-    fn model(relm: &relm::Relm<Self>, config: Config) -> Model {
+    fn model(relm: &relm::Relm<Self>, _: ()) -> Model {
+        let config = crate::config::read_config().unwrap_or_else(|e| {
+            let dialog = gtk::MessageDialog::new(
+                None::<&gtk::Window>,
+                gtk::DialogFlags::all(),
+                gtk::MessageType::Error,
+                gtk::ButtonsType::Close,
+                &format!("Error loading the configuration"),
+            );
+            dialog.set_property_secondary_text(Some(&format!(
+                "{}: {:}",
+                crate::config::config_path()
+                    .ok()
+                    .map(|p| p.to_string_lossy().to_string())
+                    .unwrap_or("".to_string()),
+                e
+            )));
+            let _r = dialog.run();
+            dialog.destroy();
+            crate::config::default_config()
+        });
         let titlebar = relm::init::<WinTitleBar>(()).expect("win title bar init");
         Model {
             relm: relm.clone(),
@@ -85,8 +105,9 @@ impl Widget for Win {
                 gtk::DialogFlags::all(),
                 gtk::MessageType::Error,
                 gtk::ButtonsType::Close,
-                &format!("Error saving the configuration: {}", e),
+                &format!("Error saving the configuration"),
             );
+            dialog.set_property_secondary_text(Some(&format!("{}", e)));
             let _r = dialog.run();
             dialog.destroy();
         });
@@ -114,12 +135,18 @@ impl Widget for Win {
                     Some(&self.window),
                     gtk::DialogFlags::all(),
                     gtk::MessageType::Warning,
-                    gtk::ButtonsType::YesNo,
-                    &format!(
-                        "Are you sure you want to remove the event source: {}",
-                        config_name
-                    ),
+                    gtk::ButtonsType::None,
+                    "Remove event source",
                 );
+                dialog.set_property_secondary_text(Some(&format!(
+                    "Are you sure you want to remove the '{}' event source?",
+                    config_name
+                )));
+                dialog.add_button("Cancel", gtk::ResponseType::Cancel);
+                let remove_btn = dialog.add_button("Remove", gtk::ResponseType::Yes);
+                remove_btn
+                    .get_style_context()
+                    .add_class("destructive-action");
                 let r = dialog.run();
                 dialog.destroy();
                 if r == gtk::ResponseType::Yes {

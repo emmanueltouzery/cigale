@@ -12,19 +12,23 @@ pub struct Config {
     pub ical: HashMap<String, crate::events::ical::IcalConfig>,
 }
 
-fn config_path() -> Result<PathBuf> {
+pub fn config_path() -> Result<PathBuf> {
     let config_folder = config_folder()?;
     Ok(config_folder.join("config.toml"))
+}
+
+pub fn default_config() -> Config {
+    Config {
+        git: HashMap::new(),
+        email: HashMap::new(),
+        ical: HashMap::new(),
+    }
 }
 
 pub fn read_config() -> Result<Config> {
     let config_file = config_path()?;
     if !config_file.is_file() {
-        return Ok(Config {
-            git: HashMap::new(),
-            email: HashMap::new(),
-            ical: HashMap::new(),
-        });
+        return Ok(default_config());
     }
     let mut contents = String::new();
     File::open(config_file)?.read_to_string(&mut contents)?;
