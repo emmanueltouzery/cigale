@@ -27,7 +27,7 @@
 }
 
 .items_frame {
-  background-color: white;
+  background-color: @theme_base_color;
 }
 
 .item_list {
