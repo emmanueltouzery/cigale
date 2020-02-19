@@ -3,7 +3,7 @@ use super::addeventsourcewin::Msg as AddEventSourceWinMsg;
 use gtk::prelude::*;
 use relm::{init, Component, Widget};
 use relm_derive::{widget, Msg};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Msg)]
 pub enum Msg {
@@ -11,6 +11,7 @@ pub enum Msg {
     MainWindowStackReady(gtk::Stack),
     NewEventSourceClick,
     AddConfig(&'static str, String, HashMap<&'static str, String>),
+    EventSourceNamesChanged(HashSet<String>),
 }
 
 pub struct Model {
@@ -18,6 +19,7 @@ pub struct Model {
     displaying_event_sources: bool,
     main_window_stack: Option<gtk::Stack>,
     add_event_source_win: Option<Component<AddEventSourceWin>>,
+    existing_source_names: HashSet<String>,
 }
 
 #[widget]
@@ -28,12 +30,13 @@ impl Widget for WinTitleBar {
             .add_class("suggested-action");
     }
 
-    fn model(relm: &relm::Relm<Self>, _: ()) -> Model {
+    fn model(relm: &relm::Relm<Self>, existing_source_names: HashSet<String>) -> Model {
         Model {
             relm: relm.clone(),
             displaying_event_sources: false,
             main_window_stack: None,
             add_event_source_win: None,
+            existing_source_names,
         }
     }
 
@@ -68,7 +71,7 @@ impl Widget for WinTitleBar {
             }
             Msg::NewEventSourceClick => {
                 self.model.add_event_source_win = Some(
-                    init::<AddEventSourceWin>(())
+                    init::<AddEventSourceWin>(self.model.existing_source_names.clone())
                         .expect("error initializing the add event source modal"),
                 );
                 let src = self.model.add_event_source_win.as_ref().unwrap();
@@ -87,6 +90,9 @@ impl Widget for WinTitleBar {
                     .unwrap()
                     .widget()
                     .set_transient_for(main_win.as_ref());
+            }
+            Msg::EventSourceNamesChanged(src) => {
+                self.model.existing_source_names = src;
             }
             Msg::AddConfig(_, _, _) => {}
         }

@@ -2,7 +2,7 @@ use crate::events::events::ConfigType;
 use gtk::prelude::*;
 use relm::{init, Component, ContainerWidget, Widget};
 use relm_derive::{widget, Msg};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 /// titlebar
 
@@ -10,6 +10,7 @@ use std::collections::HashMap;
 pub enum HeaderMsg {
     Close,
     Next,
+    FormIsValidChanged(bool),
 }
 
 pub struct HeaderModel {
@@ -30,7 +31,13 @@ impl Widget for TitleBar {
 
     fn update(&mut self, msg: HeaderMsg) {
         match msg {
-            HeaderMsg::Next => self.next_btn.set_label("Add"),
+            HeaderMsg::Next => {
+                self.next_btn.set_sensitive(false);
+                self.next_btn.set_label("Add");
+            }
+            HeaderMsg::FormIsValidChanged(is_valid) => {
+                self.next_btn.set_sensitive(is_valid);
+            }
             _ => {}
         }
     }
@@ -103,12 +110,14 @@ pub enum Msg {
     Close,
     Next,
     AddConfig(&'static str, String, HashMap<&'static str, String>),
+    ProviderNameChanged,
 }
 
 pub struct Model {
     relm: relm::Relm<AddEventSourceWin>,
     titlebar: Component<TitleBar>,
     entry_components: Option<HashMap<&'static str, gtk::Widget>>,
+    existing_provider_names: HashSet<String>,
 }
 
 #[widget]
@@ -142,11 +151,12 @@ impl Widget for AddEventSourceWin {
         ));
     }
 
-    fn model(relm: &relm::Relm<Self>, _: ()) -> Model {
+    fn model(relm: &relm::Relm<Self>, existing_provider_names: HashSet<String>) -> Model {
         Model {
             relm: relm.clone(),
             titlebar: init::<TitleBar>(()).expect("Error building the titlebar"),
             entry_components: None,
+            existing_provider_names,
         }
     }
 
@@ -192,6 +202,16 @@ impl Widget for AddEventSourceWin {
                     self.populate_second_step();
                     self.wizard_stack.set_visible_child_name("step2");
                 }
+            }
+            Msg::ProviderNameChanged => {
+                let txt = self.provider_name_entry.get_text();
+                let provider_name = txt.as_ref().map(|t| t.as_str()).unwrap_or("");
+                let form_is_valid = provider_name.len() > 0
+                    && !self.model.existing_provider_names.contains(provider_name);
+                self.model
+                    .titlebar
+                    .stream()
+                    .emit(HeaderMsg::FormIsValidChanged(form_is_valid));
             }
             Msg::AddConfig(_, _, _) => {}
         }
@@ -283,7 +303,8 @@ impl Widget for AddEventSourceWin {
                                 top_attach: 0,
                                 width: 1,
                                 height: 1
-                            }
+                            },
+                            changed() => Msg::ProviderNameChanged
                         }
                     }
                 },

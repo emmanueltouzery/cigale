@@ -8,7 +8,7 @@ use crate::events::events::EventProvider;
 use gtk::prelude::*;
 use relm::{Component, Widget};
 use relm_derive::{widget, Msg};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Msg)]
 pub enum Msg {
@@ -62,12 +62,25 @@ impl Widget for Win {
             dialog.destroy();
             crate::config::default_config()
         });
-        let titlebar = relm::init::<WinTitleBar>(()).expect("win title bar init");
+        let titlebar = relm::init::<WinTitleBar>(Win::config_provider_names(&config))
+            .expect("win title bar init");
         Model {
             relm: relm.clone(),
             config,
             titlebar,
         }
+    }
+
+    fn config_provider_names(config: &Config) -> HashSet<String> {
+        crate::events::events::get_event_providers()
+            .iter()
+            .flat_map(|ep| {
+                ep.get_config_names(config)
+                    .iter()
+                    .map(|n| (*n).clone())
+                    .collect::<Vec<String>>()
+            })
+            .collect()
     }
 
     fn load_style(&self) -> Result<(), Box<dyn std::error::Error>> {
@@ -119,6 +132,12 @@ impl Widget for Win {
         self.events
             .stream()
             .emit(super::events::Msg::ConfigUpdate(self.model.config.clone()));
+        self.model
+            .titlebar
+            .stream()
+            .emit(WinTitleBarMsg::EventSourceNamesChanged(
+                Win::config_provider_names(&self.model.config),
+            ));
     }
 
     fn update(&mut self, event: Msg) {
