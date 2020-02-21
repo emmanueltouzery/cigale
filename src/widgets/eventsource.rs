@@ -23,6 +23,12 @@ pub struct Model {
 #[widget]
 impl Widget for EventSourceListItem {
     fn init_view(&mut self) {
+        // remove the gtk-added 'image-button' CSS class.
+        // i want a gray background instead of white:
+        // consistent with the gnome printers dialog, and more visible in dark mode
+        self.event_source_actions_btn
+            .get_style_context()
+            .remove_class("image-button");
         let mut i = 1;
         for kv in &self.model.list_item_info.event_source {
             let desc = gtk::LabelBuilder::new().label(kv.0).xalign(0.0).build();
