@@ -184,7 +184,7 @@ impl Widget for EventView {
                        valign: gtk::Align::Start,
                        line_wrap: true,
                        selectable: true,
-                       markup: self.model
+                       text: self.model
                                    .current_event
                                    .as_ref()
                                    .map(|e| e.event_contents_header.as_str())
