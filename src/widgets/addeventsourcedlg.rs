@@ -1,66 +1,8 @@
 use crate::events::events::ConfigType;
 use gtk::prelude::*;
-use relm::{init, Component, ContainerWidget, Widget};
+use relm::{ContainerWidget, Widget};
 use relm_derive::{widget, Msg};
 use std::collections::{HashMap, HashSet};
-
-/// titlebar
-
-#[derive(Msg)]
-pub enum HeaderMsg {
-    Close,
-    Next,
-    FormIsValidChanged(bool),
-}
-
-pub struct HeaderModel {
-    relm: relm::Relm<TitleBar>,
-}
-
-#[widget]
-impl Widget for TitleBar {
-    fn init_view(&mut self) {
-        self.next_btn
-            .get_style_context()
-            .add_class("suggested-action");
-    }
-
-    fn model(relm: &relm::Relm<Self>, _: ()) -> HeaderModel {
-        HeaderModel { relm: relm.clone() }
-    }
-
-    fn update(&mut self, msg: HeaderMsg) {
-        match msg {
-            HeaderMsg::Next => {
-                self.next_btn.set_sensitive(false);
-                self.next_btn.set_label("Add");
-            }
-            HeaderMsg::FormIsValidChanged(is_valid) => {
-                self.next_btn.set_sensitive(is_valid);
-            }
-            _ => {}
-        }
-    }
-
-    view! {
-        gtk::HeaderBar {
-            delete_event(_, _) => (HeaderMsg::Close, Inhibit(false)),
-            title: Some("Add event source"),
-            gtk::Button {
-                label: "Close",
-                clicked() => HeaderMsg::Close,
-            },
-            #[name="next_btn"]
-            gtk::Button {
-                label: "Next",
-                child: {
-                    pack_type: gtk::PackType::End
-                },
-                clicked() => HeaderMsg::Next,
-            },
-        }
-    }
-}
 
 /// event provider list item
 
@@ -105,33 +47,34 @@ impl Widget for ProviderItem {
 
 /// window
 
-#[derive(Msg)]
+#[derive(Msg, Debug)]
 pub enum Msg {
-    Close,
     Next,
     AddConfig(&'static str, String, HashMap<&'static str, String>),
     ProviderNameChanged,
 }
 
 pub struct Model {
-    relm: relm::Relm<AddEventSourceWin>,
-    titlebar: Component<TitleBar>,
+    relm: relm::Relm<AddEventSourceDialog>,
     entry_components: Option<HashMap<&'static str, gtk::Widget>>,
     existing_provider_names: HashSet<String>,
+    next_btn: gtk::Button,
+    dialog: gtk::Dialog,
+}
+
+pub struct AddEventSourceDialogParams {
+    pub existing_provider_names: HashSet<String>,
+    pub next_btn: gtk::Button,
+    pub dialog: gtk::Dialog,
 }
 
 #[widget]
-impl Widget for AddEventSourceWin {
+impl Widget for AddEventSourceDialog {
     fn init_view(&mut self) {
-        let titlebar = &self.model.titlebar;
         relm::connect!(
-            titlebar@HeaderMsg::Close,
             self.model.relm,
-            Msg::Close
-        );
-        relm::connect!(
-            titlebar@HeaderMsg::Next,
-            self.model.relm,
+            &self.model.next_btn,
+            connect_clicked(_),
             Msg::Next
         );
         for provider in crate::events::events::get_event_providers() {
@@ -151,12 +94,13 @@ impl Widget for AddEventSourceWin {
         ));
     }
 
-    fn model(relm: &relm::Relm<Self>, existing_provider_names: HashSet<String>) -> Model {
+    fn model(relm: &relm::Relm<Self>, dialog_params: AddEventSourceDialogParams) -> Model {
         Model {
             relm: relm.clone(),
-            titlebar: init::<TitleBar>(()).expect("Error building the titlebar"),
             entry_components: None,
-            existing_provider_names,
+            existing_provider_names: dialog_params.existing_provider_names,
+            next_btn: dialog_params.next_btn,
+            dialog: dialog_params.dialog,
         }
     }
 
@@ -176,16 +120,23 @@ impl Widget for AddEventSourceWin {
 
     fn update(&mut self, msg: Msg) {
         match msg {
-            Msg::Close => self.window.close(),
             Msg::Next => {
-                if self.model.entry_components.is_some() {
+                if self.model.entry_components.is_none() {
+                    // we're at the first step: display the second step
+                    self.populate_second_step();
+                    self.wizard_stack.set_visible_child_name("step2");
+
+                    self.model.next_btn.set_label("Add");
+                    self.model.next_btn.set_sensitive(false); // must enter an event source name
+                } else {
+                    // we're at the second step: add the event source
                     let entry_values = self
                         .model
                         .entry_components
                         .as_ref()
                         .unwrap()
                         .iter()
-                        .map(|(k, v)| (*k, AddEventSourceWin::get_entry_val(v)))
+                        .map(|(k, v)| (*k, AddEventSourceDialog::get_entry_val(v)))
                         .collect();
                     let ep = &crate::events::events::get_event_providers()
                         [self.get_provider_index_if_step2()];
@@ -197,10 +148,7 @@ impl Widget for AddEventSourceWin {
                             .unwrap_or("".to_string()),
                         entry_values,
                     ));
-                    self.window.close();
-                } else {
-                    self.populate_second_step();
-                    self.wizard_stack.set_visible_child_name("step2");
+                    self.model.dialog.emit_close();
                 }
             }
             Msg::ProviderNameChanged => {
@@ -208,12 +156,11 @@ impl Widget for AddEventSourceWin {
                 let provider_name = txt.as_ref().map(|t| t.as_str()).unwrap_or("");
                 let form_is_valid = provider_name.len() > 0
                     && !self.model.existing_provider_names.contains(provider_name);
-                self.model
-                    .titlebar
-                    .stream()
-                    .emit(HeaderMsg::FormIsValidChanged(form_is_valid));
+                self.model.next_btn.set_sensitive(form_is_valid);
             }
-            Msg::AddConfig(_, _, _) => {}
+            Msg::AddConfig(_, _, _) => {
+                // this is meant for wintitlebar... we emit here, not interested by it ourselves
+            }
         }
     }
 
@@ -263,51 +210,44 @@ impl Widget for AddEventSourceWin {
     }
 
     view! {
-        #[name="window"]
-        gtk::Window {
-            delete_event(_, _) => (Msg::Close, Inhibit(false)),
-            property_width_request: 350,
-            property_height_request: 200,
-            titlebar: Some(self.model.titlebar.widget()),
-                #[name="wizard_stack"]
-                gtk::Stack {
-                    gtk::ScrolledWindow {
-                        #[name="provider_list"]
-                        gtk::ListBox {}
-                    },
-                    #[name="config_fields_grid"]
-                    gtk::Grid {
-                        margin_top: 20,
-                        margin_bottom: 10,
-                        margin_start: 10,
-                        margin_end: 10,
-                        row_spacing: 5,
-                        column_spacing: 10,
-                        child: {
-                            name: Some("step2")
-                        },
-                        gtk::Label {
-                            label: "Provider name:",
-                            cell: {
-                                left_attach: 1,
-                                top_attach: 0,
-                                width: 1,
-                                height: 1
-                            }
-                        },
-                        #[name="provider_name_entry"]
-                        gtk::Entry {
-                            hexpand: true,
-                            cell: {
-                                left_attach: 2,
-                                top_attach: 0,
-                                width: 1,
-                                height: 1
-                            },
-                            changed() => Msg::ProviderNameChanged
-                        }
+        #[name="wizard_stack"]
+        gtk::Stack {
+            gtk::ScrolledWindow {
+                #[name="provider_list"]
+                gtk::ListBox {}
+            },
+            #[name="config_fields_grid"]
+            gtk::Grid {
+                margin_top: 20,
+                margin_bottom: 10,
+                margin_start: 10,
+                margin_end: 10,
+                row_spacing: 5,
+                column_spacing: 10,
+                child: {
+                    name: Some("step2")
+                },
+                gtk::Label {
+                    label: "Provider name:",
+                    cell: {
+                        left_attach: 1,
+                        top_attach: 0,
+                        width: 1,
+                        height: 1
                     }
                 },
-        }
+                #[name="provider_name_entry"]
+                gtk::Entry {
+                    hexpand: true,
+                    cell: {
+                        left_attach: 2,
+                        top_attach: 0,
+                        width: 1,
+                        height: 1
+                    },
+                    changed() => Msg::ProviderNameChanged
+                }
+            }
+        },
     }
 }

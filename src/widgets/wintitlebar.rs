@@ -1,7 +1,7 @@
-use super::addeventsourcewin::AddEventSourceWin;
-use super::addeventsourcewin::Msg as AddEventSourceWinMsg;
+use super::addeventsourcedlg::Msg as AddEventSourceDialogMsg;
+use super::addeventsourcedlg::{AddEventSourceDialog, AddEventSourceDialogParams};
 use gtk::prelude::*;
-use relm::{init, Component, Widget};
+use relm::{init, Widget};
 use relm_derive::{widget, Msg};
 use std::collections::{HashMap, HashSet};
 
@@ -18,7 +18,6 @@ pub struct Model {
     relm: relm::Relm<WinTitleBar>,
     displaying_event_sources: bool,
     main_window_stack: Option<gtk::Stack>,
-    add_event_source_win: Option<Component<AddEventSourceWin>>,
     existing_source_names: HashSet<String>,
 }
 
@@ -35,7 +34,6 @@ impl Widget for WinTitleBar {
             relm: relm.clone(),
             displaying_event_sources: false,
             main_window_stack: None,
-            add_event_source_win: None,
             existing_source_names,
         }
     }
@@ -70,13 +68,6 @@ impl Widget for WinTitleBar {
                     .set_visible(self.model.displaying_event_sources);
             }
             Msg::NewEventSourceClick => {
-                self.model.add_event_source_win = Some(
-                    init::<AddEventSourceWin>(self.model.existing_source_names.clone())
-                        .expect("error initializing the add event source modal"),
-                );
-                let src = self.model.add_event_source_win.as_ref().unwrap();
-                relm::connect!(src@AddEventSourceWinMsg::AddConfig(ref providername, ref name, ref cfg),
-                               self.model.relm, Msg::AddConfig(providername, name.clone(), cfg.clone()));
                 let main_win = self
                     .model
                     .main_window_stack
@@ -84,17 +75,51 @@ impl Widget for WinTitleBar {
                     .unwrap()
                     .get_toplevel()
                     .and_then(|w| w.dynamic_cast::<gtk::Window>().ok());
-                self.model
-                    .add_event_source_win
-                    .as_ref()
+                let dialog = gtk::DialogBuilder::new()
+                    .use_header_bar(1)
+                    .default_width(400)
+                    .default_height(250)
+                    .title("Add event source")
+                    .transient_for(&main_win.unwrap())
+                    .build();
+                let header_bar = dialog
+                    .get_header_bar()
                     .unwrap()
-                    .widget()
-                    .set_transient_for(main_win.as_ref());
+                    .dynamic_cast::<gtk::HeaderBar>()
+                    .unwrap();
+                // i'm not using the 'official' dialog buttons,
+                // because i've had problems with relm events
+                // not propagating when using those. worked
+                // fine when i started using my own buttons.
+                let btn = gtk::Button::new_with_label("Next");
+                btn.get_style_context().add_class("suggested-action");
+                header_bar.pack_end(&btn);
+                btn.show();
+                let dialog_contents = init::<AddEventSourceDialog>(AddEventSourceDialogParams {
+                    existing_provider_names: self.model.existing_source_names.clone(),
+                    next_btn: btn.clone(),
+                    dialog: dialog.clone(),
+                })
+                .expect("error initializing the add event source modal");
+                dialog
+                    .get_content_area()
+                    .pack_start(dialog_contents.widget(), true, true, 0);
+
+                dialog.add_button("Cancel", gtk::ResponseType::Cancel);
+                relm::connect!(dialog_contents@AddEventSourceDialogMsg::AddConfig(ref providername, ref name, ref cfg),
+                               self.model.relm, Msg::AddConfig(providername, name.clone(), cfg.clone()));
+                let resp = dialog.run();
+                match resp {
+                    gtk::ResponseType::Cancel | gtk::ResponseType::DeleteEvent => dialog.destroy(),
+                    _ => {}
+                }
             }
             Msg::EventSourceNamesChanged(src) => {
                 self.model.existing_source_names = src;
             }
-            Msg::AddConfig(_, _, _) => {}
+            Msg::AddConfig(_, _, _) => {
+                // this is meant for wintitlebar... we emit here, not interested by it ourselves
+            }
         }
     }
 
