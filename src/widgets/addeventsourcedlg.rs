@@ -22,7 +22,7 @@ impl Widget for ProviderItem {
         model
     }
 
-    fn update(&mut self, msg: ProviderItemMsg) {}
+    fn update(&mut self, _msg: ProviderItemMsg) {}
 
     view! {
         gtk::Box {
