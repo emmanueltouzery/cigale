@@ -1,6 +1,7 @@
 use super::email::Email;
 use super::git::Git;
 use super::ical::Ical;
+use super::redmine::Redmine;
 use crate::config::Config;
 use chrono::prelude::*;
 use std::collections::HashMap;
@@ -48,7 +49,12 @@ pub trait EventProvider: Sync {
 }
 
 pub fn get_event_providers() -> Vec<Box<dyn EventProvider>> {
-    vec![Box::new(Git), Box::new(Email), Box::new(Ical)]
+    vec![
+        Box::new(Git),
+        Box::new(Email),
+        Box::new(Ical),
+        Box::new(Redmine),
+    ]
 }
 
 fn get_events_for_event_provider(

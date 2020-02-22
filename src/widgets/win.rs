@@ -1,3 +1,13 @@
+// cannot save when editing an event source unless you change the name!!!
+// email: display the TO list (example 19-02-2020)
+// redmine
+//
+// flatpak, new icon https://developer.gnome.org/hig/stable/icon-design.html.en
+// translations?
+//
+// ideally i could validate eg git folders
+// remove some event source boilerplate through macros?
+// dark mode activatable in the GUI. maybe also option to skip week-ends in previous/next
 use super::addeventsourcedlg::EventSourceEditModel;
 use super::addeventsourcedlg::Msg as AddEventSourceDialogMsg;
 use super::events::EventView;

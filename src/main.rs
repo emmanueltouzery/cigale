@@ -5,5 +5,6 @@ mod icons;
 mod widgets;
 
 fn main() {
+    env_logger::init();
     widgets::win::Win::run(()).unwrap();
 }

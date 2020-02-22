@@ -10,6 +10,7 @@ pub struct Config {
     pub git: HashMap<String, crate::events::git::GitConfig>,
     pub email: HashMap<String, crate::events::email::EmailConfig>,
     pub ical: HashMap<String, crate::events::ical::IcalConfig>,
+    pub redmine: HashMap<String, crate::events::redmine::RedmineConfig>,
 }
 
 pub fn config_path() -> Result<PathBuf> {
@@ -22,6 +23,7 @@ pub fn default_config() -> Config {
         git: HashMap::new(),
         email: HashMap::new(),
         ical: HashMap::new(),
+        redmine: HashMap::new(),
     }
 }
 
