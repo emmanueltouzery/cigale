@@ -138,9 +138,7 @@ impl EventProvider for Redmine {
             let day_elt = &it_day.next().unwrap();
             println!("{}", day_elt.inner_html());
             let contents_elt = &it_contents.next().unwrap();
-            // didn't find any other way than re-parsing :|
-            let fragment = scraper::Html::parse_fragment(&contents_elt.inner_html());
-            for author_elt in fragment.select(&author_sel) {
+            for author_elt in contents_elt.select(&author_sel) {
                 println!("-> {}", author_elt.inner_html());
             }
         }
