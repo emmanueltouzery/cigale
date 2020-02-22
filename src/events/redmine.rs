@@ -102,7 +102,6 @@ impl EventProvider for Redmine {
             .send()?
             .error_for_status()?
             .text()?;
-        println!("{}", html);
         let doc = scraper::Html::parse_document(&html);
         let sel = scraper::Selector::parse("input[name=authenticity_token]").unwrap();
         let auth_token_node = doc.select(&sel).next().unwrap();
@@ -128,6 +127,23 @@ impl EventProvider for Redmine {
             .error_for_status()?
             .text()?;
         println!("{}", html);
+        let doc = scraper::Html::parse_document(&html);
+        let day_sel = scraper::Selector::parse("div#content div#activity h3").unwrap();
+        let day_contents_sel =
+            scraper::Selector::parse("div#content div#activity h3 + dl").unwrap();
+        let author_sel = scraper::Selector::parse("span.author a").unwrap();
+        let mut it_day = doc.select(&day_sel);
+        let mut it_contents = doc.select(&day_contents_sel);
+        loop {
+            let day_elt = &it_day.next().unwrap();
+            println!("{}", day_elt.inner_html());
+            let contents_elt = &it_contents.next().unwrap();
+            // didn't find any other way than re-parsing :|
+            let fragment = scraper::Html::parse_fragment(&contents_elt.inner_html());
+            for author_elt in fragment.select(&author_sel) {
+                println!("-> {}", author_elt.inner_html());
+            }
+        }
         Ok(vec![])
     }
 }
