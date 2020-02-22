@@ -1,3 +1,5 @@
+use super::addeventsourcedlg::EventSourceEditModel;
+use super::addeventsourcedlg::Msg as AddEventSourceDialogMsg;
 use super::events::EventView;
 use super::eventsources::EventSources;
 use super::eventsources::Msg as EventSourcesMsg;
@@ -14,6 +16,8 @@ use std::collections::{HashMap, HashSet};
 pub enum Msg {
     Quit,
     AddConfig(&'static str, String, HashMap<&'static str, String>),
+    EditConfig(String, &'static str, String, HashMap<&'static str, String>),
+    EditEventSource(&'static str, String),
     RemoveEventSource(&'static str, String),
 }
 
@@ -39,6 +43,8 @@ impl Widget for Win {
         let event_sources = &self.event_sources;
         relm::connect!(event_sources@EventSourcesMsg::RemoveEventSource(ref providername, ref name),
                                self.model.relm, Msg::RemoveEventSource(providername, name.clone()));
+        relm::connect!(event_sources@EventSourcesMsg::EditEventSource(ref providername, ref name),
+                               self.model.relm, Msg::EditEventSource(providername, name.clone()));
     }
 
     fn model(relm: &relm::Relm<Self>, _: ()) -> Model {
@@ -62,7 +68,7 @@ impl Widget for Win {
             dialog.destroy();
             crate::config::default_config()
         });
-        let titlebar = relm::init::<WinTitleBar>(Win::config_provider_names(&config))
+        let titlebar = relm::init::<WinTitleBar>(Win::config_source_names(&config))
             .expect("win title bar init");
         Model {
             relm: relm.clone(),
@@ -71,7 +77,7 @@ impl Widget for Win {
         }
     }
 
-    fn config_provider_names(config: &Config) -> HashSet<String> {
+    fn config_source_names(config: &Config) -> HashSet<String> {
         crate::events::events::get_event_providers()
             .iter()
             .flat_map(|ep| {
@@ -136,7 +142,7 @@ impl Widget for Win {
             .titlebar
             .stream()
             .emit(WinTitleBarMsg::EventSourceNamesChanged(
-                Win::config_provider_names(&self.model.config),
+                Win::config_source_names(&self.model.config),
             ));
     }
 
@@ -146,6 +152,12 @@ impl Widget for Win {
             Msg::Quit => gtk::main_quit(),
             Msg::AddConfig(providername, name, contents) => {
                 let ep = Win::get_event_provider_by_name(providers, providername);
+                ep.add_config_values(&mut self.model.config, name, contents);
+                self.save_config();
+            }
+            Msg::EditConfig(configname, providername, name, contents) => {
+                let ep = Win::get_event_provider_by_name(providers, providername);
+                ep.remove_config(&mut self.model.config, configname);
                 ep.add_config_values(&mut self.model.config, name, contents);
                 self.save_config();
             }
@@ -172,6 +184,27 @@ impl Widget for Win {
                     let ep = Win::get_event_provider_by_name(providers, ep_name);
                     ep.remove_config(&mut self.model.config, config_name);
                     self.save_config();
+                }
+            }
+            Msg::EditEventSource(ep_name, config_name) => {
+                let config_source_names = Win::config_source_names(&self.model.config);
+                let ep = Win::get_event_provider_by_name(providers, ep_name);
+                let event_source_values = ep.get_config_values(&self.model.config, &config_name);
+                let (dialog, dialog_contents) = WinTitleBar::prepare_addedit_eventsource_dlg(
+                    &self.window,
+                    &config_source_names,
+                    Some(EventSourceEditModel {
+                        event_provider_name: ep_name,
+                        event_source_name: config_name,
+                        event_source_values,
+                    }),
+                );
+                relm::connect!(dialog_contents@AddEventSourceDialogMsg::EditConfig(ref configname, ref providername, ref name, ref cfg),
+                               self.model.relm, Msg::EditConfig(configname.clone(), providername, name.clone(), cfg.clone()));
+                let resp = dialog.run();
+                match resp {
+                    gtk::ResponseType::Cancel | gtk::ResponseType::DeleteEvent => dialog.destroy(),
+                    _ => {}
                 }
             }
         }

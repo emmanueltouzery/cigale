@@ -9,6 +9,7 @@ use relm_derive::{widget, Msg};
 pub enum Msg {
     ConfigUpdate(Config),
     ActionsClicked(gtk::Button, &'static str, String),
+    EditEventSource(&'static str, String),
     RemoveEventSource(&'static str, String),
 }
 
@@ -57,18 +58,31 @@ impl Widget for EventSources {
                     .margin(10)
                     .orientation(gtk::Orientation::Vertical)
                     .build();
+                let edit_btn = gtk::ModelButtonBuilder::new().label("Edit").build();
                 let remove_btn = gtk::ModelButtonBuilder::new().label("Remove").build();
-                // my parent is listening to that removeeventsource event.
+                // my parent is listening to these editeventsource / removeeventsource event.
+                let config_name1 = config_name.clone();
+                relm::connect!(
+                    self.model.relm,
+                    &edit_btn,
+                    connect_clicked(_),
+                    // TODO i'd need the connect! macro to do a "move ||" to avoid the clone
+                    Msg::EditEventSource(ep_name, config_name1.clone())
+                );
                 relm::connect!(
                     self.model.relm,
                     &remove_btn,
                     connect_clicked(_),
                     Msg::RemoveEventSource(ep_name, config_name.clone())
                 );
+                vbox.add(&edit_btn);
                 vbox.add(&remove_btn);
                 popover.add(&vbox);
                 vbox.show_all();
                 popover.popup();
+            }
+            Msg::EditEventSource(_, _) => {
+                // that's meant only for my parent, not for me.
             }
             Msg::RemoveEventSource(_, _) => {
                 // that's meant only for my parent, not for me.

@@ -1,4 +1,4 @@
-use crate::events::events::ConfigType;
+use crate::events::events::{get_event_providers, ConfigType, EventProvider};
 use gtk::prelude::*;
 use relm::{ContainerWidget, Widget};
 use relm_derive::{widget, Msg};
@@ -45,39 +45,57 @@ impl Widget for ProviderItem {
     }
 }
 
-/// window
+/// dialog
 
 #[derive(Msg, Debug)]
 pub enum Msg {
     Next,
+    EditSave,
     AddConfig(&'static str, String, HashMap<&'static str, String>),
-    ProviderNameChanged,
+    EditConfig(String, &'static str, String, HashMap<&'static str, String>),
+    SourceNameChanged,
 }
 
 pub struct Model {
     relm: relm::Relm<AddEventSourceDialog>,
     entry_components: Option<HashMap<&'static str, gtk::Widget>>,
-    existing_provider_names: HashSet<String>,
+    existing_source_names: HashSet<String>,
     next_btn: gtk::Button,
     dialog: gtk::Dialog,
+    edit_model: Option<EventSourceEditModel>,
+}
+
+#[derive(Clone)]
+pub struct EventSourceEditModel {
+    pub event_provider_name: &'static str,
+    pub event_source_name: String,
+    pub event_source_values: HashMap<&'static str, String>,
 }
 
 pub struct AddEventSourceDialogParams {
-    pub existing_provider_names: HashSet<String>,
+    pub existing_source_names: HashSet<String>,
     pub next_btn: gtk::Button,
     pub dialog: gtk::Dialog,
+    pub edit_model: Option<EventSourceEditModel>,
 }
 
 #[widget]
 impl Widget for AddEventSourceDialog {
     fn init_view(&mut self) {
+        match self.model.edit_model {
+            None => self.init_add(),
+            _ => self.init_edit(),
+        }
+    }
+
+    fn init_add(&mut self) {
         relm::connect!(
             self.model.relm,
             &self.model.next_btn,
             connect_clicked(_),
             Msg::Next
         );
-        for provider in crate::events::events::get_event_providers() {
+        for provider in get_event_providers() {
             let _child = self
                 .provider_list
                 .add_widget::<ProviderItem>(ProviderItemModel {
@@ -94,13 +112,37 @@ impl Widget for AddEventSourceDialog {
         ));
     }
 
+    fn init_edit(&mut self) {
+        // i'd rather be given the unwrapped model by the caller,
+        // but rustc bugs me about multiple borrows of self.
+        let edit_model = self.model.edit_model.clone().unwrap(); // annoying to clone
+        relm::connect!(
+            self.model.relm,
+            &self.model.next_btn,
+            connect_clicked(_),
+            Msg::EditSave
+        );
+        let ep = get_event_providers()
+            .into_iter()
+            .find(|ep| ep.name() == edit_model.event_provider_name)
+            .unwrap();
+        self.populate_second_step(
+            ep.as_ref(),
+            &edit_model.event_source_name,
+            &edit_model.event_source_values,
+        );
+        self.wizard_stack.set_visible_child_name("step2");
+        self.model.next_btn.set_label("Save");
+    }
+
     fn model(relm: &relm::Relm<Self>, dialog_params: AddEventSourceDialogParams) -> Model {
         Model {
             relm: relm.clone(),
             entry_components: None,
-            existing_provider_names: dialog_params.existing_provider_names,
+            existing_source_names: dialog_params.existing_source_names,
             next_btn: dialog_params.next_btn,
             dialog: dialog_params.dialog,
+            edit_model: dialog_params.edit_model,
         }
     }
 
@@ -118,26 +160,30 @@ impl Widget for AddEventSourceDialog {
         }
     }
 
+    fn get_entry_values(&self) -> HashMap<&'static str, String> {
+        self.model
+            .entry_components
+            .as_ref()
+            .unwrap()
+            .iter()
+            .map(|(k, v)| (*k, AddEventSourceDialog::get_entry_val(v)))
+            .collect()
+    }
+
     fn update(&mut self, msg: Msg) {
         match msg {
             Msg::Next => {
                 if self.model.entry_components.is_none() {
                     // we're at the first step: display the second step
-                    self.populate_second_step();
+                    let provider = &crate::events::events::get_event_providers()
+                        [self.get_provider_index_if_step2()];
+                    self.populate_second_step(provider.as_ref(), &"".to_string(), &HashMap::new());
                     self.wizard_stack.set_visible_child_name("step2");
 
                     self.model.next_btn.set_label("Add");
                     self.model.next_btn.set_sensitive(false); // must enter an event source name
                 } else {
                     // we're at the second step: add the event source
-                    let entry_values = self
-                        .model
-                        .entry_components
-                        .as_ref()
-                        .unwrap()
-                        .iter()
-                        .map(|(k, v)| (*k, AddEventSourceDialog::get_entry_val(v)))
-                        .collect();
                     let ep = &crate::events::events::get_event_providers()
                         [self.get_provider_index_if_step2()];
                     self.model.relm.stream().emit(Msg::AddConfig(
@@ -146,19 +192,44 @@ impl Widget for AddEventSourceDialog {
                             .get_text()
                             .map(|t| t.to_string())
                             .unwrap_or("".to_string()),
-                        entry_values,
+                        self.get_entry_values(),
                     ));
                     self.model.dialog.emit_close();
                 }
             }
-            Msg::ProviderNameChanged => {
+            Msg::EditSave => {
+                self.model.relm.stream().emit(Msg::EditConfig(
+                    self.model
+                        .edit_model
+                        .as_ref()
+                        .unwrap()
+                        .event_source_name
+                        .clone(),
+                    self.model
+                        .edit_model
+                        .as_ref()
+                        .unwrap()
+                        .event_provider_name
+                        .clone(),
+                    self.provider_name_entry
+                        .get_text()
+                        .map(|t| t.to_string())
+                        .unwrap_or("".to_string()),
+                    self.get_entry_values(),
+                ));
+                self.model.dialog.emit_close();
+            }
+            Msg::SourceNameChanged => {
                 let txt = self.provider_name_entry.get_text();
-                let provider_name = txt.as_ref().map(|t| t.as_str()).unwrap_or("");
-                let form_is_valid = provider_name.len() > 0
-                    && !self.model.existing_provider_names.contains(provider_name);
+                let source_name = txt.as_ref().map(|t| t.as_str()).unwrap_or("");
+                let form_is_valid = source_name.len() > 0
+                    && !self.model.existing_source_names.contains(source_name);
                 self.model.next_btn.set_sensitive(form_is_valid);
             }
             Msg::AddConfig(_, _, _) => {
+                // this is meant for wintitlebar... we emit here, not interested by it ourselves
+            }
+            Msg::EditConfig(_, _, _, _) => {
                 // this is meant for wintitlebar... we emit here, not interested by it ourselves
             }
         }
@@ -171,9 +242,13 @@ impl Widget for AddEventSourceDialog {
             .unwrap()
     }
 
-    fn populate_second_step(&mut self) {
-        let provider =
-            &crate::events::events::get_event_providers()[self.get_provider_index_if_step2()];
+    fn populate_second_step(
+        &mut self,
+        provider: &dyn EventProvider,
+        event_source_name: &String,
+        event_source_values: &HashMap<&'static str, String>,
+    ) {
+        self.provider_name_entry.set_text(event_source_name);
         self.config_fields_grid.attach(
             &gtk::Image::new_from_pixbuf(Some(&crate::icons::fontawesome_image(
                 provider.default_icon(),
@@ -195,10 +270,25 @@ impl Widget for AddEventSourceDialog {
                 1,
             );
             let entry_widget = &match field.1 {
-                ConfigType::Text => gtk::Entry::new().upcast::<gtk::Widget>(),
+                ConfigType::Text => gtk::EntryBuilder::new()
+                    .text(
+                        event_source_values
+                            .get(field.0)
+                            .unwrap_or(&"".to_string())
+                            .as_ref(),
+                    )
+                    .build()
+                    .upcast::<gtk::Widget>(),
                 ConfigType::Path => {
-                    gtk::FileChooserButton::new("Pick file", gtk::FileChooserAction::Open)
-                        .upcast::<gtk::Widget>()
+                    let btn =
+                        gtk::FileChooserButton::new("Pick file", gtk::FileChooserAction::Open);
+                    match event_source_values.get(field.0) {
+                        Some(u) => {
+                            btn.set_filename(u);
+                        }
+                        _ => {}
+                    };
+                    btn.upcast::<gtk::Widget>()
                 }
             };
             entry_components.insert(field.0, entry_widget.clone());
@@ -245,7 +335,7 @@ impl Widget for AddEventSourceDialog {
                         width: 1,
                         height: 1
                     },
-                    changed() => Msg::ProviderNameChanged
+                    changed() => Msg::SourceNameChanged
                 }
             }
         },
