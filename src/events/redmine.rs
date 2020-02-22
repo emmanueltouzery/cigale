@@ -132,14 +132,35 @@ impl EventProvider for Redmine {
         let day_contents_sel =
             scraper::Selector::parse("div#content div#activity h3 + dl").unwrap();
         let author_sel = scraper::Selector::parse("span.author a").unwrap();
+        let description_sel = scraper::Selector::parse("span.description").unwrap();
+        let link_sel = scraper::Selector::parse("dt.icon a").unwrap();
         let mut it_day = doc.select(&day_sel);
         let mut it_contents = doc.select(&day_contents_sel);
-        loop {
-            let day_elt = &it_day.next().unwrap();
-            println!("{}", day_elt.inner_html());
-            let contents_elt = &it_contents.next().unwrap();
-            for author_elt in contents_elt.select(&author_sel) {
-                println!("-> {}", author_elt.inner_html());
+        let mut page_has_data = true;
+        while page_has_data {
+            let next_day = it_day.next();
+            page_has_data = next_day.is_some();
+            if page_has_data {
+                let day_elt = &next_day.unwrap();
+                println!("{}", day_elt.inner_html());
+                let contents_elt = &it_contents.next().unwrap();
+
+                let mut it_authors = contents_elt.select(&author_sel);
+                let mut it_descriptions = contents_elt.select(&description_sel);
+                let mut it_links = contents_elt.select(&link_sel);
+                let mut day_has_data = true;
+                while day_has_data {
+                    let next_auth = it_authors.next();
+                    day_has_data = next_auth.is_some();
+                    if day_has_data {
+                        let author_elt = &next_auth.unwrap();
+                        println!("-> {}", author_elt.inner_html());
+                        let description_elt = &it_descriptions.next().unwrap();
+                        println!("--> {}", description_elt.inner_html());
+                        let link_elt = &it_links.next().unwrap();
+                        println!("--> {}", link_elt.inner_html());
+                    }
+                }
             }
         }
         Ok(vec![])
