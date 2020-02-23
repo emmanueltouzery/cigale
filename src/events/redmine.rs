@@ -148,6 +148,7 @@ impl EventProvider for Redmine {
         let author_sel = scraper::Selector::parse("span.author a").unwrap();
         let description_sel = scraper::Selector::parse("span.description").unwrap();
         let link_sel = scraper::Selector::parse("dt.icon a").unwrap();
+        let time_sel = scraper::Selector::parse("span.time").unwrap();
         let mut it_day = doc.select(&day_sel);
         let mut it_contents = doc.select(&day_contents_sel);
         let mut page_has_data = true;
@@ -162,6 +163,7 @@ impl EventProvider for Redmine {
                 let mut it_authors = contents_elt.select(&author_sel);
                 let mut it_descriptions = contents_elt.select(&description_sel);
                 let mut it_links = contents_elt.select(&link_sel);
+                let mut it_times = contents_elt.select(&time_sel);
                 let mut day_has_data = true;
                 while day_has_data {
                     let next_auth = it_authors.next();
@@ -169,6 +171,8 @@ impl EventProvider for Redmine {
                     if day_has_data {
                         let author_elt = &next_auth.unwrap();
                         println!("-> {}", author_elt.inner_html());
+                        let time_elt = &it_times.next().unwrap();
+                        println!("--> {}", time_elt.inner_html());
                         let description_elt = &it_descriptions.next().unwrap();
                         println!("--> {}", description_elt.inner_html());
                         let link_elt = &it_links.next().unwrap();
