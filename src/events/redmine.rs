@@ -24,6 +24,15 @@ const SERVER_URL_KEY: &'static str = "Server URL";
 const USERNAME_KEY: &'static str = "Username";
 const PASSWORD_KEY: &'static str = "Password";
 
+// have a look at implementing Try here
+// once try_trait stabilizes https://github.com/rust-lang/rust/issues/42327
+// would allow to use ? a little more through this file
+enum ActivityParseResult {
+    Ok(Vec<Event>),
+    Err(Box<dyn std::error::Error>),
+    ReachedEndOfPage(Option<String>), // link to the previous page or None if no previous
+}
+
 impl Redmine {
     fn parse_date(date_str: &str) -> Result<Date<Local>> {
         if date_str == "Today" {
@@ -74,7 +83,7 @@ impl Redmine {
         Ok(result)
     }
 
-    fn fetch_activity_html(redmine_config: &RedmineConfig) -> Result<String> {
+    fn init_client(redmine_config: &RedmineConfig) -> Result<(reqwest::blocking::Client, String)> {
         let client = reqwest::blocking::ClientBuilder::new()
             .cookie_store(true)
             .timeout(Duration::from_secs(30))
@@ -116,6 +125,13 @@ impl Redmine {
             .attr("href")
             .unwrap()
             .replace("/users/", "");
+        Ok((client, user_id))
+    }
+
+    fn fetch_activity_html(
+        redmine_config: &RedmineConfig,
+    ) -> Result<(reqwest::blocking::Client, String)> {
+        let (client, user_id) = Self::init_client(redmine_config)?;
 
         let html = client
             .get(&format!(
@@ -127,7 +143,79 @@ impl Redmine {
             .text()?;
         let mut file = File::create(Config::get_cache_path(REDMINE_CACHE_FNAME)?)?;
         file.write_all(html.as_bytes())?;
-        Ok(html)
+        Ok((client, html))
+    }
+
+    fn parse_html(
+        redmine_config: &RedmineConfig,
+        day: &Date<Local>,
+        activity_html: &str,
+    ) -> ActivityParseResult {
+        let doc = scraper::Html::parse_document(&activity_html);
+        let day_sel = scraper::Selector::parse("div#content div#activity h3").unwrap();
+        let day_contents_sel =
+            scraper::Selector::parse("div#content div#activity h3 + dl").unwrap();
+        let mut it_day = doc.select(&day_sel);
+        let mut it_contents = doc.select(&day_contents_sel);
+        loop {
+            let next_day = it_day.next();
+            let contents = it_contents.next();
+            match (next_day, contents) {
+                (Some(day_elt), Some(contents_elt)) => {
+                    // try_trait could maybe enable us to use the ? operator here
+                    match Self::parse_date(&day_elt.inner_html()) {
+                        Err(e) => return ActivityParseResult::Err(e),
+                        Ok(cur_date) => {
+                            if cur_date < *day {
+                                // passed the day, won't be any events this time.
+                                return ActivityParseResult::Ok(vec![]);
+                            }
+                            if cur_date == *day {
+                                return match Self::parse_events(&contents_elt) {
+                                    Err(e) => ActivityParseResult::Err(e),
+                                    Ok(v) => ActivityParseResult::Ok(v),
+                                };
+                            }
+                        }
+                    }
+                }
+                _ => {
+                    break;
+                }
+            }
+        }
+        // no matches in this page, search for the 'previous' paging link
+        let previous_sel = scraper::Selector::parse("li.previous.page a").unwrap();
+        let previous_url = doc
+            .select(&previous_sel)
+            .next()
+            .and_then(|p| p.value().attr("href"));
+        ActivityParseResult::ReachedEndOfPage(
+            previous_url.map(|s| redmine_config.server_url.clone() + s),
+        )
+    }
+
+    fn get_events_with_paging(
+        day: &Date<Local>,
+        activity_html: String,
+        redmine_config: &RedmineConfig,
+        client_opt: Option<reqwest::blocking::Client>,
+    ) -> Result<Vec<Event>> {
+        match Self::parse_html(redmine_config, day, &activity_html) {
+            ActivityParseResult::Ok(events) => return Ok(events),
+            ActivityParseResult::Err(e) => return Err(e),
+            ActivityParseResult::ReachedEndOfPage(None) => return Ok(vec![]),
+            ActivityParseResult::ReachedEndOfPage(Some(new_url)) => {
+                // recursively check for the previous page
+                let client = match client_opt {
+                    Some(c) => c,
+                    None => Self::init_client(redmine_config)?.0,
+                };
+                println!("Fetching {}", new_url);
+                let html = client.get(&new_url).send()?.error_for_status()?.text()?;
+                Self::get_events_with_paging(day, html, redmine_config, Some(client))
+            }
+        }
     }
 }
 
@@ -202,34 +290,11 @@ impl EventProvider for Redmine {
         let redmine_config = &config.redmine[config_name];
         let day_start = day.and_hms(0, 0, 0);
         let next_day_start = day_start + chrono::Duration::days(1);
-        let activity_html = match Config::get_cached_file(REDMINE_CACHE_FNAME, &next_day_start)? {
-            Some(t) => Ok(t),
-            None => Self::fetch_activity_html(&redmine_config),
-        }?;
-        let doc = scraper::Html::parse_document(&activity_html);
-        let day_sel = scraper::Selector::parse("div#content div#activity h3").unwrap();
-        let day_contents_sel =
-            scraper::Selector::parse("div#content div#activity h3 + dl").unwrap();
-        let mut it_day = doc.select(&day_sel);
-        let mut it_contents = doc.select(&day_contents_sel);
-        let mut page_has_data = true;
-        while page_has_data {
-            let next_day = it_day.next();
-            let contents = it_contents.next();
-            page_has_data = next_day.is_some();
-            if page_has_data {
-                let day_elt = &next_day.unwrap();
-                let cur_date = Self::parse_date(&day_elt.inner_html())?;
-                if cur_date < *day {
-                    // passed the day, won't be any events this time.
-                    return Ok(vec![]);
-                }
-                if cur_date == *day {
-                    let contents_elt = &contents.unwrap();
-                    return Self::parse_events(&contents_elt);
-                }
-            }
-        }
-        Ok(vec![])
+        let (client, activity_html) =
+            match Config::get_cached_file(REDMINE_CACHE_FNAME, &next_day_start)? {
+                Some(t) => Ok((None, t)),
+                None => Self::fetch_activity_html(&redmine_config).map(|(a, b)| (Some(a), b)),
+            }?;
+        Self::get_events_with_paging(day, activity_html, redmine_config, client)
     }
 }
