@@ -7,6 +7,10 @@ use crate::config::Config;
 use chrono::prelude::*;
 use core::time::Duration;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::Write;
+
+const REDMINE_CACHE_FNAME: &'static str = "redmine-cache.html";
 
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Clone, Debug)]
 pub struct RedmineConfig {
@@ -71,6 +75,62 @@ impl Redmine {
             }
         }
         Ok(result)
+    }
+
+    fn fetch_activity_html(redmine_config: &RedmineConfig) -> Result<String> {
+        let client = reqwest::blocking::ClientBuilder::new()
+            .cookie_store(true)
+            .timeout(Duration::from_secs(30))
+            .connect_timeout(Duration::from_secs(30))
+            .connection_verbose(true)
+            .build()
+            .unwrap();
+
+        let html = client
+            .get(&format!("{}", redmine_config.server_url))
+            .send()?
+            .error_for_status()?
+            .text()?;
+        let doc = scraper::Html::parse_document(&html);
+        let sel = scraper::Selector::parse("input[name=authenticity_token]").unwrap();
+        let auth_token_node = doc.select(&sel).next().unwrap();
+        let auth_token = auth_token_node.value().attr("value").unwrap();
+
+        let html = client
+            .post(&format!("{}/login", redmine_config.server_url))
+            .form(&[
+                ("username", &redmine_config.username),
+                ("password", &redmine_config.password),
+                ("login", &"Login".to_string()),
+                ("utf8", &"✓".to_string()),
+                ("back_url", &redmine_config.server_url),
+                ("authenticity_token", &auth_token.to_string()),
+            ])
+            .send()?
+            .error_for_status()?
+            .text()?;
+        let doc = scraper::Html::parse_document(&html);
+        let user_sel = scraper::Selector::parse("a.user.active").unwrap();
+        let user_id = doc
+            .select(&user_sel)
+            .next()
+            .unwrap()
+            .value()
+            .attr("href")
+            .unwrap()
+            .replace("/users/", "");
+
+        let html = client
+            .get(&format!(
+                "{}/activity?user_id={}",
+                redmine_config.server_url, user_id
+            ))
+            .send()?
+            .error_for_status()?
+            .text()?;
+        let mut file = File::create(Config::get_cache_path(REDMINE_CACHE_FNAME)?)?;
+        file.write_all(html.as_bytes())?;
+        Ok(html)
     }
 }
 
@@ -143,57 +203,13 @@ impl EventProvider for Redmine {
         day: &Date<Local>,
     ) -> Result<Vec<Event>> {
         let redmine_config = &config.redmine[config_name];
-        let client = reqwest::blocking::ClientBuilder::new()
-            .cookie_store(true)
-            .timeout(Duration::from_secs(30))
-            .connect_timeout(Duration::from_secs(30))
-            .connection_verbose(true)
-            .build()
-            .unwrap();
-
-        let html = client
-            .get(&format!("{}", redmine_config.server_url))
-            .send()?
-            .error_for_status()?
-            .text()?;
-        let doc = scraper::Html::parse_document(&html);
-        let sel = scraper::Selector::parse("input[name=authenticity_token]").unwrap();
-        let auth_token_node = doc.select(&sel).next().unwrap();
-        let auth_token = auth_token_node.value().attr("value").unwrap();
-
-        let html = client
-            .post(&format!("{}/login", redmine_config.server_url))
-            .form(&[
-                ("username", &redmine_config.username),
-                ("password", &redmine_config.password),
-                ("login", &"Login".to_string()),
-                ("utf8", &"✓".to_string()),
-                ("back_url", &redmine_config.server_url),
-                ("authenticity_token", &auth_token.to_string()),
-            ])
-            .send()?
-            .error_for_status()?
-            .text()?;
-        let doc = scraper::Html::parse_document(&html);
-        let user_sel = scraper::Selector::parse("a.user.active").unwrap();
-        let user_id = doc
-            .select(&user_sel)
-            .next()
-            .unwrap()
-            .value()
-            .attr("href")
-            .unwrap()
-            .replace("/users/", "");
-
-        let html = client
-            .get(&format!(
-                "{}/activity?user_id={}",
-                redmine_config.server_url, user_id
-            ))
-            .send()?
-            .error_for_status()?
-            .text()?;
-        let doc = scraper::Html::parse_document(&html);
+        let day_start = day.and_hms(0, 0, 0);
+        let next_day_start = day_start + chrono::Duration::days(1);
+        let activity_html = match Config::get_cached_file(REDMINE_CACHE_FNAME, &next_day_start)? {
+            Some(t) => Ok(t),
+            None => Self::fetch_activity_html(&redmine_config),
+        }?;
+        let doc = scraper::Html::parse_document(&activity_html);
         let day_sel = scraper::Selector::parse("div#content div#activity h3").unwrap();
         let day_contents_sel =
             scraper::Selector::parse("div#content div#activity h3 + dl").unwrap();
