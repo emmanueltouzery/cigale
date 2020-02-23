@@ -2,7 +2,7 @@
 // 1. unless the redmine admin greenlights it, a user may be unable to get an apikey
 // 2. the redmine rest api doesn't offer an activity API https://www.redmine.org/issues/14872
 //    without such an API, this would be very painful and very slow
-use super::events::{ConfigType, Event, EventProvider, Result};
+use super::events::{ConfigType, Event, EventBody, EventProvider, Result};
 use crate::config::Config;
 use chrono::prelude::*;
 use core::time::Duration;
@@ -19,6 +19,64 @@ pub struct Redmine;
 const SERVER_URL_KEY: &'static str = "Server URL";
 const USERNAME_KEY: &'static str = "Username";
 const PASSWORD_KEY: &'static str = "Password";
+
+impl Redmine {
+    fn parse_date(date_str: &str) -> Result<Date<Local>> {
+        if date_str == "Today" {
+            Ok(Local::today())
+        } else {
+            let naive = NaiveDate::parse_from_str(date_str, "%m/%d/%Y")?;
+            let local = Local
+                .from_local_date(&naive)
+                .single()
+                .ok_or(format!("Can't convert {} to local time", naive))?;
+            Ok(local)
+        }
+    }
+
+    fn parse_time(time_str: &str) -> Result<NaiveTime> {
+        Ok(NaiveTime::parse_from_str(&time_str, "%I:%M %p")?)
+    }
+
+    fn parse_events<'a>(contents_elt: &scraper::element_ref::ElementRef<'a>) -> Result<Vec<Event>> {
+        let author_sel = scraper::Selector::parse("span.author a").unwrap();
+        let description_sel = scraper::Selector::parse("span.description").unwrap();
+        let link_sel = scraper::Selector::parse("dt.icon a").unwrap();
+        let time_sel = scraper::Selector::parse("span.time").unwrap();
+        let mut it_authors = contents_elt.select(&author_sel);
+        let mut it_descriptions = contents_elt.select(&description_sel);
+        let mut it_links = contents_elt.select(&link_sel);
+        let mut it_times = contents_elt.select(&time_sel);
+        let mut day_has_data = true;
+        let mut result = vec![];
+        while day_has_data {
+            let next_auth = it_authors.next();
+            day_has_data = next_auth.is_some();
+            if day_has_data {
+                let author_elt = &next_auth.unwrap();
+                println!("-> {}", author_elt.inner_html());
+                let time_elt = &it_times.next().unwrap();
+                let time_str = time_elt.inner_html();
+                let time = Self::parse_time(&time_str)?;
+                println!("--> {}", time);
+                let description_elt = &it_descriptions.next().unwrap();
+                println!("--> {}", description_elt.inner_html());
+                let link_elt = &it_links.next().unwrap();
+                println!("--> {}", link_elt.inner_html());
+                result.push(Event::new(
+                    "Redmine",
+                    "tasks",
+                    time,
+                    link_elt.inner_html(),
+                    link_elt.inner_html(),
+                    EventBody::PlainText(description_elt.inner_html()),
+                    None,
+                ));
+            }
+        }
+        Ok(result)
+    }
+}
 
 impl EventProvider for Redmine {
     fn name(&self) -> &'static str {
@@ -145,39 +203,24 @@ impl EventProvider for Redmine {
         let day_sel = scraper::Selector::parse("div#content div#activity h3").unwrap();
         let day_contents_sel =
             scraper::Selector::parse("div#content div#activity h3 + dl").unwrap();
-        let author_sel = scraper::Selector::parse("span.author a").unwrap();
-        let description_sel = scraper::Selector::parse("span.description").unwrap();
-        let link_sel = scraper::Selector::parse("dt.icon a").unwrap();
-        let time_sel = scraper::Selector::parse("span.time").unwrap();
         let mut it_day = doc.select(&day_sel);
         let mut it_contents = doc.select(&day_contents_sel);
         let mut page_has_data = true;
         while page_has_data {
             let next_day = it_day.next();
+            let contents = it_contents.next();
             page_has_data = next_day.is_some();
             if page_has_data {
                 let day_elt = &next_day.unwrap();
                 println!("{}", day_elt.inner_html());
-                let contents_elt = &it_contents.next().unwrap();
-
-                let mut it_authors = contents_elt.select(&author_sel);
-                let mut it_descriptions = contents_elt.select(&description_sel);
-                let mut it_links = contents_elt.select(&link_sel);
-                let mut it_times = contents_elt.select(&time_sel);
-                let mut day_has_data = true;
-                while day_has_data {
-                    let next_auth = it_authors.next();
-                    day_has_data = next_auth.is_some();
-                    if day_has_data {
-                        let author_elt = &next_auth.unwrap();
-                        println!("-> {}", author_elt.inner_html());
-                        let time_elt = &it_times.next().unwrap();
-                        println!("--> {}", time_elt.inner_html());
-                        let description_elt = &it_descriptions.next().unwrap();
-                        println!("--> {}", description_elt.inner_html());
-                        let link_elt = &it_links.next().unwrap();
-                        println!("--> {}", link_elt.inner_html());
-                    }
+                let cur_date = Self::parse_date(&day_elt.inner_html())?;
+                if cur_date < *day {
+                    // passed the day, won't be any events this time.
+                    return Ok(vec![]);
+                }
+                if cur_date == *day {
+                    let contents_elt = &contents.unwrap();
+                    return Self::parse_events(&contents_elt);
                 }
             }
         }
