@@ -236,7 +236,7 @@ impl EventProvider for Redmine {
         vec![
             (SERVER_URL_KEY, ConfigType::Text),
             (USERNAME_KEY, ConfigType::Text),
-            (PASSWORD_KEY, ConfigType::Text), // TODO should be config type=password!
+            (PASSWORD_KEY, ConfigType::Password),
         ]
     }
 

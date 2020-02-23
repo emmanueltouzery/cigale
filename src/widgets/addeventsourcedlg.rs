@@ -290,6 +290,16 @@ impl Widget for AddEventSourceDialog {
                     };
                     btn.upcast::<gtk::Widget>()
                 }
+                ConfigType::Password => gtk::EntryBuilder::new()
+                    .text(
+                        event_source_values
+                            .get(field.0)
+                            .unwrap_or(&"".to_string())
+                            .as_ref(),
+                    )
+                    .visibility(false) // password field
+                    .build()
+                    .upcast::<gtk::Widget>(),
             };
             entry_components.insert(field.0, entry_widget.clone());
             self.config_fields_grid.attach(entry_widget, 2, i, 1, 1);

@@ -1,3 +1,4 @@
+use crate::events::events::{get_event_providers, ConfigType};
 use gtk::prelude::*;
 use relm::Widget;
 use relm_derive::{widget, Msg};
@@ -29,15 +30,29 @@ impl Widget for EventSourceListItem {
         self.event_source_actions_btn
             .get_style_context()
             .remove_class("image-button");
+        let ep = get_event_providers()
+            .into_iter()
+            .find(|ep| ep.name() == self.model.list_item_info.event_provider_name)
+            .unwrap();
         let mut i = 1;
         for kv in &self.model.list_item_info.event_source {
+            let field_type = ep
+                .get_config_fields()
+                .iter()
+                .find(|(fname, _)| fname == kv.0)
+                .unwrap()
+                .1;
             let desc = gtk::LabelBuilder::new().label(kv.0).xalign(0.0).build();
             desc.get_style_context()
                 .add_class("event_source_config_label");
             self.items_box.attach(&desc, 0, i, 1, 1);
             self.items_box.attach(
                 &gtk::LabelBuilder::new()
-                    .label(kv.1)
+                    .label(if field_type == ConfigType::Password {
+                        "●●●●●"
+                    } else {
+                        kv.1
+                    })
                     .ellipsize(pango::EllipsizeMode::End)
                     .xalign(0.0)
                     .build(),

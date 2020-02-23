@@ -7,8 +7,10 @@ use chrono::prelude::*;
 use std::collections::HashMap;
 use std::error::Error;
 
+#[derive(PartialEq, Copy, Clone)]
 pub enum ConfigType {
     Text,
+    Password,
     Path,
 }
 
