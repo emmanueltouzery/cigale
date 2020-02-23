@@ -43,22 +43,19 @@ impl Redmine {
     }
 
     fn parse_events<'a>(contents_elt: &scraper::element_ref::ElementRef<'a>) -> Result<Vec<Event>> {
-        let author_sel = scraper::Selector::parse("span.author a").unwrap();
         let description_sel = scraper::Selector::parse("span.description").unwrap();
         let link_sel = scraper::Selector::parse("dt.icon a").unwrap();
         let time_sel = scraper::Selector::parse("span.time").unwrap();
-        let mut it_authors = contents_elt.select(&author_sel);
         let mut it_descriptions = contents_elt.select(&description_sel);
         let mut it_links = contents_elt.select(&link_sel);
         let mut it_times = contents_elt.select(&time_sel);
         let mut day_has_data = true;
         let mut result = vec![];
         while day_has_data {
-            let next_auth = it_authors.next();
-            day_has_data = next_auth.is_some();
+            let next_time = it_times.next();
+            day_has_data = next_time.is_some();
             if day_has_data {
-                let author_elt = &next_auth.unwrap();
-                let time_elt = &it_times.next().unwrap();
+                let time_elt = &next_time.unwrap();
                 let time_str = time_elt.inner_html();
                 let time = Self::parse_time(&time_str)?;
                 let description_elt = &it_descriptions.next().unwrap();
