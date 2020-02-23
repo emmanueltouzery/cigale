@@ -187,7 +187,8 @@ impl Widget for Win {
                 }
             }
             Msg::EditEventSource(ep_name, config_name) => {
-                let config_source_names = Win::config_source_names(&self.model.config);
+                let mut config_source_names = Win::config_source_names(&self.model.config);
+                config_source_names.remove(&config_name); // allow to use the current config name in the edit dialog
                 let ep = Win::get_event_provider_by_name(providers, ep_name);
                 let event_source_values = ep.get_config_values(&self.model.config, &config_name);
                 let (dialog, dialog_contents) = WinTitleBar::prepare_addedit_eventsource_dlg(
