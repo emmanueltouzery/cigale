@@ -1,11 +1,13 @@
 use super::events::{ConfigType, Event, EventBody, EventProvider, Result};
 use crate::config::Config;
 use chrono::prelude::*;
+use core::time::Duration;
 use ical::parser::ical::component::IcalEvent;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{Read, Write};
-use std::path::PathBuf;
+use std::io::Write;
+
+const ICAL_CACHE_FNAME: &'static str = "ical-cache.ical";
 
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Clone, Debug)]
 pub struct IcalConfig {
@@ -43,34 +45,16 @@ impl Ical {
             })
     }
 
-    fn get_cache_path() -> Result<PathBuf> {
-        let config_folder = crate::config::config_folder()?;
-        Ok(config_folder.join("ical-cache.ical"))
-    }
-
-    fn get_cached_ical(date: &DateTime<Local>) -> Result<Option<String>> {
-        let cache_file = Ical::get_cache_path()?;
-        if !cache_file.exists() {
-            return Ok(None);
-        }
-        let metadata = std::fs::metadata(&cache_file)?;
-        if DateTime::from(metadata.modified()?) >= *date {
-            let mut contents = String::new();
-            File::open(cache_file)?.read_to_string(&mut contents)?;
-            Ok(Some(contents))
-        } else {
-            println!("ical cache too old, refetching");
-            Ok(None)
-        }
-    }
-
     fn fetch_ical(ical_url: &String) -> Result<String> {
-        let r = minreq::get(ical_url)
-            .with_timeout(30)
+        let r = reqwest::blocking::ClientBuilder::new()
+            .timeout(Duration::from_secs(30))
+            .connect_timeout(Duration::from_secs(30))
+            .build()?
+            .get(ical_url)
             .send()?
-            .as_str()?
-            .to_string();
-        let mut file = File::create(Ical::get_cache_path()?)?;
+            .error_for_status()?
+            .text()?;
+        let mut file = File::create(Config::get_cache_path(ICAL_CACHE_FNAME)?)?;
         file.write_all(r.as_bytes())?;
         Ok(r)
     }
@@ -185,7 +169,7 @@ impl EventProvider for Ical {
         let ical_config = &config.ical[config_name];
         let day_start = day.and_hms(0, 0, 0);
         let next_day_start = day_start + chrono::Duration::days(1);
-        let ical_text = match Ical::get_cached_ical(&next_day_start)? {
+        let ical_text = match Config::get_cached_file(ICAL_CACHE_FNAME, &next_day_start)? {
             Some(t) => Ok(t),
             None => Ical::fetch_ical(&ical_config.ical_url),
         }?;

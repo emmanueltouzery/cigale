@@ -54,15 +54,11 @@ impl Redmine {
             day_has_data = next_auth.is_some();
             if day_has_data {
                 let author_elt = &next_auth.unwrap();
-                println!("-> {}", author_elt.inner_html());
                 let time_elt = &it_times.next().unwrap();
                 let time_str = time_elt.inner_html();
                 let time = Self::parse_time(&time_str)?;
-                println!("--> {}", time);
                 let description_elt = &it_descriptions.next().unwrap();
-                println!("--> {}", description_elt.inner_html());
                 let link_elt = &it_links.next().unwrap();
-                println!("--> {}", link_elt.inner_html());
                 result.push(Event::new(
                     "Redmine",
                     "tasks",
@@ -188,7 +184,6 @@ impl EventProvider for Redmine {
             .attr("href")
             .unwrap()
             .replace("/users/", "");
-        println!("user id: {}", user_id);
 
         let html = client
             .get(&format!(
@@ -198,7 +193,6 @@ impl EventProvider for Redmine {
             .send()?
             .error_for_status()?
             .text()?;
-        println!("{}", html);
         let doc = scraper::Html::parse_document(&html);
         let day_sel = scraper::Selector::parse("div#content div#activity h3").unwrap();
         let day_contents_sel =
@@ -212,7 +206,6 @@ impl EventProvider for Redmine {
             page_has_data = next_day.is_some();
             if page_has_data {
                 let day_elt = &next_day.unwrap();
-                println!("{}", day_elt.inner_html());
                 let cur_date = Self::parse_date(&day_elt.inner_html())?;
                 if cur_date < *day {
                     // passed the day, won't be any events this time.

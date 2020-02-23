@@ -58,7 +58,7 @@ impl Widget for Win {
     }
 
     fn model(relm: &relm::Relm<Self>, _: ()) -> Model {
-        let config = crate::config::read_config().unwrap_or_else(|e| {
+        let config = Config::read_config().unwrap_or_else(|e| {
             let dialog = gtk::MessageDialog::new(
                 None::<&gtk::Window>,
                 gtk::DialogFlags::all(),
@@ -68,7 +68,7 @@ impl Widget for Win {
             );
             dialog.set_property_secondary_text(Some(&format!(
                 "{}: {:}",
-                crate::config::config_path()
+                Config::config_path()
                     .ok()
                     .map(|p| p.to_string_lossy().to_string())
                     .unwrap_or("".to_string()),
@@ -76,7 +76,7 @@ impl Widget for Win {
             )));
             let _r = dialog.run();
             dialog.destroy();
-            crate::config::default_config()
+            Config::default_config()
         });
         let titlebar = relm::init::<WinTitleBar>(Win::config_source_names(&config))
             .expect("win title bar init");
@@ -128,7 +128,7 @@ impl Widget for Win {
     }
 
     fn save_config(&self) {
-        crate::config::save_config(&self.model.config).unwrap_or_else(|e| {
+        Config::save_config(&self.model.config).unwrap_or_else(|e| {
             let dialog = gtk::MessageDialog::new(
                 Some(&self.window),
                 gtk::DialogFlags::all(),
