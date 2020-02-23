@@ -3,6 +3,8 @@ use chrono::prelude::*;
 use std::collections::hash_map::*;
 use std::fs::File;
 use std::io::{Read, Write};
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 use std::*;
 
@@ -48,11 +50,26 @@ impl Config {
         Ok(r)
     }
 
+    #[cfg(unix)]
+    fn set_private_folder(path: &PathBuf) -> Result<()> {
+        let mut p = File::open(path)?.metadata()?.permissions();
+        p.set_mode(0o700);
+        fs::set_permissions(path, p)?;
+        Ok(())
+    }
+
+    #[cfg(not(unix))]
+    fn set_private_folder(_path: &PathBuf) -> Result<()> {
+        Ok(())
+    }
+
     pub fn config_folder() -> Result<PathBuf> {
         let home_dir = dirs::home_dir().expect("Can't find your home folder?");
         let config_folder = home_dir.join(".cigale");
         if !config_folder.is_dir() {
             fs::create_dir(&config_folder)?;
+            // we potentially put passwords in the config file...
+            Self::set_private_folder(&config_folder)?;
         }
         Ok(config_folder)
     }
