@@ -107,7 +107,7 @@ impl EventProvider for Redmine {
         let auth_token_node = doc.select(&sel).next().unwrap();
         let auth_token = auth_token_node.value().attr("value").unwrap();
 
-        let res = client
+        let html = client
             .post(&format!("{}/login", redmine_config.server_url))
             .form(&[
                 ("username", &redmine_config.username),
@@ -118,11 +118,25 @@ impl EventProvider for Redmine {
                 ("authenticity_token", &auth_token.to_string()),
             ])
             .send()?
-            .error_for_status()?;
-        println!("{:?}", res);
+            .error_for_status()?
+            .text()?;
+        let doc = scraper::Html::parse_document(&html);
+        let user_sel = scraper::Selector::parse("a.user.active").unwrap();
+        let user_id = doc
+            .select(&user_sel)
+            .next()
+            .unwrap()
+            .value()
+            .attr("href")
+            .unwrap()
+            .replace("/users/", "");
+        println!("user id: {}", user_id);
 
         let html = client
-            .get(&format!("{}/activity", redmine_config.server_url))
+            .get(&format!(
+                "{}/activity?user_id={}",
+                redmine_config.server_url, user_id
+            ))
             .send()?
             .error_for_status()?
             .text()?;
