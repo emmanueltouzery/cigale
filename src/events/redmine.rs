@@ -51,7 +51,10 @@ impl Redmine {
         Ok(NaiveTime::parse_from_str(&time_str, "%I:%M %p")?)
     }
 
-    fn parse_events<'a>(contents_elt: &scraper::element_ref::ElementRef<'a>) -> Result<Vec<Event>> {
+    fn parse_events<'a>(
+        redmine_config: &RedmineConfig,
+        contents_elt: &scraper::element_ref::ElementRef<'a>,
+    ) -> Result<Vec<Event>> {
         let description_sel = scraper::Selector::parse("span.description").unwrap();
         let link_sel = scraper::Selector::parse("dt.icon a").unwrap();
         let time_sel = scraper::Selector::parse("span.time").unwrap();
@@ -75,7 +78,12 @@ impl Redmine {
                     time,
                     link_elt.inner_html(),
                     link_elt.inner_html(),
-                    EventBody::PlainText(description_elt.inner_html()),
+                    EventBody::Markup(format!(
+                        "<a href=\"{}{}\">Open in the browser</a>\n{}",
+                        redmine_config.server_url,
+                        link_elt.value().attr("href").unwrap_or(""),
+                        glib::markup_escape_text(&description_elt.inner_html()),
+                    )),
                     None,
                 ));
             }
@@ -171,7 +179,7 @@ impl Redmine {
                                 return ActivityParseResult::Ok(vec![]);
                             }
                             if cur_date == *day {
-                                return match Self::parse_events(&contents_elt) {
+                                return match Self::parse_events(redmine_config, &contents_elt) {
                                     Err(e) => ActivityParseResult::Err(e),
                                     Ok(v) => ActivityParseResult::Ok(v),
                                 };
