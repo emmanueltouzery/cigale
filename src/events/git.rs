@@ -55,7 +55,7 @@ impl Git {
     }
 
     // common prefix to all the files
-    fn get_files_root(files: &Vec<std::path::PathBuf>) -> String {
+    fn get_files_root(files: &[std::path::PathBuf]) -> String {
         let paths_for_each_file: Vec<Vec<&str>> = files
             .iter()
             .filter_map(|f| f.iter().map(|c| c.to_str()).collect())
@@ -81,8 +81,8 @@ impl Git {
 }
 
 pub struct Git;
-const REPO_FOLDER_KEY: &'static str = "Repository folder";
-const COMMIT_AUTHOR_KEY: &'static str = "Commit Author";
+const REPO_FOLDER_KEY: &str = "Repository folder";
+const COMMIT_AUTHOR_KEY: &str = "Commit Author";
 
 impl EventProvider for Git {
     fn get_config_fields(&self) -> Vec<(&'static str, ConfigType)> {
@@ -186,7 +186,7 @@ impl EventProvider for Git {
                     None => ("".to_string(), None),
                     Some(d) => (
                         "<span font-family=\"monospace\">".to_owned()
-                            + &Git::get_commit_full_diffstr(&d).unwrap_or("".to_string())
+                            + &Git::get_commit_full_diffstr(&d).unwrap_or_else(|| "".to_string())
                             + "</span>",
                         Git::get_commit_extra_info(&d),
                     ),

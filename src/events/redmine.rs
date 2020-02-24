@@ -20,9 +20,9 @@ pub struct RedmineConfig {
 }
 
 pub struct Redmine;
-const SERVER_URL_KEY: &'static str = "Server URL";
-const USERNAME_KEY: &'static str = "Username";
-const PASSWORD_KEY: &'static str = "Password";
+const SERVER_URL_KEY: &str = "Server URL";
+const USERNAME_KEY: &str = "Username";
+const PASSWORD_KEY: &str = "Password";
 
 // have a look at implementing Try here
 // once try_trait stabilizes https://github.com/rust-lang/rust/issues/42327
@@ -210,9 +210,9 @@ impl Redmine {
         client_opt: Option<reqwest::blocking::Client>,
     ) -> Result<Vec<Event>> {
         match Self::parse_html(redmine_config, day, &activity_html) {
-            ActivityParseResult::Ok(events) => return Ok(events),
-            ActivityParseResult::Err(e) => return Err(e),
-            ActivityParseResult::ReachedEndOfPage(None) => return Ok(vec![]),
+            ActivityParseResult::Ok(events) => Ok(events),
+            ActivityParseResult::Err(e) => Err(e),
+            ActivityParseResult::ReachedEndOfPage(None) => Ok(vec![]),
             ActivityParseResult::ReachedEndOfPage(Some(new_url)) => {
                 // recursively check for the previous page
                 let client = match client_opt {

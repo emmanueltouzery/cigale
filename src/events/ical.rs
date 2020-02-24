@@ -15,22 +15,22 @@ pub struct IcalConfig {
 }
 
 impl Ical {
-    fn get_property_value<'a>(event: &'a IcalEvent, name: &str) -> Option<&'a String> {
+    fn get_property_value<'a>(event: &'a IcalEvent, name: &str) -> Option<&'a str> {
         event
             .properties
             .iter()
             .find(|p| p.name == name)
-            .and_then(|s| s.value.as_ref())
+            .and_then(|s| s.value.as_ref().map(|s| s.as_str()))
     }
 
-    fn get_property_value_any<'a>(event: &'a IcalEvent, names: &Vec<&str>) -> Option<&'a String> {
+    fn get_property_value_any<'a>(event: &'a IcalEvent, names: &[&str]) -> Option<&'a str> {
         names
             .iter()
             .find(|n| Ical::get_property_value(event, n).is_some())
             .and_then(|n| Ical::get_property_value(event, n))
     }
 
-    fn parse_ical_date(ical_date_str: &String) -> Option<DateTime<Local>> {
+    fn parse_ical_date(ical_date_str: &str) -> Option<DateTime<Local>> {
         Utc.datetime_from_str(ical_date_str, "%Y%m%dT%H%M%SZ")
             .ok()
             .map(DateTime::from)
@@ -45,7 +45,7 @@ impl Ical {
             })
     }
 
-    fn fetch_ical(ical_url: &String) -> Result<String> {
+    fn fetch_ical(ical_url: &str) -> Result<String> {
         let r = reqwest::blocking::ClientBuilder::new()
             .timeout(Duration::from_secs(30))
             .connect_timeout(Duration::from_secs(30))
@@ -76,14 +76,14 @@ impl Ical {
         ) {
             (Some(st), end_dt, Some(summ)) => {
                 if st >= *day_start && st < *next_day_start {
-                    result.push(Ical::to_event(summ, st, end_dt));
+                    result.push(Ical::build_event(summ, st, end_dt));
                 }
             }
             _ => println!("Skipping event without start or summary: {:?}", event),
         }
     }
 
-    fn to_event(summ: &String, st: DateTime<Local>, end_dt: Option<DateTime<Local>>) -> Event {
+    fn build_event(summ: &str, st: DateTime<Local>, end_dt: Option<DateTime<Local>>) -> Event {
         let summary = summ.replace("\\,", ",");
         let extra_info = end_dt.map(|e| {
             let duration = e - st;
@@ -99,19 +99,19 @@ impl Ical {
             "calendar-alt",
             st.time(),
             summary.to_string(),
-            summary.to_string(),
+            summary,
             EventBody::PlainText(
                 extra_info
                     .as_ref()
                     .map(|i| i.clone())
-                    .unwrap_or("".to_string()),
+                    .unwrap_or_else(|| "".to_string()),
             ),
             extra_info,
         )
     }
 }
 
-const URL_KEY: &'static str = "Ical URL";
+const URL_KEY: &str = "Ical URL";
 
 pub struct Ical;
 

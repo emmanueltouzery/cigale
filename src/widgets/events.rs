@@ -43,7 +43,7 @@ impl Widget for EventView {
     fn model(relm: &relm::Relm<Self>, config: Config) -> Model {
         EventView::fetch_events(&config, relm, &Local::today().pred());
         Model {
-            config: config,
+            config,
             relm: relm.clone(),
             events: None,
             current_event: None,
@@ -84,7 +84,7 @@ impl Widget for EventView {
     }
 
     fn fetch_events(config: &Config, relm: &relm::Relm<Self>, day: &Date<Local>) {
-        let dday = day.clone();
+        let dday = *day;
         let stream = relm.stream().clone();
         let (_channel, sender) = Channel::new(move |events| {
             stream.emit(Msg::GotEvents(events));

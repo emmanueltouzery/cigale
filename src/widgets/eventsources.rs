@@ -30,7 +30,7 @@ impl Widget for EventSources {
 
     fn model(relm: &relm::Relm<Self>, config: Config) -> Model {
         Model {
-            config: config,
+            config,
             relm: relm.clone(),
             eventsource_action_popover: gtk::PopoverBuilder::new()
                 .position(gtk::PositionType::Bottom)

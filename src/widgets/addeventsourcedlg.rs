@@ -156,7 +156,7 @@ impl Widget for AddEventSourceDialog {
                 .unwrap()
                 .get_filename()
                 .and_then(|f| f.to_str().map(|s| s.to_string()))
-                .unwrap_or("".to_string()),
+                .unwrap_or_else(|| "".to_string()),
         }
     }
 
@@ -191,7 +191,7 @@ impl Widget for AddEventSourceDialog {
                         self.provider_name_entry
                             .get_text()
                             .map(|t| t.to_string())
-                            .unwrap_or("".to_string()),
+                            .unwrap_or_else(|| "".to_string()),
                         self.get_entry_values(),
                     ));
                     self.model.dialog.emit_close();
@@ -214,7 +214,7 @@ impl Widget for AddEventSourceDialog {
                     self.provider_name_entry
                         .get_text()
                         .map(|t| t.to_string())
-                        .unwrap_or("".to_string()),
+                        .unwrap_or_else(|| "".to_string()),
                     self.get_entry_values(),
                 ));
                 self.model.dialog.emit_close();
@@ -222,7 +222,7 @@ impl Widget for AddEventSourceDialog {
             Msg::SourceNameChanged => {
                 let txt = self.provider_name_entry.get_text();
                 let source_name = txt.as_ref().map(|t| t.as_str()).unwrap_or("");
-                let form_is_valid = source_name.len() > 0
+                let form_is_valid = !source_name.is_empty()
                     && !self.model.existing_source_names.contains(source_name);
                 self.model.next_btn.set_sensitive(form_is_valid);
             }
@@ -245,7 +245,7 @@ impl Widget for AddEventSourceDialog {
     fn populate_second_step(
         &mut self,
         provider: &dyn EventProvider,
-        event_source_name: &String,
+        event_source_name: &str,
         event_source_values: &HashMap<&'static str, String>,
     ) {
         self.provider_name_entry.set_text(event_source_name);
@@ -282,12 +282,9 @@ impl Widget for AddEventSourceDialog {
                 ConfigType::Path => {
                     let btn =
                         gtk::FileChooserButton::new("Pick file", gtk::FileChooserAction::Open);
-                    match event_source_values.get(field.0) {
-                        Some(u) => {
-                            btn.set_filename(u);
-                        }
-                        _ => {}
-                    };
+                    if let Some(u) = event_source_values.get(field.0) {
+                        btn.set_filename(u);
+                    }
                     btn.upcast::<gtk::Widget>()
                 }
                 ConfigType::Password => gtk::EntryBuilder::new()

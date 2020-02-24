@@ -46,8 +46,8 @@ impl Config {
 
     pub fn save_config(config: &Config) -> Result<()> {
         let mut file = File::create(Self::config_path()?)?;
-        let r = file.write_all(toml::to_string_pretty(config)?.as_bytes())?;
-        Ok(r)
+        file.write_all(toml::to_string_pretty(config)?.as_bytes())?;
+        Ok(())
     }
 
     #[cfg(unix)]

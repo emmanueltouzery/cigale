@@ -54,14 +54,14 @@ impl Widget for Win {
                 gtk::DialogFlags::all(),
                 gtk::MessageType::Error,
                 gtk::ButtonsType::Close,
-                &format!("Error loading the configuration"),
+                "Error loading the configuration",
             );
             dialog.set_property_secondary_text(Some(&format!(
                 "{}: {:}",
                 Config::config_path()
                     .ok()
                     .map(|p| p.to_string_lossy().to_string())
-                    .unwrap_or("".to_string()),
+                    .unwrap_or_else(|| "".to_string()),
                 e
             )));
             let _r = dialog.run();
@@ -108,7 +108,7 @@ impl Widget for Win {
     }
 
     fn get_event_provider_by_name<'a>(
-        providers: &'a Vec<Box<dyn EventProvider>>,
+        providers: &'a [Box<dyn EventProvider>],
         providername: &'static str,
     ) -> &'a Box<dyn EventProvider> {
         providers
@@ -124,7 +124,7 @@ impl Widget for Win {
                 gtk::DialogFlags::all(),
                 gtk::MessageType::Error,
                 gtk::ButtonsType::Close,
-                &format!("Error saving the configuration"),
+                "Error saving the configuration",
             );
             dialog.set_property_secondary_text(Some(&format!("{}", e)));
             let _r = dialog.run();

@@ -71,7 +71,7 @@ impl Widget for WinTitleBar {
         btn.show();
         let dialog_contents = init::<AddEventSourceDialog>(AddEventSourceDialogParams {
             existing_source_names: existing_source_names.clone(),
-            next_btn: btn.clone(),
+            next_btn: btn,
             dialog: dialog.clone(),
             edit_model,
         })

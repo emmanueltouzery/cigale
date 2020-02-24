@@ -62,7 +62,7 @@ impl Widget for DatePicker {
             relm: relm.clone(),
             calendar_popover: gtk::Popover::new(None::<&gtk::Button>),
             calendar: cal,
-            date: date,
+            date,
             month_change_ongoing: false,
         }
     }

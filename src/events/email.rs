@@ -10,9 +10,7 @@ const BUF_SIZE: u64 = 4096;
 // let mut separator_bytes = "\nFrom ".to_string().into_bytes();
 // separator_bytes.reverse();
 // could use lazy_static! but a dependency for that...
-const SEPARATOR_BYTES: [u8; 6] = [
-    ' ' as u8, 'm' as u8, 'o' as u8, 'r' as u8, 'F' as u8, '\n' as u8,
-];
+const SEPARATOR_BYTES: [u8; 6] = [b' ', b'm', b'o', b'r', b'F', b'\n'];
 
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Clone, Debug)]
 pub struct EmailConfig {
@@ -55,7 +53,7 @@ impl Email {
                     // => we don't require the leading \n from the separator bytes
                     // do collect the current letter too [0..(i+1)]
                     matches = true;
-                    email_contents.extend(cur_buf[0..(i + 1)].iter());
+                    email_contents.extend(cur_buf[0..=i].iter());
                 }
                 if matches {
                     // found the marker for the beginning of the email
@@ -98,7 +96,7 @@ impl Email {
         Ok(cur_buf)
     }
 
-    fn get_header_val(headers: &Vec<mailparse::MailHeader>, header_name: &str) -> Option<String> {
+    fn get_header_val(headers: &[mailparse::MailHeader], header_name: &str) -> Option<String> {
         headers
             .iter()
             // TODO change to Result::contains when it stabilizes
@@ -106,7 +104,7 @@ impl Email {
             .and_then(|h| h.get_value().ok())
     }
 
-    fn parse_email_headers_date(headers: &Vec<mailparse::MailHeader>) -> Option<DateTime<Local>> {
+    fn parse_email_headers_date(headers: &[mailparse::MailHeader]) -> Option<DateTime<Local>> {
         Email::get_header_val(headers, "Date").and_then(|d_str| Email::parse_email_date(&d_str))
     }
 
@@ -135,7 +133,7 @@ impl Email {
                 )
                 .ok()
             })
-            .map(|d| DateTime::from(d))
+            .map(DateTime::from)
             .or_else(|| Local.datetime_from_str(dt_str, "%b %d %T %Y").ok())
             .or_else(|| Local.datetime_from_str(dt_str, "%a %b %e %T %Y").ok())
     }
@@ -178,8 +176,8 @@ impl Email {
         } else {
             email_contents.get_body()?
         };
-        let email_subject =
-            Email::get_header_val(&email_contents.headers, "Subject").unwrap_or("-".to_string());
+        let email_subject = Email::get_header_val(&email_contents.headers, "Subject")
+            .unwrap_or_else(|| "-".to_string());
         Ok(Event::new(
             "Email",
             "envelope",
@@ -221,7 +219,7 @@ impl Email {
 
 pub struct Email;
 
-const MBOX_FILE_PATH_KEY: &'static str = "Mbox file path";
+const MBOX_FILE_PATH_KEY: &str = "Mbox file path";
 
 impl EventProvider for Email {
     fn get_config_fields(&self) -> Vec<(&'static str, ConfigType)> {
