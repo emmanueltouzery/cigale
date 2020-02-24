@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 
-const ICAL_CACHE_FNAME: &'static str = "ical-cache.ical";
+const ICAL_CACHE_FNAME: &str = "ical-cache.ical";
 
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Clone, Debug)]
 pub struct IcalConfig {
@@ -67,8 +67,7 @@ impl Ical {
     ) {
         let start = Ical::get_property_value(&event, "DTSTART");
         let end = Ical::get_property_value(&event, "DTEND");
-        let summary =
-            Ical::get_property_value_any(&event, &vec!["SUMMARY", "DESCRIPTION", "LOCATION"]);
+        let summary = Ical::get_property_value_any(&event, &["SUMMARY", "DESCRIPTION", "LOCATION"]);
         match (
             start.and_then(Ical::parse_ical_date),
             end.and_then(Ical::parse_ical_date),
@@ -103,7 +102,7 @@ impl Ical {
             EventBody::PlainText(
                 extra_info
                     .as_ref()
-                    .map(|i| i.clone())
+                    .cloned()
                     .unwrap_or_else(|| "".to_string()),
             ),
             extra_info,

@@ -99,18 +99,17 @@ impl Widget for EventView {
 
     fn update(&mut self, event: Msg) {
         match event {
-            Msg::EventSelected => match &self.model.events {
-                Some(Ok(events)) => {
+            Msg::EventSelected => {
+                if let Some(Ok(events)) = &self.model.events {
                     let selected_index_maybe = self
                         .event_list
                         .get_selected_row()
                         .map(|r| r.get_index() as usize);
                     self.model.current_event = selected_index_maybe
                         .and_then(|idx| events.get(idx))
-                        .map(|evt| evt.clone());
+                        .cloned();
                 }
-                _ => {}
-            },
+            }
             Msg::DayChange(day) => {
                 self.model.events = None;
                 self.update_events();

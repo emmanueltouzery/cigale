@@ -10,7 +10,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 
-const REDMINE_CACHE_FNAME: &'static str = "redmine-cache.html";
+const REDMINE_CACHE_FNAME: &str = "redmine-cache.html";
 
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Clone, Debug)]
 pub struct RedmineConfig {
@@ -101,7 +101,7 @@ impl Redmine {
             .unwrap();
 
         let html = client
-            .get(&format!("{}", redmine_config.server_url))
+            .get(&redmine_config.server_url)
             .send()?
             .error_for_status()?
             .text()?;

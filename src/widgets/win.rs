@@ -30,9 +30,8 @@ pub struct Model {
 #[widget]
 impl Widget for Win {
     fn init_view(&mut self) {
-        match self.load_style() {
-            Err(err) => println!("Error loading the CSS: {}", err),
-            _ => {}
+        if let Err(err) = self.load_style() {
+            println!("Error loading the CSS: {}", err);
         }
         let titlebar = &self.model.titlebar;
         titlebar.emit(super::wintitlebar::Msg::MainWindowStackReady(

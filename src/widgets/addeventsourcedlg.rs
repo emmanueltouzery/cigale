@@ -205,12 +205,7 @@ impl Widget for AddEventSourceDialog {
                         .unwrap()
                         .event_source_name
                         .clone(),
-                    self.model
-                        .edit_model
-                        .as_ref()
-                        .unwrap()
-                        .event_provider_name
-                        .clone(),
+                    self.model.edit_model.as_ref().unwrap().event_provider_name,
                     self.provider_name_entry
                         .get_text()
                         .map(|t| t.to_string())
