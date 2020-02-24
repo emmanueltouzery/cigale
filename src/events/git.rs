@@ -144,7 +144,7 @@ impl EventProvider for Git {
         &self,
         config: &Config,
         config_name: &str,
-        day: &Date<Local>,
+        day: Date<Local>,
     ) -> Result<Vec<Event>> {
         let git_config = &config.git[config_name];
         let day_start = day.and_hms(0, 0, 0);

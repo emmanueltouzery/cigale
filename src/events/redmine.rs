@@ -156,7 +156,7 @@ impl Redmine {
 
     fn parse_html(
         redmine_config: &RedmineConfig,
-        day: &Date<Local>,
+        day: Date<Local>,
         activity_html: &str,
     ) -> ActivityParseResult {
         let doc = scraper::Html::parse_document(&activity_html);
@@ -174,11 +174,11 @@ impl Redmine {
                     match Self::parse_date(&day_elt.inner_html()) {
                         Err(e) => return ActivityParseResult::Err(e),
                         Ok(cur_date) => {
-                            if cur_date < *day {
+                            if cur_date < day {
                                 // passed the day, won't be any events this time.
                                 return ActivityParseResult::Ok(vec![]);
                             }
-                            if cur_date == *day {
+                            if cur_date == day {
                                 return match Self::parse_events(redmine_config, &contents_elt) {
                                     Err(e) => ActivityParseResult::Err(e),
                                     Ok(v) => ActivityParseResult::Ok(v),
@@ -204,7 +204,7 @@ impl Redmine {
     }
 
     fn get_events_with_paging(
-        day: &Date<Local>,
+        day: Date<Local>,
         activity_html: String,
         redmine_config: &RedmineConfig,
         client_opt: Option<reqwest::blocking::Client>,
@@ -293,7 +293,7 @@ impl EventProvider for Redmine {
         &self,
         config: &Config,
         config_name: &str,
-        day: &Date<Local>,
+        day: Date<Local>,
     ) -> Result<Vec<Event>> {
         let redmine_config = &config.redmine[config_name];
         let day_start = day.and_hms(0, 0, 0);

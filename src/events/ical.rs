@@ -163,7 +163,7 @@ impl EventProvider for Ical {
         &self,
         config: &Config,
         config_name: &str,
-        day: &Date<Local>,
+        day: Date<Local>,
     ) -> Result<Vec<Event>> {
         let ical_config = &config.ical[config_name];
         let day_start = day.and_hms(0, 0, 0);

@@ -46,7 +46,7 @@ pub trait EventProvider: Sync {
         &self,
         config: &Config,
         config_name: &str,
-        day: &Date<Local>,
+        day: Date<Local>,
     ) -> Result<Vec<Event>>;
 }
 
@@ -62,7 +62,7 @@ pub fn get_event_providers() -> Vec<Box<dyn EventProvider>> {
 fn get_events_for_event_provider(
     config: &Config,
     ep: &Box<dyn EventProvider>,
-    day: &Date<Local>,
+    day: Date<Local>,
 ) -> Result<Vec<Event>> {
     ep.get_config_names(&config)
         .iter()
@@ -71,7 +71,7 @@ fn get_events_for_event_provider(
         .map(|es| es.into_iter().flatten().collect())
 }
 
-pub fn get_all_events(config: Config, day: &Date<Local>) -> Result<Vec<Event>> {
+pub fn get_all_events(config: Config, day: Date<Local>) -> Result<Vec<Event>> {
     let mut events: Vec<Event> = get_event_providers()
         .iter()
         .map(|ep| get_events_for_event_provider(&config, ep, day))

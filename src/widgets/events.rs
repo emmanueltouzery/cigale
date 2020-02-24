@@ -41,7 +41,7 @@ impl Widget for EventView {
     }
 
     fn model(relm: &relm::Relm<Self>, config: Config) -> Model {
-        EventView::fetch_events(&config, relm, &Local::today().pred());
+        EventView::fetch_events(&config, relm, Local::today().pred());
         Model {
             config,
             relm: relm.clone(),
@@ -83,8 +83,7 @@ impl Widget for EventView {
         }
     }
 
-    fn fetch_events(config: &Config, relm: &relm::Relm<Self>, day: &Date<Local>) {
-        let dday = *day;
+    fn fetch_events(config: &Config, relm: &relm::Relm<Self>, day: Date<Local>) {
         let stream = relm.stream().clone();
         let (_channel, sender) = Channel::new(move |events| {
             stream.emit(Msg::GotEvents(events));
@@ -92,7 +91,7 @@ impl Widget for EventView {
         let c = config.clone();
         std::thread::spawn(move || {
             sender
-                .send(crate::events::events::get_all_events(c, &dday).map_err(|e| e.to_string()))
+                .send(crate::events::events::get_all_events(c, day).map_err(|e| e.to_string()))
                 .unwrap_or_else(|err| println!("Thread communication error: {}", err));
         });
     }
@@ -113,7 +112,7 @@ impl Widget for EventView {
             Msg::DayChange(day) => {
                 self.model.events = None;
                 self.update_events();
-                EventView::fetch_events(&self.model.config, &self.model.relm, &day);
+                EventView::fetch_events(&self.model.config, &self.model.relm, day);
             }
             Msg::GotEvents(events) => {
                 self.model.events = Some(events);

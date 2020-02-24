@@ -273,7 +273,7 @@ impl EventProvider for Email {
         &self,
         config: &Config,
         config_name: &str,
-        day: &Date<Local>,
+        day: Date<Local>,
     ) -> Result<Vec<Event>> {
         let email_config = &config.email[config_name];
         let day_start = day.and_hms(0, 0, 0);
