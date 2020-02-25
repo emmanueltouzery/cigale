@@ -96,8 +96,8 @@ impl EventProvider for Git {
         "Git"
     }
 
-    fn default_icon(&self) -> &'static str {
-        "code-branch"
+    fn default_icon(&self) -> &'static [u8] {
+        crate::icons::FONTAWESOME_CODE_BRANCH_SVG
     }
 
     fn get_config_names<'a>(&self, config: &'a Config) -> Vec<&'a String> {
@@ -193,7 +193,7 @@ impl EventProvider for Git {
                 };
                 Event::new(
                     "Git",
-                    "code-branch",
+                    crate::icons::FONTAWESOME_CODE_BRANCH_SVG,
                     commit_date.time(),
                     c.summary().unwrap_or("").to_string(),
                     contents_header,

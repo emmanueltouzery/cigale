@@ -11,7 +11,7 @@ pub enum ProviderItemMsg {}
 
 pub struct ProviderItemModel {
     name: &'static str,
-    icon: &'static str,
+    icon: &'static [u8],
 }
 
 #[widget]
@@ -290,10 +290,7 @@ impl Widget for AddEventSourceDialog {
                             .as_ref(),
                     )
                     .visibility(false) // password field
-                    .secondary_icon_pixbuf(&crate::icons::fontawesome_image(
-                        "exclamation-triangle",
-                        12,
-                    ))
+                    .secondary_icon_pixbuf(&crate::icons::fontawesome_exclamation_triangle(12))
                     .secondary_icon_tooltip_text("Passwords are not encrypted in the config file")
                     .build()
                     .upcast::<gtk::Widget>(),

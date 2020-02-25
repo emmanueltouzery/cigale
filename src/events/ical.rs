@@ -95,7 +95,7 @@ impl Ical {
         });
         Event::new(
             "Ical",
-            "calendar-alt",
+            crate::icons::FONTAWESOME_CALENDAR_ALT_SVG,
             st.time(),
             summary.to_string(),
             summary,
@@ -123,8 +123,8 @@ impl EventProvider for Ical {
         "Ical"
     }
 
-    fn default_icon(&self) -> &'static str {
-        "calendar-alt"
+    fn default_icon(&self) -> &'static [u8] {
+        crate::icons::FONTAWESOME_CALENDAR_ALT_SVG
     }
 
     fn get_config_names<'a>(&self, config: &'a Config) -> Vec<&'a String> {

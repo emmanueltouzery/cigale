@@ -40,7 +40,7 @@ pub trait EventProvider: Sync {
 
     fn name(&self) -> &'static str;
 
-    fn default_icon(&self) -> &'static str;
+    fn default_icon(&self) -> &'static [u8];
 
     fn get_events(
         &self,
@@ -108,7 +108,7 @@ impl EventBody {
 #[derive(Clone)]
 pub struct Event {
     pub event_type_desc: &'static str,
-    pub event_type_icon: &'static str,
+    pub event_type_icon: &'static [u8],
     pub event_time: NaiveTime,
     pub event_info: String,
     pub event_contents_header: String,
@@ -119,7 +119,7 @@ pub struct Event {
 impl Event {
     pub fn new(
         event_type_desc: &'static str,
-        event_type_icon: &'static str,
+        event_type_icon: &'static [u8],
         event_time: NaiveTime,
         event_info: String,
         event_contents_header: String,

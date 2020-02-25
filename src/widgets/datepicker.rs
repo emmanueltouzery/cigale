@@ -123,7 +123,7 @@ impl Widget for DatePicker {
             gtk::Button {
                 always_show_image: true,
                 image: Some(&gtk::Image::new_from_pixbuf(
-                    Some(&crate::icons::fontawesome_image("angle-left", 16)))),
+                    Some(&crate::icons::fontawesome_angle_left(16)))),
                 valign: gtk::Align::Center,
                 relief: gtk::ReliefStyle::None,
                 clicked => DatePickerMsg::PreviousDay
@@ -135,14 +135,14 @@ impl Widget for DatePicker {
                 },
                 always_show_image: true,
                 image: Some(&gtk::Image::new_from_pixbuf(
-                    Some(&crate::icons::fontawesome_image("calendar-alt", 16)))),
+                    Some(&crate::icons::fontawesome_calendar_alt(16)))),
                 label: self.model.date.format("%A, %Y-%m-%d").to_string().as_str(),
                 clicked => DatePickerMsg::ButtonClicked
             },
             gtk::Button {
                 always_show_image: true,
                 image: Some(&gtk::Image::new_from_pixbuf(
-                    Some(&crate::icons::fontawesome_image("angle-right", 16)))),
+                    Some(&crate::icons::fontawesome_angle_right(16)))),
                 valign: gtk::Align::Center,
                 relief: gtk::ReliefStyle::None,
                 clicked => DatePickerMsg::NextDay

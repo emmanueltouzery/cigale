@@ -10,7 +10,7 @@ pub enum EventSourceListItemMsg {
 }
 
 pub struct EventSourceListItemInfo {
-    pub event_provider_icon: &'static str,
+    pub event_provider_icon: &'static [u8],
     pub event_provider_name: &'static str,
     pub config_name: String,
     pub event_source: HashMap<&'static str, String>,
@@ -125,7 +125,7 @@ impl Widget for EventSourceListItem {
                 gtk::Button {
                     always_show_image: true,
                     image: Some(&gtk::Image::new_from_pixbuf(
-                        Some(&crate::icons::fontawesome_image("cog", 12)))), // emblem-system-symbolic
+                        Some(&crate::icons::fontawesome_cog(12)))), // emblem-system-symbolic
                     hexpand: true,
                     halign: gtk::Align::End,
                     cell: {

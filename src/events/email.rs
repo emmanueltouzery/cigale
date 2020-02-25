@@ -180,7 +180,7 @@ impl Email {
             .unwrap_or_else(|| "-".to_string());
         Ok(Event::new(
             "Email",
-            "envelope",
+            crate::icons::FONTAWESOME_ENVELOPE_SVG,
             email_date.time(),
             email_subject.clone(),
             email_subject,
@@ -230,8 +230,8 @@ impl EventProvider for Email {
         "Email"
     }
 
-    fn default_icon(&self) -> &'static str {
-        "envelope"
+    fn default_icon(&self) -> &'static [u8] {
+        crate::icons::FONTAWESOME_ENVELOPE_SVG
     }
 
     fn get_config_names<'a>(&self, config: &'a Config) -> Vec<&'a String> {

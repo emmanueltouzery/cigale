@@ -1,15 +1,50 @@
-const FONT_AWESOME_SVGS_ROOT: &str = "fontawesome-free-5.12.0-desktop/svgs/solid";
+macro_rules! include_fontawesome_svg {
+    ($ file : expr) => {
+        include_bytes!(concat!(
+            "../fontawesome-free-5.12.0-desktop/svgs/solid/",
+            $file,
+            ".svg"
+        ))
+    };
+}
 
-// TODO load the icons i'm interested in only once, put them
-// in the binary
-pub fn fontawesome_image(image_name: &str, size: i32) -> gdk_pixbuf::Pixbuf {
-    gdk_pixbuf::Pixbuf::new_from_file_at_size(
-        format!(
-            "/home/emmanuel/home/cigale/{}/{}.svg",
-            FONT_AWESOME_SVGS_ROOT, image_name
-        ),
+const FONTAWESOME_COG_SVG: &[u8] = include_fontawesome_svg!("cog");
+pub const FONTAWESOME_CODE_BRANCH_SVG: &[u8] = include_fontawesome_svg!("code-branch");
+pub const FONTAWESOME_ENVELOPE_SVG: &[u8] = include_fontawesome_svg!("envelope");
+pub const FONTAWESOME_TASKS_SVG: &[u8] = include_fontawesome_svg!("tasks");
+const FONTAWESOME_ANGLE_LEFT_SVG: &[u8] = include_fontawesome_svg!("angle-left");
+const FONTAWESOME_ANGLE_RIGHT_SVG: &[u8] = include_fontawesome_svg!("angle-right");
+pub const FONTAWESOME_CALENDAR_ALT_SVG: &[u8] = include_fontawesome_svg!("calendar-alt");
+const FONTAWESOME_EXCLAMATION_TRIANGLE_SVG: &[u8] =
+    include_fontawesome_svg!("exclamation-triangle");
+
+pub fn fontawesome_image(icon_bytes: &'static [u8], size: i32) -> gdk_pixbuf::Pixbuf {
+    gdk_pixbuf::Pixbuf::new_from_stream_at_scale(
+        &gio::MemoryInputStream::new_from_bytes(&glib::Bytes::from_static(icon_bytes)),
         size,
         size,
+        true,
+        gio::NONE_CANCELLABLE,
     )
-    .unwrap()
+    .expect("loading icon")
+}
+
+pub fn fontawesome_cog(size: i32) -> gdk_pixbuf::Pixbuf {
+    fontawesome_image(FONTAWESOME_COG_SVG, size)
+}
+
+pub fn fontawesome_angle_left(size: i32) -> gdk_pixbuf::Pixbuf {
+    fontawesome_image(FONTAWESOME_ANGLE_LEFT_SVG, size)
+}
+
+pub fn fontawesome_angle_right(size: i32) -> gdk_pixbuf::Pixbuf {
+    fontawesome_image(FONTAWESOME_ANGLE_RIGHT_SVG, size)
+}
+
+pub fn fontawesome_calendar_alt(size: i32) -> gdk_pixbuf::Pixbuf {
+    fontawesome_image(FONTAWESOME_CALENDAR_ALT_SVG, size)
+}
+
+pub fn fontawesome_exclamation_triangle(size: i32) -> gdk_pixbuf::Pixbuf {
+    fontawesome_image(FONTAWESOME_EXCLAMATION_TRIANGLE_SVG, size)
 }

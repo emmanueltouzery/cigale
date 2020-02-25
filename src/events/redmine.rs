@@ -74,7 +74,7 @@ impl Redmine {
                 let link_elt = &it_links.next().unwrap();
                 result.push(Event::new(
                     "Redmine",
-                    "tasks",
+                    crate::icons::FONTAWESOME_TASKS_SVG,
                     time,
                     link_elt.inner_html(),
                     link_elt.inner_html(),
@@ -232,8 +232,8 @@ impl EventProvider for Redmine {
         "Redmine"
     }
 
-    fn default_icon(&self) -> &'static str {
-        "tasks"
+    fn default_icon(&self) -> &'static [u8] {
+        crate::icons::FONTAWESOME_TASKS_SVG
     }
 
     fn get_config_names<'a>(&self, config: &'a Config) -> Vec<&'a String> {
