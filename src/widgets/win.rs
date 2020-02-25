@@ -12,6 +12,8 @@ use relm::{Component, Widget};
 use relm_derive::{widget, Msg};
 use std::collections::{HashMap, HashSet};
 
+const CSS_DATA: &[u8] = include_bytes!("../../resources/style.css");
+
 #[derive(Msg)]
 pub enum Msg {
     Quit,
@@ -91,13 +93,7 @@ impl Widget for Win {
     fn load_style(&self) -> Result<(), Box<dyn std::error::Error>> {
         let screen = self.window.get_screen().unwrap();
         let css = gtk::CssProvider::new();
-
-        // TODO embed the css in the binary?
-        let mut path = std::path::PathBuf::new();
-        path.push("resources");
-        path.push("style.css");
-        let path_str = path.to_str().ok_or("Invalid path")?;
-        css.load_from_path(path_str)?;
+        css.load_from_data(CSS_DATA)?;
         gtk::StyleContext::add_provider_for_screen(
             &screen,
             &css,
