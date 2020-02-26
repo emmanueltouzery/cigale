@@ -35,6 +35,9 @@ impl Widget for Win {
         if let Err(err) = self.load_style() {
             println!("Error loading the CSS: {}", err);
         }
+        // gtk::Settings::get_default() // maybe someday add an option for that. the text is too bright by default i'd say though.
+        //     .unwrap()
+        //     .set_property_gtk_application_prefer_dark_theme(true);
         let titlebar = &self.model.titlebar;
         titlebar.emit(super::wintitlebar::Msg::MainWindowStackReady(
             self.main_window_stack.clone(),
