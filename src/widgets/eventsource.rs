@@ -111,7 +111,7 @@ impl Widget for EventSourceListItem {
                         width: 2
                     },
                     gtk::Image {
-                        from_pixbuf: Some(&crate::icons::fontawesome_image(
+                        from_pixbuf: Some(&crate::icons::load_pixbuf(
                             self.model.list_item_info.event_provider_icon, 16)),
                     },
                     gtk::Label {

@@ -41,7 +41,7 @@ impl Widget for EventListItem {
                     padding: 3,
                 },
                 gtk::Image {
-                    from_pixbuf: Some(&crate::icons::fontawesome_image(
+                    from_pixbuf: Some(&crate::icons::load_pixbuf(
                         self.model.event.event_type_icon, 32))
                 },
                 #[name="event_type_label"]

@@ -35,7 +35,7 @@ impl Widget for ProviderItem {
                 child: {
                     padding: 10,
                 },
-                from_pixbuf: Some(&crate::icons::fontawesome_image(
+                from_pixbuf: Some(&crate::icons::load_pixbuf(
                     self.model.icon, 32))
             },
             gtk::Label {
@@ -245,7 +245,7 @@ impl Widget for AddEventSourceDialog {
     ) {
         self.provider_name_entry.set_text(event_source_name);
         self.config_fields_grid.attach(
-            &gtk::Image::new_from_pixbuf(Some(&crate::icons::fontawesome_image(
+            &gtk::Image::new_from_pixbuf(Some(&crate::icons::load_pixbuf(
                 provider.default_icon(),
                 32,
             ))),

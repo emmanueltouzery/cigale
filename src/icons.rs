@@ -17,8 +17,9 @@ const FONTAWESOME_ANGLE_RIGHT_SVG: &[u8] = include_fontawesome_svg!("angle-right
 pub const FONTAWESOME_CALENDAR_ALT_SVG: &[u8] = include_fontawesome_svg!("calendar-alt");
 const FONTAWESOME_EXCLAMATION_TRIANGLE_SVG: &[u8] =
     include_fontawesome_svg!("exclamation-triangle");
+const APPICON_SVG: &[u8] = include_bytes!("../cigale.svg");
 
-pub fn fontawesome_image(icon_bytes: &'static [u8], size: i32) -> gdk_pixbuf::Pixbuf {
+pub fn load_pixbuf(icon_bytes: &'static [u8], size: i32) -> gdk_pixbuf::Pixbuf {
     gdk_pixbuf::Pixbuf::new_from_stream_at_scale(
         &gio::MemoryInputStream::new_from_bytes(&glib::Bytes::from_static(icon_bytes)),
         size,
@@ -29,22 +30,26 @@ pub fn fontawesome_image(icon_bytes: &'static [u8], size: i32) -> gdk_pixbuf::Pi
     .expect("loading icon")
 }
 
+pub fn app_icon(size: i32) -> gdk_pixbuf::Pixbuf {
+    load_pixbuf(APPICON_SVG, size)
+}
+
 pub fn fontawesome_cog(size: i32) -> gdk_pixbuf::Pixbuf {
-    fontawesome_image(FONTAWESOME_COG_SVG, size)
+    load_pixbuf(FONTAWESOME_COG_SVG, size)
 }
 
 pub fn fontawesome_angle_left(size: i32) -> gdk_pixbuf::Pixbuf {
-    fontawesome_image(FONTAWESOME_ANGLE_LEFT_SVG, size)
+    load_pixbuf(FONTAWESOME_ANGLE_LEFT_SVG, size)
 }
 
 pub fn fontawesome_angle_right(size: i32) -> gdk_pixbuf::Pixbuf {
-    fontawesome_image(FONTAWESOME_ANGLE_RIGHT_SVG, size)
+    load_pixbuf(FONTAWESOME_ANGLE_RIGHT_SVG, size)
 }
 
 pub fn fontawesome_calendar_alt(size: i32) -> gdk_pixbuf::Pixbuf {
-    fontawesome_image(FONTAWESOME_CALENDAR_ALT_SVG, size)
+    load_pixbuf(FONTAWESOME_CALENDAR_ALT_SVG, size)
 }
 
 pub fn fontawesome_exclamation_triangle(size: i32) -> gdk_pixbuf::Pixbuf {
-    fontawesome_image(FONTAWESOME_EXCLAMATION_TRIANGLE_SVG, size)
+    load_pixbuf(FONTAWESOME_EXCLAMATION_TRIANGLE_SVG, size)
 }

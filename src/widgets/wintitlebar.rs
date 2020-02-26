@@ -14,6 +14,7 @@ pub enum Msg {
     NewEventSourceClick,
     AddConfig(&'static str, String, HashMap<&'static str, String>),
     EventSourceNamesChanged(HashSet<String>),
+    DisplayAbout,
 }
 
 pub struct Model {
@@ -21,6 +22,7 @@ pub struct Model {
     displaying_event_sources: bool,
     main_window_stack: Option<gtk::Stack>,
     existing_source_names: HashSet<String>,
+    menu_popover: gtk::Popover,
 }
 
 #[widget]
@@ -29,6 +31,21 @@ impl Widget for WinTitleBar {
         self.new_event_source_btn
             .get_style_context()
             .add_class("suggested-action");
+        let vbox = gtk::BoxBuilder::new()
+            .margin(10)
+            .orientation(gtk::Orientation::Vertical)
+            .build();
+        let about_btn = gtk::ModelButtonBuilder::new().label("About").build();
+        relm::connect!(
+            self.model.relm,
+            &about_btn,
+            connect_clicked(_),
+            Msg::DisplayAbout
+        );
+        vbox.add(&about_btn);
+        vbox.show_all();
+        self.model.menu_popover.add(&vbox);
+        self.menu_button.set_popover(Some(&self.model.menu_popover));
     }
 
     fn model(relm: &relm::Relm<Self>, existing_source_names: HashSet<String>) -> Model {
@@ -37,6 +54,7 @@ impl Widget for WinTitleBar {
             displaying_event_sources: false,
             main_window_stack: None,
             existing_source_names,
+            menu_popover: gtk::Popover::new(None::<&gtk::MenuButton>),
         }
     }
 
@@ -106,6 +124,18 @@ impl Widget for WinTitleBar {
         }
     }
 
+    fn display_about() {
+        let dlg = gtk::AboutDialogBuilder::new()
+            .name("Cigale")
+            .version(env!("CARGO_PKG_VERSION"))
+            .logo(&crate::icons::app_icon(128))
+            .website("https://github.com/emmanueltouzery/cigale/")
+            .comments("Review your past activity")
+            .build();
+        dlg.run();
+        dlg.destroy();
+    }
+
     fn update(&mut self, event: Msg) {
         match event {
             Msg::MainWindowStackReady(stack) => {
@@ -144,6 +174,7 @@ impl Widget for WinTitleBar {
             Msg::AddConfig(_, _, _) => {
                 // this is meant for win... we emit here, not interested by it ourselves
             }
+            Msg::DisplayAbout => Self::display_about(),
         }
     }
 
@@ -158,12 +189,21 @@ impl Widget for WinTitleBar {
             },
             show_close_button: true,
             title: Some("Cigale"),
+            #[name="menu_button"]
+            gtk::MenuButton {
+                // sensitive: true,
+                image: Some(&gtk::Image::new_from_icon_name(Some("open-menu-symbolic"), gtk::IconSize::Menu)),
+                child: {
+                    pack_type: gtk::PackType::End
+                },
+                // clicked() => Msg::OpenMenu,
+            },
             #[name="main_window_stack_switcher"]
             gtk::StackSwitcher {
                 child: {
                     pack_type: gtk::PackType::End
                 }
-            }
+            },
         }
     }
 }
