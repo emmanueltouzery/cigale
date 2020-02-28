@@ -87,7 +87,7 @@ const COMMIT_AUTHOR_KEY: &str = "Commit Author";
 impl EventProvider for Git {
     fn get_config_fields(&self) -> Vec<(&'static str, ConfigType)> {
         vec![
-            (REPO_FOLDER_KEY, ConfigType::Path),
+            (REPO_FOLDER_KEY, ConfigType::Folder),
             (COMMIT_AUTHOR_KEY, ConfigType::Text),
         ]
     }

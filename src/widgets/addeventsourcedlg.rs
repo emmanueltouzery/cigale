@@ -274,9 +274,19 @@ impl Widget for AddEventSourceDialog {
                     )
                     .build()
                     .upcast::<gtk::Widget>(),
-                ConfigType::Path => {
+                ConfigType::File => {
                     let btn =
                         gtk::FileChooserButton::new("Pick file", gtk::FileChooserAction::Open);
+                    if let Some(u) = event_source_values.get(field.0) {
+                        btn.set_filename(u);
+                    }
+                    btn.upcast::<gtk::Widget>()
+                }
+                ConfigType::Folder => {
+                    let btn = gtk::FileChooserButton::new(
+                        "Pick folder",
+                        gtk::FileChooserAction::SelectFolder,
+                    );
                     if let Some(u) = event_source_values.get(field.0) {
                         btn.set_filename(u);
                     }

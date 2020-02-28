@@ -11,7 +11,8 @@ use std::error::Error;
 pub enum ConfigType {
     Text,
     Password,
-    Path,
+    File,
+    Folder,
 }
 
 pub type Result<T> = std::result::Result<T, Box<dyn Error>>;

@@ -223,7 +223,7 @@ const MBOX_FILE_PATH_KEY: &str = "Mbox file path";
 
 impl EventProvider for Email {
     fn get_config_fields(&self) -> Vec<(&'static str, ConfigType)> {
-        vec![(MBOX_FILE_PATH_KEY, ConfigType::Path)]
+        vec![(MBOX_FILE_PATH_KEY, ConfigType::File)]
     }
 
     fn name(&self) -> &'static str {
