@@ -11,3 +11,4 @@ rm flatpak-cargo-generator.py
 rm com.github.emmanueltouzery.cigale.json
 rm com.github.emmanueltouzery.cigale.metainfo.xml
 rm cargo-sources.json
+rm -Rf vendor
