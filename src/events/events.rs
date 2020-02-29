@@ -69,7 +69,7 @@ pub fn get_event_providers() -> Vec<Box<dyn EventProvider>> {
 
 fn get_events_for_event_provider(
     config: &Config,
-    ep: &Box<dyn EventProvider>,
+    ep: &dyn EventProvider,
     day: Date<Local>,
 ) -> Result<Vec<Event>> {
     ep.get_config_names(&config)
@@ -82,7 +82,7 @@ fn get_events_for_event_provider(
 pub fn get_all_events(config: Config, day: Date<Local>) -> Result<Vec<Event>> {
     let mut events: Vec<Event> = get_event_providers()
         .iter()
-        .map(|ep| get_events_for_event_provider(&config, ep, day))
+        .map(|ep| get_events_for_event_provider(&config, ep.as_ref(), day))
         .collect::<Result<Vec<Vec<Event>>>>()?
         .into_iter()
         .flatten()

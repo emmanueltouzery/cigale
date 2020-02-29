@@ -108,11 +108,12 @@ impl Widget for Win {
     fn get_event_provider_by_name<'a>(
         providers: &'a [Box<dyn EventProvider>],
         providername: &'static str,
-    ) -> &'a Box<dyn EventProvider> {
+    ) -> &'a dyn EventProvider {
         providers
             .iter()
             .find(|ep| ep.name() == providername)
             .unwrap()
+            .as_ref()
     }
 
     fn save_config(&self) {

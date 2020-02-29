@@ -17,7 +17,6 @@ pub struct EventSourceListItemInfo {
 }
 
 pub struct Model {
-    relm: relm::Relm<EventSourceListItem>,
     list_item_info: EventSourceListItemInfo,
 }
 
@@ -72,11 +71,8 @@ impl Widget for EventSourceListItem {
             .add_class("items_frame");
     }
 
-    fn model(relm: &relm::Relm<Self>, list_item_info: EventSourceListItemInfo) -> Model {
-        Model {
-            relm: relm.clone(),
-            list_item_info,
-        }
+    fn model(list_item_info: EventSourceListItemInfo) -> Model {
+        Model { list_item_info }
     }
 
     fn update(&mut self, event: EventSourceListItemMsg) {

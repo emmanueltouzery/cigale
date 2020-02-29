@@ -246,7 +246,7 @@ impl EventProvider for Git {
                     let diff = Git::get_commit_diff(rrepo, &c);
                     let contents_header = c.message().unwrap_or("").to_string();
                     let (contents, extra_details) = match diff {
-                        None => (branch.clone(), None),
+                        None => (branch, None),
                         Some(d) => (
                             ("<span font-family=\"monospace\">".to_owned()
                                 + &branch
