@@ -302,7 +302,7 @@ fn it_can_get_events_for_the_cigale_repo() {
         "include the icons in the binary".to_string(),
         "include the icons in the binary\n".to_string(),
         EventBody::Markup(
-            r#"<span font-family="monospace">flatpak
+            r#"<span font-family="monospace">master
 
  Cargo.lock                       | 11 ++++++-----
  Cargo.toml                       |  1 +
