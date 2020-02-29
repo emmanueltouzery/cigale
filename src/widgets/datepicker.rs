@@ -55,9 +55,7 @@ impl Widget for DatePicker {
     fn model(relm: &relm::Relm<Self>, _: ()) -> DatePickerModel {
         let date = Local::today().pred();
         let cal = gtk::Calendar::new();
-        cal.set_property_year(date.year());
-        cal.set_property_month(date.month() as i32 - 1);
-        cal.set_property_day(date.day() as i32);
+        Self::calendar_set_date(&cal, date);
         DatePickerModel {
             relm: relm.clone(),
             calendar_popover: gtk::Popover::new(None::<&gtk::Button>),
@@ -67,21 +65,36 @@ impl Widget for DatePicker {
         }
     }
 
+    fn calendar_set_date(cal: &gtk::Calendar, date: Date<Local>) {
+        cal.set_property_year(date.year());
+        cal.set_property_month(date.month() as i32 - 1);
+        cal.set_property_day(date.day() as i32);
+    }
+
     fn update(&mut self, event: DatePickerMsg) {
         match event {
             DatePickerMsg::ButtonClicked => {
                 if self.model.calendar_popover.is_visible() {
                     self.model.calendar_popover.popdown()
                 } else {
+                    // the date held by the calendar will be outdated
+                    // if the user's been navigating with previous/next
+                    Self::calendar_set_date(&self.model.calendar, self.model.date);
                     self.model.calendar_popover.popup()
                 }
             }
             DatePickerMsg::DayClicked => {
                 let (y, m, d) = self.model.calendar.get_date();
-                self.model
-                    .relm
-                    .stream()
-                    .emit(DatePickerMsg::DayPicked(Local.ymd(y as i32, m + 1, d)))
+                // the if is useful for instance because we update the calendar when
+                // opening it (it could be outdated due to previous/next navigation)
+                // without the if that would trigger a reload of the current day
+                let clicked_date = Local.ymd(y as i32, m + 1, d);
+                if self.model.date != clicked_date {
+                    self.model
+                        .relm
+                        .stream()
+                        .emit(DatePickerMsg::DayPicked(clicked_date))
+                }
             }
             DatePickerMsg::DayPicked(d) => {
                 self.model.date = d;
@@ -92,7 +105,10 @@ impl Widget for DatePicker {
                 }
             }
             DatePickerMsg::MonthChanged => {
-                self.model.month_change_ongoing = true;
+                // getting false positives, because this is called even if the month
+                // was changed by API call to the same value as before...
+                let (_y, m, _d) = self.model.calendar.get_date();
+                self.model.month_change_ongoing = m + 1 != self.model.date.month();
             }
             DatePickerMsg::NextDay => self
                 .model
