@@ -112,6 +112,7 @@ impl EventProvider for Git {
         // for the 'commit author' combo box, we offer the list
         // of authors for the repo. This is quite slow though,
         // hopefully there is a faster way?
+        // https://stackoverflow.com/questions/60464449/get-the-list-of-authors-in-a-git-repository-efficiently-with-libgit2
         let git_path = cur_values
             .get(REPO_FOLDER_KEY)
             .map(|s| s.as_str())
@@ -122,7 +123,7 @@ impl EventProvider for Git {
         let repo = Repository::open(&git_path)?;
         let mut revwalk = repo.revwalk()?;
         revwalk.push_head()?;
-        let mut commits: Vec<String> = revwalk
+        let mut authors: Vec<String> = revwalk
             .map(|r| {
                 let oid = r?;
                 repo.find_commit(oid)
@@ -142,8 +143,8 @@ impl EventProvider for Git {
             })
             .into_iter()
             .collect();
-        commits.sort();
-        Ok(commits)
+        authors.sort();
+        Ok(authors)
     }
 
     fn get_config_values(
