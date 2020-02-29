@@ -2,7 +2,7 @@ use super::events::{ConfigType, Event, EventBody, EventProvider, Result};
 use crate::config::Config;
 use chrono::prelude::*;
 use git2::{Commit, Repository};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 // git2 revwalk
 // https://github.com/rust-lang/git2-rs/blob/master/examples/log.rs
@@ -88,7 +88,7 @@ impl EventProvider for Git {
     fn get_config_fields(&self) -> Vec<(&'static str, ConfigType)> {
         vec![
             (REPO_FOLDER_KEY, ConfigType::Folder),
-            (COMMIT_AUTHOR_KEY, ConfigType::Text),
+            (COMMIT_AUTHOR_KEY, ConfigType::Combo),
         ]
     }
 
@@ -102,6 +102,48 @@ impl EventProvider for Git {
 
     fn get_config_names<'a>(&self, config: &'a Config) -> Vec<&'a String> {
         config.git.keys().collect()
+    }
+
+    fn field_values(
+        &self,
+        cur_values: &HashMap<&'static str, String>,
+        field_name: &'static str,
+    ) -> Result<Vec<String>> {
+        // for the 'commit author' combo box, we offer the list
+        // of authors for the repo. This is quite slow though,
+        // hopefully there is a faster way?
+        let git_path = cur_values
+            .get(REPO_FOLDER_KEY)
+            .map(|s| s.as_str())
+            .unwrap_or_else(|| "");
+        if field_name != COMMIT_AUTHOR_KEY || git_path.is_empty() {
+            return Ok(Vec::new());
+        }
+        let repo = Repository::open(&git_path)?;
+        let mut revwalk = repo.revwalk()?;
+        revwalk.push_head()?;
+        let mut commits: Vec<String> = revwalk
+            .map(|r| {
+                let oid = r?;
+                repo.find_commit(oid)
+            })
+            .filter_map(|c| match c {
+                Ok(commit) => Some(commit),
+                Err(e) => {
+                    println!("Error walking the revisions {}, skipping", e);
+                    None
+                }
+            })
+            .fold(HashSet::new(), |mut sofar, cur| {
+                if let Some(name) = cur.author().name() {
+                    sofar.insert(name.to_string());
+                }
+                sofar
+            })
+            .into_iter()
+            .collect();
+        commits.sort();
+        Ok(commits)
     }
 
     fn get_config_values(

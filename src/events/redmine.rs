@@ -248,6 +248,14 @@ impl EventProvider for Redmine {
         ]
     }
 
+    fn field_values(
+        &self,
+        _cur_values: &HashMap<&'static str, String>,
+        _field_name: &'static str,
+    ) -> Result<Vec<String>> {
+        Ok(Vec::new())
+    }
+
     fn get_config_values(
         &self,
         config: &Config,

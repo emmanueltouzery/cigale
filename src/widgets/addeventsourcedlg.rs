@@ -54,6 +54,7 @@ pub enum Msg {
     AddConfig(&'static str, String, HashMap<&'static str, String>),
     EditConfig(String, &'static str, String, HashMap<&'static str, String>),
     SourceNameChanged,
+    FormChanged,
 }
 
 pub struct Model {
@@ -63,6 +64,7 @@ pub struct Model {
     next_btn: gtk::Button,
     dialog: gtk::Dialog,
     edit_model: Option<EventSourceEditModel>,
+    event_provider: Option<Box<dyn EventProvider>>,
 }
 
 #[derive(Clone)]
@@ -127,7 +129,7 @@ impl Widget for AddEventSourceDialog {
             .find(|ep| ep.name() == edit_model.event_provider_name)
             .unwrap();
         self.populate_second_step(
-            ep.as_ref(),
+            ep,
             &edit_model.event_source_name,
             &edit_model.event_source_values,
         );
@@ -143,19 +145,42 @@ impl Widget for AddEventSourceDialog {
             next_btn: dialog_params.next_btn,
             dialog: dialog_params.dialog,
             edit_model: dialog_params.edit_model,
+            event_provider: None,
         }
     }
 
-    fn get_entry_val(entry: &gtk::Widget) -> String {
-        let text_entry = entry.clone().dynamic_cast::<gtk::Entry>().ok();
-        match text_entry {
-            Some(e) => e.get_text().unwrap().to_string(),
-            None => entry
+    fn get_entry_val(&self, field_name: &'static str, entry: &gtk::Widget) -> String {
+        let field_type = self
+            .model
+            .event_provider
+            .as_ref()
+            .unwrap()
+            .get_config_fields()
+            .iter()
+            .find(|f| f.0 == field_name)
+            .unwrap()
+            .1;
+        match field_type {
+            ConfigType::File | ConfigType::Folder => entry
                 .clone()
                 .dynamic_cast::<gtk::FileChooserButton>()
                 .unwrap()
                 .get_filename()
                 .and_then(|f| f.to_str().map(|s| s.to_string()))
+                .unwrap_or_else(|| "".to_string()),
+            ConfigType::Text | ConfigType::Password => entry
+                .clone()
+                .dynamic_cast::<gtk::Entry>()
+                .unwrap()
+                .get_text()
+                .unwrap()
+                .to_string(),
+            ConfigType::Combo => entry
+                .clone()
+                .dynamic_cast::<gtk::ComboBoxText>()
+                .unwrap()
+                .get_active_text()
+                .map(|s| s.to_string())
                 .unwrap_or_else(|| "".to_string()),
         }
     }
@@ -166,7 +191,7 @@ impl Widget for AddEventSourceDialog {
             .as_ref()
             .unwrap()
             .iter()
-            .map(|(k, v)| (*k, AddEventSourceDialog::get_entry_val(v)))
+            .map(|(k, v)| (*k, self.get_entry_val(k, v)))
             .collect()
     }
 
@@ -175,9 +200,9 @@ impl Widget for AddEventSourceDialog {
             Msg::Next => {
                 if self.model.entry_components.is_none() {
                     // we're at the first step: display the second step
-                    let provider = &crate::events::events::get_event_providers()
-                        [self.get_provider_index_if_step2()];
-                    self.populate_second_step(provider.as_ref(), &"".to_string(), &HashMap::new());
+                    let provider = crate::events::events::get_event_providers()
+                        .remove(self.get_provider_index_if_step2());
+                    self.populate_second_step(provider, &"".to_string(), &HashMap::new());
                     self.wizard_stack.set_visible_child_name("step2");
 
                     self.model.next_btn.set_label("Add");
@@ -227,6 +252,9 @@ impl Widget for AddEventSourceDialog {
             Msg::EditConfig(_, _, _, _) => {
                 // this is meant for wintitlebar... we emit here, not interested by it ourselves
             }
+            Msg::FormChanged => {
+                self.update_form();
+            }
         }
     }
 
@@ -237,18 +265,62 @@ impl Widget for AddEventSourceDialog {
             .unwrap()
     }
 
+    fn update_form(&mut self) {
+        // for now combo boxes can be loaded when other fields
+        // are updated. we use that for git author names, which
+        // depends on the git repo path.
+        let fields = self
+            .model
+            .event_provider
+            .as_ref()
+            .unwrap()
+            .get_config_fields();
+        // assumes only one combo max
+        let combo_pos = fields.iter().position(|e| e.1 == ConfigType::Combo);
+        if let Some(idx) = combo_pos {
+            let field_name = fields[idx].0;
+            let combo_widget = self.model.entry_components.as_ref().unwrap()[field_name].clone();
+            self.refresh_combo(combo_widget, field_name, &self.get_entry_values());
+        }
+    }
+
+    fn refresh_combo(
+        &self,
+        combo_widget: gtk::Widget,
+        field_name: &'static str,
+        entry_values: &HashMap<&'static str, String>,
+    ) -> Vec<String> {
+        let combo = combo_widget
+            .dynamic_cast::<gtk::ComboBoxText>()
+            .expect("upcast combobox");
+        combo.remove_all();
+        let values = self
+            .model
+            .event_provider
+            .as_ref()
+            .expect("reading event provider from model")
+            .field_values(&entry_values, field_name)
+            .unwrap_or_else(|e| {
+                println!("fetching field values failed: {}", e);
+                Vec::new()
+            });
+        for value in &values {
+            combo.append_text(value);
+        }
+        values
+    }
+
     fn populate_second_step(
         &mut self,
-        provider: &dyn EventProvider,
+        provider: Box<dyn EventProvider>,
         event_source_name: &str,
         event_source_values: &HashMap<&'static str, String>,
     ) {
+        self.model.event_provider = Some(provider);
+        let p = self.model.event_provider.as_ref().unwrap();
         self.provider_name_entry.set_text(event_source_name);
         self.config_fields_grid.attach(
-            &gtk::Image::new_from_pixbuf(Some(&crate::icons::load_pixbuf(
-                provider.default_icon(),
-                32,
-            ))),
+            &gtk::Image::new_from_pixbuf(Some(&crate::icons::load_pixbuf(p.default_icon(), 32))),
             0,
             0,
             1,
@@ -256,7 +328,11 @@ impl Widget for AddEventSourceDialog {
         );
         let mut i = 1;
         let mut entry_components = HashMap::new();
-        for field in provider.get_config_fields() {
+        for field in p.get_config_fields() {
+            let field_val = event_source_values
+                .get(field.0)
+                .map(|s| s.as_str())
+                .unwrap_or("");
             self.config_fields_grid.attach(
                 &gtk::LabelBuilder::new().label(field.0).build(),
                 1,
@@ -266,12 +342,7 @@ impl Widget for AddEventSourceDialog {
             );
             let entry_widget = &match field.1 {
                 ConfigType::Text => gtk::EntryBuilder::new()
-                    .text(
-                        event_source_values
-                            .get(field.0)
-                            .unwrap_or(&"".to_string())
-                            .as_ref(),
-                    )
+                    .text(field_val)
                     .build()
                     .upcast::<gtk::Widget>(),
                 ConfigType::File => {
@@ -280,6 +351,7 @@ impl Widget for AddEventSourceDialog {
                     if let Some(u) = event_source_values.get(field.0) {
                         btn.set_filename(u);
                     }
+                    relm::connect!(self.model.relm, btn, connect_file_set(_), Msg::FormChanged);
                     btn.upcast::<gtk::Widget>()
                 }
                 ConfigType::Folder => {
@@ -290,20 +362,31 @@ impl Widget for AddEventSourceDialog {
                     if let Some(u) = event_source_values.get(field.0) {
                         btn.set_filename(u);
                     }
+                    relm::connect!(self.model.relm, btn, connect_file_set(_), Msg::FormChanged);
                     btn.upcast::<gtk::Widget>()
                 }
                 ConfigType::Password => gtk::EntryBuilder::new()
-                    .text(
-                        event_source_values
-                            .get(field.0)
-                            .unwrap_or(&"".to_string())
-                            .as_ref(),
-                    )
+                    .text(field_val)
                     .visibility(false) // password field
                     .secondary_icon_pixbuf(&crate::icons::fontawesome_exclamation_triangle(12))
                     .secondary_icon_tooltip_text("Passwords are not encrypted in the config file")
                     .build()
                     .upcast::<gtk::Widget>(),
+                ConfigType::Combo => {
+                    let combo = gtk::ComboBoxText::new();
+                    let combo_items = self.refresh_combo(
+                        combo.clone().upcast::<gtk::Widget>(),
+                        field.0,
+                        event_source_values,
+                    );
+                    combo.set_active(
+                        combo_items
+                            .iter()
+                            .position(|i| i == field_val)
+                            .map(|p| p as u32),
+                    );
+                    combo.upcast::<gtk::Widget>()
+                }
             };
             entry_components.insert(field.0, entry_widget.clone());
             self.config_fields_grid.attach(entry_widget, 2, i, 1, 1);

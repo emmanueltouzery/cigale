@@ -13,6 +13,7 @@ pub enum ConfigType {
     Password,
     File,
     Folder,
+    Combo,
 }
 
 pub type Result<T> = std::result::Result<T, Box<dyn Error>>;
@@ -36,6 +37,12 @@ pub trait EventProvider: Sync {
         config_name: String,
         config_values: HashMap<&'static str, String>,
     );
+
+    fn field_values(
+        &self,
+        cur_values: &HashMap<&'static str, String>,
+        field_name: &'static str,
+    ) -> Result<Vec<String>>;
 
     fn remove_config(&self, config: &mut Config, config_name: String);
 

@@ -141,6 +141,14 @@ impl EventProvider for Ical {
         h
     }
 
+    fn field_values(
+        &self,
+        _cur_values: &HashMap<&'static str, String>,
+        _field_name: &'static str,
+    ) -> Result<Vec<String>> {
+        Ok(Vec::new())
+    }
+
     fn remove_config(&self, config: &mut Config, config_name: String) {
         config.ical.remove(&config_name);
     }
