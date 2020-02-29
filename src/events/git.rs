@@ -193,57 +193,90 @@ impl EventProvider for Git {
         let day_start = day.and_hms(0, 0, 0);
         let next_day_start = day_start + chrono::Duration::days(1);
         let repo = Repository::open(&git_config.repo_folder)?;
-        let mut revwalk = repo.revwalk()?;
-        revwalk.set_sorting(/*git2::Sort::REVERSE |*/ git2::Sort::TIME);
-        revwalk.push_head()?;
-        let mut commits: Vec<Commit> = revwalk
-            .map(|r| {
-                let oid = r?;
-                repo.find_commit(oid)
-            })
-            .filter_map(|c| match c {
-                Ok(commit) => Some(commit),
-                Err(e) => {
-                    println!("Error walking the revisions {}, skipping", e);
-                    None
+        let mut all_commits = HashMap::new();
+        for branch in repo
+            .branches(Some(git2::BranchType::Local))?
+            .filter_map(|b| b.ok())
+        {
+            if let Some(branch_oid) = branch.0.get().target() {
+                let branch_name = branch.0.name().ok().flatten().map(|s| s.to_string());
+                let branch_head = repo.find_commit(branch_oid)?;
+                let branch_head_date = Git::git2_time_to_datetime(branch_head.time());
+                if branch_head_date < day_start {
+                    // early abort: quite a lot faster than starting a useless revwalk
+                    continue;
                 }
-            })
-            .take_while(|c| {
-                let commit_date = Git::git2_time_to_datetime(c.time());
-                commit_date >= day_start
-            })
-            .filter(|c| {
-                let commit_date = Git::git2_time_to_datetime(c.time());
-                // TODO move to option.contains when it stabilizes https://github.com/rust-lang/rust/issues/62358
-                commit_date < next_day_start && c.author().name() == Some(&git_config.commit_author)
-            })
-            .collect();
-        commits.reverse();
-        Ok(commits
+                let mut revwalk = repo.revwalk()?;
+                revwalk.set_sorting(/*git2::Sort::REVERSE |*/ git2::Sort::TIME);
+                revwalk.push(branch_oid)?;
+                let mut commits: Vec<Commit> = revwalk
+                    .map(|r| {
+                        let oid = r?;
+                        repo.find_commit(oid)
+                    })
+                    .filter_map(|c| match c {
+                        Ok(commit) => Some(commit),
+                        Err(e) => {
+                            println!("Error walking the revisions {}, skipping", e);
+                            None
+                        }
+                    })
+                    .take_while(|c| {
+                        let commit_date = Git::git2_time_to_datetime(c.time());
+                        commit_date >= day_start
+                    })
+                    .filter(|c| {
+                        let commit_date = Git::git2_time_to_datetime(c.time());
+                        // TODO move to option.contains when it stabilizes https://github.com/rust-lang/rust/issues/62358
+                        commit_date < next_day_start
+                            && c.author().name() == Some(&git_config.commit_author)
+                    })
+                    .collect();
+                commits.reverse();
+                all_commits.insert(branch_name.unwrap_or_else(|| "".to_string()), commits);
+            }
+        }
+        let mut result = all_commits
             .iter()
-            .map(|c| {
-                let commit_date = Git::git2_time_to_datetime(c.time());
-                let diff = Git::get_commit_diff(&repo, &c);
-                let contents_header = c.message().unwrap_or("").to_string();
-                let (contents, extra_details) = match diff {
-                    None => ("".to_string(), None),
-                    Some(d) => (
-                        "<span font-family=\"monospace\">".to_owned()
-                            + &Git::get_commit_full_diffstr(&d).unwrap_or_else(|| "".to_string())
-                            + "</span>",
-                        Git::get_commit_extra_info(&d),
-                    ),
-                };
-                Event::new(
-                    "Git",
-                    crate::icons::FONTAWESOME_CODE_BRANCH_SVG,
-                    commit_date.time(),
-                    c.summary().unwrap_or("").to_string(),
-                    contents_header,
-                    EventBody::Markup(contents, WordWrapMode::NoWordWrap),
-                    extra_details,
-                )
+            .flat_map(|(branch, commits)| {
+                let rrepo = &repo;
+                commits.iter().map(move |c| {
+                    let branch = branch.clone();
+                    let commit_date = Git::git2_time_to_datetime(c.time());
+                    let diff = Git::get_commit_diff(rrepo, &c);
+                    let contents_header = c.message().unwrap_or("").to_string();
+                    let (contents, extra_details) = match diff {
+                        None => (branch.clone(), None),
+                        Some(d) => (
+                            ("<span font-family=\"monospace\">".to_owned()
+                                + &branch
+                                + "\n\n"
+                                + &Git::get_commit_full_diffstr(&d)
+                                    .unwrap_or_else(|| "".to_string())
+                                + "</span>"),
+                            Git::get_commit_extra_info(&d),
+                        ),
+                    };
+                    Event::new(
+                        "Git",
+                        crate::icons::FONTAWESOME_CODE_BRANCH_SVG,
+                        commit_date.time(),
+                        c.summary().unwrap_or("").to_string(),
+                        contents_header,
+                        EventBody::Markup(contents, WordWrapMode::NoWordWrap),
+                        extra_details,
+                    )
+                })
             })
-            .collect())
+            .collect::<Vec<Event>>();
+        result.sort_by_key(|e| e.event_time); // need to sort for the dedup to work
+        result.dedup_by(|e1, e2| {
+            // deduplicate identical commits seen in different branches
+            // (the body will be different since we put the branch name there)
+            e1.event_time == e2.event_time
+                && e1.event_contents_header == e2.event_contents_header
+                && e1.event_info == e2.event_info
+        });
+        Ok(result)
     }
 }
