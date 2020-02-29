@@ -91,13 +91,13 @@ pub fn get_all_events(config: Config, day: Date<Local>) -> Result<Vec<Event>> {
     Ok(events)
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum WordWrapMode {
     WordWrap,
     NoWordWrap,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum EventBody {
     PlainText(String),
     Markup(String, WordWrapMode),
@@ -126,7 +126,7 @@ impl EventBody {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Event {
     pub event_type_desc: &'static str,
     pub event_type_icon: &'static [u8],

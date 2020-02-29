@@ -280,3 +280,51 @@ impl EventProvider for Git {
         Ok(result)
     }
 }
+
+#[test]
+fn it_can_get_events_for_the_cigale_repo() {
+    let git_cfg = GitConfig {
+        repo_folder: ".".to_string(),
+        commit_author: "Emmanuel Touzery".to_string(),
+    };
+    let mut git = HashMap::new();
+    git.insert("test".to_string(), git_cfg);
+    let config = Config {
+        git,
+        email: HashMap::new(),
+        redmine: HashMap::new(),
+        ical: HashMap::new(),
+    };
+    let expected_fst = Event::new(
+        "Git",
+        crate::icons::FONTAWESOME_CODE_BRANCH_SVG,
+        NaiveTime::from_hms(17, 1, 35),
+        "include the icons in the binary".to_string(),
+        "include the icons in the binary\n".to_string(),
+        EventBody::Markup(
+            r#"<span font-family="monospace">flatpak
+
+ Cargo.lock                       | 11 ++++++-----
+ Cargo.toml                       |  1 +
+ src/events/email.rs              |  6 +++---
+ src/events/events.rs             |  6 +++---
+ src/events/git.rs                |  6 +++---
+ src/events/ical.rs               |  6 +++---
+ src/events/redmine.rs            |  6 +++---
+ src/icons.rs                     | 57 ++++++++++++++++++++++++++++++++++++++++++++++-----------
+ src/widgets/addeventsourcedlg.rs |  7 ++-----
+ src/widgets/datepicker.rs        |  6 +++---
+ src/widgets/eventsource.rs       |  4 ++--
+ 11 files changed, 75 insertions(+), 41 deletions(-)
+</span>"#
+                .to_string(),
+            WordWrapMode::NoWordWrap,
+        ),
+        Some("".to_string()),
+    );
+    let actual = Git
+        .get_events(&config, "test", Local.ymd(2020, 2, 25))
+        .unwrap();
+    assert_eq!(2, actual.len());
+    assert_eq!(expected_fst, *actual.first().unwrap());
+}
