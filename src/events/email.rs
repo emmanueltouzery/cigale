@@ -157,8 +157,7 @@ impl Email {
                 None => {
                     return Ok(None); // no more emails
                 }
-                // the DateTime::from is to convert the TZ
-                Some(date) if date < DateTime::from(*next_day_start) => {
+                Some(date) if date < *next_day_start => {
                     // first date before my end date
                     return Ok(Some((email_bytes.unwrap(), date)));
                 }

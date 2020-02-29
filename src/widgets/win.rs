@@ -136,7 +136,9 @@ impl Widget for Win {
             ));
         self.events
             .stream()
-            .emit(super::events::Msg::ConfigUpdate(self.model.config.clone()));
+            .emit(super::events::Msg::ConfigUpdate(Box::new(
+                self.model.config.clone(),
+            )));
         self.model
             .titlebar
             .stream()
