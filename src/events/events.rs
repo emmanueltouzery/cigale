@@ -92,23 +92,36 @@ pub fn get_all_events(config: Config, day: Date<Local>) -> Result<Vec<Event>> {
 }
 
 #[derive(Clone)]
+pub enum WordWrapMode {
+    WordWrap,
+    NoWordWrap,
+}
+
+#[derive(Clone)]
 pub enum EventBody {
     PlainText(String),
-    Markup(String),
+    Markup(String, WordWrapMode),
 }
 
 impl EventBody {
     pub fn is_markup(&self) -> bool {
         match self {
-            EventBody::Markup(_) => true,
+            EventBody::Markup(_, _) => true,
             _ => false,
         }
     }
 
     pub fn as_str(&self) -> &str {
         match self {
-            EventBody::Markup(str) => &str,
+            EventBody::Markup(str, _) => &str,
             EventBody::PlainText(str) => &str,
+        }
+    }
+
+    pub fn is_word_wrap(&self) -> bool {
+        match self {
+            EventBody::Markup(_, WordWrapMode::WordWrap) => true,
+            _ => false,
         }
     }
 }

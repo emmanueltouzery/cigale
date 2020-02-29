@@ -1,4 +1,4 @@
-use super::events::{ConfigType, Event, EventBody, EventProvider, Result};
+use super::events::{ConfigType, Event, EventBody, EventProvider, Result, WordWrapMode};
 use crate::config::Config;
 use chrono::prelude::*;
 use git2::{Commit, Repository};
@@ -240,7 +240,7 @@ impl EventProvider for Git {
                     commit_date.time(),
                     c.summary().unwrap_or("").to_string(),
                     contents_header,
-                    EventBody::Markup(contents),
+                    EventBody::Markup(contents, WordWrapMode::NoWordWrap),
                     extra_details,
                 )
             })

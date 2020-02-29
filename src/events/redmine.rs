@@ -2,7 +2,7 @@
 // 1. unless the redmine admin greenlights it, a user may be unable to get an apikey
 // 2. the redmine rest api doesn't offer an activity API https://www.redmine.org/issues/14872
 //    without such an API, this would be very painful and very slow
-use super::events::{ConfigType, Event, EventBody, EventProvider, Result};
+use super::events::{ConfigType, Event, EventBody, EventProvider, Result, WordWrapMode};
 use crate::config::Config;
 use chrono::prelude::*;
 use core::time::Duration;
@@ -78,12 +78,15 @@ impl Redmine {
                     time,
                     link_elt.inner_html(),
                     link_elt.inner_html(),
-                    EventBody::Markup(format!(
-                        "<a href=\"{}{}\">Open in the browser</a>\n{}",
-                        redmine_config.server_url,
-                        link_elt.value().attr("href").unwrap_or(""),
-                        glib::markup_escape_text(&description_elt.inner_html()),
-                    )),
+                    EventBody::Markup(
+                        format!(
+                            "<a href=\"{}{}\">Open in the browser</a>\n{}",
+                            redmine_config.server_url,
+                            link_elt.value().attr("href").unwrap_or(""),
+                            glib::markup_escape_text(&description_elt.inner_html()),
+                        ),
+                        WordWrapMode::WordWrap,
+                    ),
                     None,
                 ));
             }

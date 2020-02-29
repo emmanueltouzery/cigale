@@ -165,7 +165,7 @@ impl Widget for EventView {
                },
                gtk::Box {
                    orientation: gtk::Orientation::Vertical,
-                   valign: gtk::Align::Start,
+                   valign: gtk::Align::Fill,
                    child: {
                        fill: true,
                        expand: true,
@@ -176,8 +176,10 @@ impl Widget for EventView {
                        child: {
                            padding: 10, // vertical padding for the label
                            fill: true,
-                           expand: true,
+                           expand: false,
+                           pack_type: gtk::PackType::Start,
                        },
+                       xalign: 0.0,
                        halign: gtk::Align::Start,
                        valign: gtk::Align::Start,
                        line_wrap: true,
@@ -191,6 +193,8 @@ impl Widget for EventView {
                    gtk::ScrolledWindow {
                        child: {
                            expand: true,
+                           fill: true,
+                           pack_type: gtk::PackType::Start,
                        },
                        propagate_natural_height: true,
                        gtk::Box {
@@ -202,6 +206,7 @@ impl Widget for EventView {
                            gtk::Label {
                                // text label, not used when we display markup
                                child: {
+                                   pack_type: gtk::PackType::Start,
                                    fill: true,
                                    expand: true,
                                    padding: 10,
@@ -209,6 +214,8 @@ impl Widget for EventView {
                                halign: gtk::Align::Start,
                                valign: gtk::Align::Start,
                                selectable: true,
+                               xalign: 0.0,
+                               yalign: 0.0,
                                visible: self.model.current_event.as_ref()
                                                                 .filter(|e| e.event_contents_body.is_markup())
                                                                 .is_none(),
@@ -222,6 +229,7 @@ impl Widget for EventView {
                            gtk::Label {
                                // markup label, not used when we display text
                                child: {
+                                   pack_type: gtk::PackType::Start,
                                    fill: true,
                                    expand: true,
                                    padding: 10,
@@ -229,6 +237,12 @@ impl Widget for EventView {
                                halign: gtk::Align::Start,
                                valign: gtk::Align::Start,
                                selectable: true,
+                               xalign: 0.0,
+                               yalign: 0.0,
+                               line_wrap: self.model.current_event.as_ref()
+                                                                .filter(|e| e.event_contents_body.is_markup())
+                                                                .map(|e| e.event_contents_body.is_word_wrap())
+                                                                .unwrap_or(false),
                                visible: self.model.current_event.as_ref()
                                                                 .filter(|e| e.event_contents_body.is_markup())
                                                                 .is_some(),
