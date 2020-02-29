@@ -213,6 +213,8 @@ impl Widget for Win {
         #[name="window"]
         gtk::Window {
             titlebar: Some(self.model.titlebar.widget()),
+            property_default_width: 1000,
+            property_default_height: 650,
             #[name="main_window_stack"]
             gtk::Stack {
                 #[name="events"]
