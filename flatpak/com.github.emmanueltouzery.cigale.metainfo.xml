@@ -11,8 +11,13 @@
   <screenshots>
     <screenshot type="default">
       <image>
-      https://gitlab.gnome.org/World/design/contrast/raw/master/data/resources/screenshots/screenshot1.png</image>
+      https://raw.githubusercontent.com/wiki/emmanueltouzery/cigale/cigale-main.png</image>
       <caption>Main Window</caption>
+    </screenshot>
+    <screenshot>
+      <image>
+      https://raw.githubusercontent.com/wiki/emmanueltouzery/cigale/cigale-event-sources.png</image>
+      <caption>Event sources</caption>
     </screenshot>
   </screenshots>
   <url type="homepage">
