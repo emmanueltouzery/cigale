@@ -30,7 +30,7 @@ have it soon available on flathub too.
 ## Use
 
 You must configure event sources in the application so it displays your data.
-Go in the second tab, then click the "Add" button.
+Go in the second tab, then click the "New" button.
 
 ![Main view picture](https://raw.githubusercontent.com/wiki/emmanueltouzery/cigale/first_run.png)
 
