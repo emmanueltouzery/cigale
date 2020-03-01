@@ -23,3 +23,13 @@ It will look at traces of your past activity in your system. Here are the event 
 
 This is a rust and gtk application. I've tested it only on linux. You can build it on your computer, I'm hoping to
 have it soon available on flathub too.
+
+## Use
+
+You must configure event sources in the application so it displays your data.
+Go in the second tab, then click the "Add" button.
+
+![Main view picture](https://raw.githubusercontent.com/wiki/emmanueltouzery/cigale/first_run.png)
+
+Once you have added event sources, you can return to the first tab to view the
+data the application collected for you, one day at a time.
