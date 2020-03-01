@@ -6,7 +6,20 @@
   <name>Cigale</name>
   <summary>Review your past activity</summary>
   <description>
-    <p>Review your past activity</p>
+    <p>If you need to give a timesheet of your activities in the
+    previous month for your work, but you didn't collect the
+    information of what you were doing, when (like the grasshopper
+    in the tale, who didn't plan for winter), then this program may
+    help you.</p>
+    <p>It will look at traces of your past activity in your system.
+    Here are the event sources that it will take into account:
+    <ul>
+      <li>The emails you sent (mbox format, for instance
+      Thunderbird)</li>
+      <li>Ical sources (for instance Google calendar)</li>
+      <li>Source control activity - Git</li>
+      <li>Redmine bug activity</li>
+    </ul></p>
   </description>
   <screenshots>
     <screenshot type="default">
@@ -28,7 +41,7 @@ https://hughsie.github.io/oars/index.html
 -->
   <content_rating type="oars-1.0" />
   <releases>
-    <release version="0.0.1" date="2020-02-08">
+    <release version="0.0.1" date="2020-03-01">
       <description>
         <p>First release of Cigale</p>
       </description>
