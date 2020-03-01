@@ -16,7 +16,10 @@ It will look at traces of your past activity in your system. Here are the event 
 - Source control activity - Git
 - Redmine bug activity
 
+First tab, events:
 ![Main view picture](https://raw.githubusercontent.com/wiki/emmanueltouzery/cigale/cigale-main.png)
+
+Second tab, configured event sources:
 ![Event sources picture](https://raw.githubusercontent.com/wiki/emmanueltouzery/cigale/cigale-event-sources.png)
 
 ## Installation
