@@ -216,6 +216,7 @@ impl Widget for EventView {
                                selectable: true,
                                xalign: 0.0,
                                yalign: 0.0,
+                               line_wrap: true,
                                visible: self.model.current_event.as_ref()
                                                                 .filter(|e| e.event_contents_body.is_markup())
                                                                 .is_none(),

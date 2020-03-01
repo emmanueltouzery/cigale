@@ -170,11 +170,18 @@ impl Email {
         email_contents: &mailparse::ParsedMail,
         email_date: &DateTime<Local>,
     ) -> Result<Event> {
-        let message = if email_contents.subparts.len() > 1 {
+        let message_body = if email_contents.subparts.len() > 1 {
             email_contents.subparts[0].get_body()? // TODO check the mimetype, i want text, not html
         } else {
             email_contents.get_body()?
         };
+        let event_body = Email::get_header_val(&email_contents.headers, "To")
+            .map(|t| format!("To: {}\n", t))
+            .unwrap_or_else(|| "".to_string())
+            + &Email::get_header_val(&email_contents.headers, "Cc")
+                .map(|c| format!("Cc: {}\n\n", c))
+                .unwrap_or_else(|| "".to_string())
+            + &message_body;
         let email_subject = Email::get_header_val(&email_contents.headers, "Subject")
             .unwrap_or_else(|| "-".to_string());
         Ok(Event::new(
@@ -183,7 +190,7 @@ impl Email {
             email_date.time(),
             email_subject.clone(),
             email_subject,
-            EventBody::PlainText(message),
+            EventBody::PlainText(event_body),
             Email::get_header_val(&email_contents.headers, "To"),
         ))
     }
