@@ -1,5 +1,7 @@
 # Cigale timesheet
 
+<a  href='https://flathub.org/apps/details/com.github.emmanueltouzery.cigale'><img width='180' align='right' alt='Download on Flathub' src='https://flathub.org/assets/badges/flathub-badge-en.png'/></a>
+
 > "La Cigale, ayant chanté tout l'Été, se trouva fort dépourvue quand la bise fut venue."
 > -- Jean de la Fontaine, The ant and the grasshopper
 
@@ -24,8 +26,7 @@ Second tab, configured event sources:
 
 ## Installation
 
-This is a rust and gtk application. I've tested it only on linux. You can build it on your computer, I'm hoping to
-have it soon available on flathub too.
+This is a rust and gtk application. I've tested it only on linux. The preferred way to install it is [through flathub](https://flathub.org/apps/details/com.github.emmanueltouzery.cigale), you can also of course build it from source.
 
 ## Use
 
