@@ -70,8 +70,10 @@ impl Redmine {
                 let time_elt = &next_time.unwrap();
                 let time_str = time_elt.inner_html();
                 let time = Self::parse_time(&time_str)?;
-                let description_elt = &it_descriptions.next().unwrap();
-                let link_elt = &it_links.next().unwrap();
+                let description_elt = &it_descriptions
+                    .next()
+                    .ok_or_else(|| "Redmine event: no description?")?;
+                let link_elt = &it_links.next().ok_or_else(|| "Redmine event: no link?")?;
                 result.push(Event::new(
                     "Redmine",
                     crate::icons::FONTAWESOME_TASKS_SVG,
@@ -100,8 +102,7 @@ impl Redmine {
             .timeout(Duration::from_secs(30))
             .connect_timeout(Duration::from_secs(30))
             .connection_verbose(true)
-            .build()
-            .unwrap();
+            .build()?;
 
         let html = client
             .get(&redmine_config.server_url)
@@ -131,10 +132,10 @@ impl Redmine {
         let user_id = doc
             .select(&user_sel)
             .next()
-            .unwrap()
+            .ok_or_else(|| "Failed getting the user id#1")?
             .value()
             .attr("href")
-            .unwrap()
+            .ok_or_else(|| "Failed getting the user id#2")?
             .replace("/users/", "");
         Ok((client, user_id))
     }
