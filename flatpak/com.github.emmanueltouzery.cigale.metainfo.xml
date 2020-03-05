@@ -12,14 +12,14 @@
     in the tale, who didn't plan for winter), then this program may
     help you.</p>
     <p>It will look at traces of your past activity in your system.
-    Here are the event sources that it will take into account:
+    Here are the event sources that it will take into account:</p>
     <ul>
       <li>The emails you sent (mbox format, for instance
       Thunderbird)</li>
       <li>Ical sources (for instance Google calendar)</li>
       <li>Source control activity - Git</li>
       <li>Redmine bug activity</li>
-    </ul></p>
+    </ul>
   </description>
   <screenshots>
     <screenshot type="default">
