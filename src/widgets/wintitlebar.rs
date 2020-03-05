@@ -191,12 +191,10 @@ impl Widget for WinTitleBar {
             title: Some("Cigale"),
             #[name="menu_button"]
             gtk::MenuButton {
-                // sensitive: true,
                 image: Some(&gtk::Image::new_from_icon_name(Some("open-menu-symbolic"), gtk::IconSize::Menu)),
                 child: {
                     pack_type: gtk::PackType::End
                 },
-                // clicked() => Msg::OpenMenu,
             },
             #[name="main_window_stack_switcher"]
             gtk::StackSwitcher {
