@@ -49,6 +49,7 @@ impl Widget for Win {
                                self.model.relm, Msg::RemoveEventSource(providername, name.clone()));
         relm::connect!(event_sources@EventSourcesMsg::EditEventSource(ref providername, ref name),
                                self.model.relm, Msg::EditEventSource(providername, name.clone()));
+        self.update_event_sources_need_attention();
     }
 
     fn model(relm: &relm::Relm<Self>, _: ()) -> Model {
@@ -81,7 +82,7 @@ impl Widget for Win {
         }
     }
 
-    fn config_source_names(config: &Config) -> HashSet<String> {
+    pub fn config_source_names(config: &Config) -> HashSet<String> {
         crate::events::events::get_event_providers()
             .iter()
             .flat_map(|ep| {
@@ -91,6 +92,16 @@ impl Widget for Win {
                     .collect::<Vec<String>>()
             })
             .collect()
+    }
+
+    // we use the 'needs-attention' hint on the 'event sources'
+    // tab when there are no event sources configured, because
+    // the app won't be useful until we have event sources.
+    fn update_event_sources_need_attention(&self) {
+        self.main_window_stack.set_child_needs_attention(
+            self.event_sources.widget(),
+            Self::config_source_names(&self.model.config).is_empty(),
+        );
     }
 
     fn load_style(&self) -> Result<(), Box<dyn std::error::Error>> {

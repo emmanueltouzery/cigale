@@ -22,6 +22,7 @@ pub struct Model {
     // events will be None while we're loading
     events: Option<Result<Vec<Event>, String>>,
     current_event: Option<Event>,
+    day: Date<Local>,
 }
 
 #[widget]
@@ -41,12 +42,14 @@ impl Widget for EventView {
     }
 
     fn model(relm: &relm::Relm<Self>, config: Config) -> Model {
-        EventView::fetch_events(&config, relm, Local::today().pred());
+        let day = Local::today().pred();
+        EventView::fetch_events(&config, relm, day);
         Model {
             config,
             relm: relm.clone(),
             events: None,
             current_event: None,
+            day,
         }
     }
 
@@ -81,6 +84,15 @@ impl Widget for EventView {
             }
             None => {}
         }
+
+        let has_event_sources =
+            !super::win::Win::config_source_names(&self.model.config).is_empty();
+        self.events_stack
+            .set_visible_child_name(if has_event_sources {
+                "events"
+            } else {
+                "no-event-sources"
+            });
     }
 
     fn fetch_events(config: &Config, relm: &relm::Relm<Self>, day: Date<Local>) {
@@ -111,6 +123,7 @@ impl Widget for EventView {
             }
             Msg::DayChange(day) => {
                 self.model.events = None;
+                self.model.day = day;
                 self.update_events();
                 EventView::fetch_events(&self.model.config, &self.model.relm, day);
             }
@@ -120,142 +133,156 @@ impl Widget for EventView {
             }
             Msg::ConfigUpdate(config) => {
                 self.model.config = *config;
-                self.update_events();
+                EventView::fetch_events(&self.model.config, &self.model.relm, self.model.day);
             }
         }
     }
 
     view! {
-       gtk::Box {
-           orientation: gtk::Orientation::Vertical,
-           gtk::Box {
-               orientation: gtk::Orientation::Horizontal,
-               DatePicker {
-                   DatePickerDayPickedMsg(d) => Msg::DayChange(d)
-               },
-               gtk::Spinner {
-                   property_active: self.model.events.is_none()
-               }
-           },
-           #[name="info_bar"]
-           gtk::InfoBar {
-               revealed: self.model.events.as_ref()
-                                          .filter(|r| r.is_err())
-                                          .is_some(),
-               message_type: gtk::MessageType::Error,
-           },
-           gtk::Box {
-               orientation: gtk::Orientation::Horizontal,
-               child: {
-                   fill: true,
-                   expand: true,
-               },
-               gtk::ScrolledWindow {
-                   halign: gtk::Align::Start,
-                   property_width_request: 350,
-                   gtk::Box {
-                       #[name="event_list"]
-                       gtk::ListBox {
-                           child: {
-                               fill: true,
-                               expand: true,
-                           }
-                       }
-                   }
-               },
-               gtk::Box {
-                   orientation: gtk::Orientation::Vertical,
-                   valign: gtk::Align::Fill,
-                   child: {
-                       fill: true,
-                       expand: true,
-                       padding: 10, // horizontal padding for the label
-                   },
-                   #[name="header_label"]
-                   gtk::Label {
-                       child: {
-                           padding: 10, // vertical padding for the label
-                           fill: true,
-                           expand: false,
-                           pack_type: gtk::PackType::Start,
-                       },
-                       xalign: 0.0,
-                       halign: gtk::Align::Start,
-                       valign: gtk::Align::Start,
-                       line_wrap: true,
-                       selectable: true,
-                       text: self.model
-                                   .current_event
-                                   .as_ref()
-                                   .map(|e| e.event_contents_header.as_str())
-                                   .unwrap_or("No current event")
-                   },
-                   gtk::ScrolledWindow {
-                       child: {
-                           expand: true,
-                           fill: true,
-                           pack_type: gtk::PackType::Start,
-                       },
-                       propagate_natural_height: true,
-                       gtk::Box {
-                           // two labels: one in case we have markup, one in case we have plain text.
-                           // I used to have a single label for both,  using use_markup and text, and it worked,
-                           // but there was no guarantee on the other in which both fields were updated. If the text
-                           // was updated before 'use_markup', i could get text interpreted as markup which was not markup,
-                           // then GtkLabel would fail and never recover displaying markup.
-                           gtk::Label {
-                               // text label, not used when we display markup
-                               child: {
-                                   pack_type: gtk::PackType::Start,
-                                   fill: true,
-                                   expand: true,
-                                   padding: 10,
-                               },
-                               halign: gtk::Align::Start,
-                               valign: gtk::Align::Start,
-                               selectable: true,
-                               xalign: 0.0,
-                               yalign: 0.0,
-                               line_wrap: true,
-                               visible: self.model.current_event.as_ref()
-                                                                .filter(|e| e.event_contents_body.is_markup())
-                                                                .is_none(),
-                               text: self.model
-                                         .current_event
-                                         .as_ref()
-                                         .filter(|e| !e.event_contents_body.is_markup())
-                                         .map(|e| e.event_contents_body.as_str())
-                                         .unwrap_or(""),
-                           },
-                           gtk::Label {
-                               // markup label, not used when we display text
-                               child: {
-                                   pack_type: gtk::PackType::Start,
-                                   fill: true,
-                                   expand: true,
-                                   padding: 10,
-                               },
-                               halign: gtk::Align::Start,
-                               valign: gtk::Align::Start,
-                               selectable: true,
-                               xalign: 0.0,
-                               yalign: 0.0,
-                               line_wrap: self.model.current_event.as_ref()
-                                                                .filter(|e| e.event_contents_body.is_markup())
-                                                                .map(|e| e.event_contents_body.is_word_wrap())
-                                                                .unwrap_or(false),
-                               visible: self.model.current_event.as_ref()
-                                                                .filter(|e| e.event_contents_body.is_markup())
-                                                                .is_some(),
-                               markup: self.model.current_event.as_ref()
-                                                               .filter(|e| e.event_contents_body.is_markup())
-                                                               .map(|e| e.event_contents_body.as_str())
-                                                               .unwrap_or(""),
-                           }
-                       }
-                   }
-               }
-           },
-       },
+        #[name="events_stack"]
+        gtk::Stack {
+            gtk::Box {
+                child: {
+                    name: Some("events")
+                },
+                orientation: gtk::Orientation::Vertical,
+                gtk::Box {
+                    orientation: gtk::Orientation::Horizontal,
+                    DatePicker {
+                        DatePickerDayPickedMsg(d) => Msg::DayChange(d)
+                    },
+                    gtk::Spinner {
+                        property_active: self.model.events.is_none()
+                    }
+                },
+                #[name="info_bar"]
+                gtk::InfoBar {
+                    revealed: self.model.events.as_ref()
+                                               .filter(|r| r.is_err())
+                                               .is_some(),
+                    message_type: gtk::MessageType::Error,
+                },
+                gtk::Box {
+                    orientation: gtk::Orientation::Horizontal,
+                    child: {
+                        fill: true,
+                        expand: true,
+                    },
+                    gtk::ScrolledWindow {
+                        halign: gtk::Align::Start,
+                        property_width_request: 350,
+                        gtk::Box {
+                            #[name="event_list"]
+                            gtk::ListBox {
+                                child: {
+                                    fill: true,
+                                    expand: true,
+                                }
+                            }
+                        }
+                    },
+                    gtk::Box {
+                        orientation: gtk::Orientation::Vertical,
+                        valign: gtk::Align::Fill,
+                        child: {
+                            fill: true,
+                            expand: true,
+                            padding: 10, // horizontal padding for the label
+                        },
+                        #[name="header_label"]
+                        gtk::Label {
+                            child: {
+                                padding: 10, // vertical padding for the label
+                                fill: true,
+                                expand: false,
+                                pack_type: gtk::PackType::Start,
+                            },
+                            xalign: 0.0,
+                            halign: gtk::Align::Start,
+                            valign: gtk::Align::Start,
+                            line_wrap: true,
+                            selectable: true,
+                            text: self.model
+                                      .current_event
+                                      .as_ref()
+                                      .map(|e| e.event_contents_header.as_str())
+                                      .unwrap_or("No current event")
+                        },
+                        gtk::ScrolledWindow {
+                            child: {
+                                expand: true,
+                                fill: true,
+                                pack_type: gtk::PackType::Start,
+                            },
+                            propagate_natural_height: true,
+                            gtk::Box {
+                                // two labels: one in case we have markup, one in case we have plain text.
+                                // I used to have a single label for both,  using use_markup and text, and it worked,
+                                // but there was no guarantee on the other in which both fields were updated. If the text
+                                // was updated before 'use_markup', i could get text interpreted as markup which was not markup,
+                                // then GtkLabel would fail and never recover displaying markup.
+                                gtk::Label {
+                                    // text label, not used when we display markup
+                                    child: {
+                                        pack_type: gtk::PackType::Start,
+                                        fill: true,
+                                        expand: true,
+                                        padding: 10,
+                                    },
+                                    halign: gtk::Align::Start,
+                                    valign: gtk::Align::Start,
+                                    selectable: true,
+                                    xalign: 0.0,
+                                    yalign: 0.0,
+                                    line_wrap: true,
+                                    visible: self.model.current_event.as_ref()
+                                                                     .filter(|e| e.event_contents_body.is_markup())
+                                                                     .is_none(),
+                                    text: self.model
+                                              .current_event
+                                              .as_ref()
+                                              .filter(|e| !e.event_contents_body.is_markup())
+                                              .map(|e| e.event_contents_body.as_str())
+                                              .unwrap_or(""),
+                                },
+                                gtk::Label {
+                                    // markup label, not used when we display text
+                                    child: {
+                                        pack_type: gtk::PackType::Start,
+                                        fill: true,
+                                        expand: true,
+                                        padding: 10,
+                                    },
+                                    halign: gtk::Align::Start,
+                                    valign: gtk::Align::Start,
+                                    selectable: true,
+                                    xalign: 0.0,
+                                    yalign: 0.0,
+                                    line_wrap: self.model.current_event.as_ref()
+                                                                       .filter(|e| e.event_contents_body.is_markup())
+                                                                       .map(|e| e.event_contents_body.is_word_wrap())
+                                                                       .unwrap_or(false),
+                                    visible: self.model.current_event.as_ref()
+                                                                     .filter(|e| e.event_contents_body.is_markup())
+                                                                     .is_some(),
+                                    markup: self.model.current_event.as_ref()
+                                                                    .filter(|e| e.event_contents_body.is_markup())
+                                                                    .map(|e| e.event_contents_body.as_str())
+                                                                    .unwrap_or(""),
+                                }
+                            }
+                        }
+                    }
+                },
+            },
+            gtk::Label {
+                child: {
+                    name: Some("no-event-sources")
+                },
+                text: "No event sources have been set up yet.\n\nUse the second tab to configure event sources.",
+                justify: gtk::Justification::Center,
+                use_markup: true
+            }
+        }
     }
 }

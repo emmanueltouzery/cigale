@@ -119,7 +119,14 @@ impl Widget for EventSources {
                 );
             }
         }
-        for child in self.eventsources_list.get_children() {
+        let children = self.eventsources_list.get_children();
+        self.eventsources_stack
+            .set_visible_child_name(if children.is_empty() {
+                "no-events"
+            } else {
+                "events"
+            });
+        for child in children {
             // don't want the row background color to change when we hover
             // it with the mouse (activatable), or the focus dotted lines
             // around the rows to be drawn, for aesthetic reasons.
@@ -130,10 +137,23 @@ impl Widget for EventSources {
     }
 
     view! {
-        gtk::ScrolledWindow {
-            #[name="eventsources_list"]
-            gtk::ListBox {
-                selection_mode: gtk::SelectionMode::None,
+        #[name="eventsources_stack"]
+        gtk::Stack {
+            gtk::ScrolledWindow {
+                child: {
+                    name: Some("events")
+                },
+                #[name="eventsources_list"]
+                gtk::ListBox {
+                    selection_mode: gtk::SelectionMode::None,
+                }
+            },
+            gtk::Label {
+                child: {
+                    name: Some("no-events")
+                },
+                markup: "No event sources have been set up yet.\n\nUse the <b>'New'</b> button on the top-left of this window to add one.",
+                justify: gtk::Justification::Center,
             }
         }
     }
