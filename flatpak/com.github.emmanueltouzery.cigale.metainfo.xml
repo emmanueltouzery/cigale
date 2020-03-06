@@ -41,6 +41,17 @@ https://hughsie.github.io/oars/index.html
 -->
   <content_rating type="oars-1.0" />
   <releases>
+    <release version="0.2.0" date="2020-03-06">
+      <description>
+        <ul>
+          <li>Make the redmine event source react better to
+          errors</li>
+          <li>Much nicer first-run experience</li>
+          <li>Reload the events view immediately when the config is
+          changed</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.0.1" date="2020-03-01">
       <description>
         <p>First release of Cigale</p>
