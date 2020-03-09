@@ -32,13 +32,3 @@ You can also build it from source. If you install all the system-related
 dependencies and the rust toolchain, you should be able to simply run `cargo run --release`.
 But on linux, you can also locally build and install a flatpak, without having
 to install any dependencies yourself: `sh flatpak/build-and-install-flatpak.sh`.
-
-## Use
-
-You must configure event sources in the application so it displays your data.
-Go in the second tab, then click the "New" button.
-
-![Main view picture](https://raw.githubusercontent.com/wiki/emmanueltouzery/cigale/first_run.png)
-
-Once you have added event sources, you can return to the first tab to view the
-data the application collected for you, one day at a time.
