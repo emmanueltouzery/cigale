@@ -26,9 +26,27 @@ Second tab, configured event sources:
 
 ## Installation
 
-This is a rust and gtk application. I've tested it only on linux. The preferred way to install it is [through flathub](https://flathub.org/apps/details/com.github.emmanueltouzery.cigale).
+This is a rust and gtk application. 
+
+### Linux
+
+The preferred way to install it is [through flathub](https://flathub.org/apps/details/com.github.emmanueltouzery.cigale).
 
 You can also build it from source. If you install all the system-related
 dependencies and the rust toolchain, you should be able to simply run `cargo run --release`.
 But on linux, you can also locally build and install a flatpak, without having
 to install any dependencies yourself: `sh flatpak/build-and-install-flatpak.sh`.
+
+### Mac OSX
+
+You must [install the rust compiler](https://www.rust-lang.org/tools/install), then use homebrew to install a few dependencies:
+
+    brew install gtk+3
+    brew install librsvg
+    brew install adwaita-icon-theme
+
+Finally you can compile and run the application:
+
+    cargo run --release
+    
+The binary will be in `target/release`, and is relocatable.
