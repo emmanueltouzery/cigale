@@ -3,3 +3,4 @@
 .flatpak-builder/
 repo/
 vendor/
+helpers/redmine_locales/target

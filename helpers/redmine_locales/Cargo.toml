@@ -1,0 +1,10 @@
+[package]
+name = "redmine_locales"
+version = "0.1.0"
+authors = ["Emmanuel Touzery <etouzery@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+reqwest = {version="0.10.2", features=["blocking"]}
+zip = "0.5.5"
+yaml-rust = "0.4.3"
