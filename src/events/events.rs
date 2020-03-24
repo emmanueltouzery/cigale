@@ -6,6 +6,7 @@ use crate::config::Config;
 use chrono::prelude::*;
 use std::collections::HashMap;
 use std::error::Error;
+use std::fmt;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum ConfigType {
@@ -67,6 +68,36 @@ pub fn get_event_providers() -> Vec<Box<dyn EventProvider>> {
     ]
 }
 
+#[derive(Debug)]
+struct ProviderError {
+    pub provider_name: &'static str,
+    pub config_name: String,
+    pub err: Box<dyn Error>,
+}
+
+impl fmt::Display for ProviderError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} - {}: {}",
+            self.provider_name, self.config_name, self.err
+        )
+    }
+}
+
+impl Error for ProviderError {}
+
+/// lets us know from which event source the error came
+impl ProviderError {
+    fn new(provider_name: &'static str, config_name: String, err: Box<dyn Error>) -> ProviderError {
+        ProviderError {
+            provider_name,
+            config_name,
+            err,
+        }
+    }
+}
+
 fn get_events_for_event_provider(
     config: &Config,
     ep: &dyn EventProvider,
@@ -74,7 +105,12 @@ fn get_events_for_event_provider(
 ) -> Result<Vec<Event>> {
     ep.get_config_names(&config)
         .iter()
-        .map(|name| ep.get_events(&config, name, day))
+        .map(|name| {
+            ep.get_events(&config, name, day).map_err(|err| {
+                Box::new(ProviderError::new(ep.name(), (*name).clone(), err))
+                    as Box<dyn std::error::Error>
+            })
+        })
         .collect::<Result<Vec<Vec<Event>>>>()
         .map(|es| es.into_iter().flatten().collect())
 }
