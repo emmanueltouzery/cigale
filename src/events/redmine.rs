@@ -38,8 +38,8 @@ struct LocaleInfo {
 impl LocaleInfo {
     fn new(date_format: &'static str, today_translation: &'static str) -> LocaleInfo {
         LocaleInfo {
-            date_format: date_format,
-            today_translation: today_translation,
+            date_format,
+            today_translation,
         }
     }
 }

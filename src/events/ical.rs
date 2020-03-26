@@ -20,7 +20,7 @@ impl Ical {
             .properties
             .iter()
             .find(|p| p.name == name)
-            .and_then(|s| s.value.as_ref().map(|s| s.as_str()))
+            .and_then(|s| s.value.as_deref())
     }
 
     fn get_property_value_any<'a>(event: &'a IcalEvent, names: &[&str]) -> Option<&'a str> {
