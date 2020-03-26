@@ -236,37 +236,46 @@ impl EventProvider for Git {
                 all_commits.insert(branch_name.unwrap_or_else(|| "".to_string()), commits);
             }
         }
+        let master_commit_ids: &HashSet<git2::Oid> = &all_commits
+            .get("master")
+            .unwrap_or(&vec![])
+            .iter()
+            .map(|c| c.id())
+            .collect();
         let mut result = all_commits
             .iter()
             .flat_map(|(branch, commits)| {
                 let rrepo = &repo;
-                commits.iter().map(move |c| {
-                    let branch = branch.clone();
-                    let commit_date = Git::git2_time_to_datetime(c.time());
-                    let diff = Git::get_commit_diff(rrepo, &c);
-                    let contents_header = c.message().unwrap_or("").to_string();
-                    let (contents, extra_details) = match diff {
-                        None => (branch, None),
-                        Some(d) => (
-                            ("<span font-family=\"monospace\">".to_owned()
-                                + &branch
-                                + "\n\n"
-                                + &Git::get_commit_full_diffstr(&d)
-                                    .unwrap_or_else(|| "".to_string())
-                                + "</span>"),
-                            Git::get_commit_extra_info(&d),
-                        ),
-                    };
-                    Event::new(
-                        "Git",
-                        crate::icons::FONTAWESOME_CODE_BRANCH_SVG,
-                        commit_date.time(),
-                        c.summary().unwrap_or("").to_string(),
-                        contents_header,
-                        EventBody::Markup(contents, WordWrapMode::NoWordWrap),
-                        extra_details,
-                    )
-                })
+                commits
+                    .iter()
+                    .filter(move |c| branch == "master" || !master_commit_ids.contains(&c.id()))
+                    .map(move |c| {
+                        let branch = branch.clone();
+                        let commit_date = Git::git2_time_to_datetime(c.time());
+                        let diff = Git::get_commit_diff(rrepo, &c);
+                        let contents_header = c.message().unwrap_or("").to_string();
+                        let (contents, extra_details) = match diff {
+                            None => (branch, None),
+                            Some(d) => (
+                                ("<span font-family=\"monospace\">".to_owned()
+                                    + &branch
+                                    + "\n\n"
+                                    + &Git::get_commit_full_diffstr(&d)
+                                        .unwrap_or_else(|| "".to_string())
+                                    + "</span>"),
+                                Git::get_commit_extra_info(&d),
+                            ),
+                        };
+                        Event::new(
+                            "Git",
+                            crate::icons::FONTAWESOME_CODE_BRANCH_SVG,
+                            commit_date.time(),
+                            c.summary().unwrap_or("").to_string(),
+                            contents_header,
+                            EventBody::Markup(contents, WordWrapMode::NoWordWrap),
+                            extra_details,
+                        )
+                    })
             })
             .collect::<Vec<Event>>();
         result.sort_by_key(|e| e.event_time); // need to sort for the dedup to work
