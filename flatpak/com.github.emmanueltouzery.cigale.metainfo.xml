@@ -14,12 +14,13 @@
     <p>It will look at traces of your past activity in your system.
     Here are the event sources that it will take into account:</p>
     <ul>
-      <li>The emails you sent (mbox format, for instance
-      Thunderbird)</li>
-      <li>Ical sources (for instance Google calendar)</li>
-      <li>Source control activity - Git</li>
-      <li>Redmine bug activity</li>
-    </ul>
+    <li>The emails you sent (mbox format, for instance
+    Thunderbird)</li>
+    <li>Ical sources (for instance Google calendar)</li>
+    <li>Source control activity - Git</li>
+    <li>Redmine bug activity</li>
+    <li>Gitlab: your merge request comments and
+    approvals</li>&gt;</ul>
   </description>
   <screenshots>
     <screenshot type="default">
@@ -43,8 +44,11 @@ https://hughsie.github.io/oars/index.html
   <releases>
     <release version="0.3.0" date="2020-03-25">
       <description>
-        <ul>when we get an error display from which event provider type and from which event source we got the error.</ul>
-        <ul>redmine: handle multilanguage: translations for 'today'+date formats based on the language+ISO support. Also clean up error handling.</ul>
+        <ul>when we get an error display from which event provider
+        type and from which event source we got the error.</ul>
+        <ul>redmine: handle multilanguage: translations for
+        'today'+date formats based on the language+ISO support.
+        Also clean up error handling.</ul>
       </description>
     </release>
     <release version="0.2.0" date="2020-03-06">
