@@ -1,5 +1,6 @@
 use super::email::Email;
 use super::git::Git;
+use super::gitlab::Gitlab;
 use super::ical::Ical;
 use super::redmine::Redmine;
 use crate::config::Config;
@@ -65,6 +66,7 @@ pub fn get_event_providers() -> Vec<Box<dyn EventProvider>> {
         Box::new(Email),
         Box::new(Ical),
         Box::new(Redmine),
+        Box::new(Gitlab),
     ]
 }
 

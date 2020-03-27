@@ -14,6 +14,8 @@ pub struct Config {
     pub email: HashMap<String, crate::events::email::EmailConfig>,
     pub ical: HashMap<String, crate::events::ical::IcalConfig>,
     pub redmine: HashMap<String, crate::events::redmine::RedmineConfig>,
+    #[serde(default)] // gitlab was added later, after 0.3.0
+    pub gitlab: HashMap<String, crate::events::gitlab::GitlabConfig>,
 }
 
 impl Config {
@@ -28,6 +30,7 @@ impl Config {
             email: HashMap::new(),
             ical: HashMap::new(),
             redmine: HashMap::new(),
+            gitlab: HashMap::new(),
         }
     }
 
