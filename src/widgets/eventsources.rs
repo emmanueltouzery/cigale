@@ -7,7 +7,7 @@ use relm_derive::{widget, Msg};
 
 #[derive(Msg)]
 pub enum Msg {
-    ConfigUpdate(Config),
+    ConfigUpdate(Box<Config>),
     ActionsClicked(gtk::Button, &'static str, String),
     EditEventSource(&'static str, String),
     RemoveEventSource(&'static str, String),
@@ -41,7 +41,7 @@ impl Widget for EventSources {
     fn update(&mut self, event: Msg) {
         match event {
             Msg::ConfigUpdate(cfg) => {
-                self.model.config = cfg;
+                self.model.config = *cfg;
                 self.update_eventsources();
             }
             Msg::ActionsClicked(btn, ep_name, config_name) => {

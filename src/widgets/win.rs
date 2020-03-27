@@ -142,9 +142,9 @@ impl Widget for Win {
         });
         self.event_sources
             .stream()
-            .emit(super::eventsources::Msg::ConfigUpdate(
+            .emit(super::eventsources::Msg::ConfigUpdate(Box::new(
                 self.model.config.clone(),
-            ));
+            )));
         self.events
             .stream()
             .emit(super::events::Msg::ConfigUpdate(Box::new(
