@@ -18,6 +18,7 @@ pub const FONTAWESOME_CALENDAR_ALT_SVG: &[u8] = include_fontawesome_svg!("calend
 const FONTAWESOME_EXCLAMATION_TRIANGLE_SVG: &[u8] =
     include_fontawesome_svg!("exclamation-triangle");
 pub const FONTAWESOME_COMMENT_DOTS_SVG: &[u8] = include_fontawesome_svg!("comment-dots");
+pub const FONTAWESOME_CHECK_SQUARE_SVG: &[u8] = include_fontawesome_svg!("check-square");
 const APPICON_SVG: &[u8] = include_bytes!("../com.github.emmanueltouzery.cigale.svg");
 
 pub fn load_pixbuf(icon_bytes: &'static [u8], size: i32) -> gdk_pixbuf::Pixbuf {

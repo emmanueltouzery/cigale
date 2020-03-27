@@ -17,6 +17,7 @@ It will look at traces of your past activity in your system. Here are the event 
 - Ical sources (for instance Google calendar)
 - Source control activity - Git
 - Redmine bug activity
+- Gitlab: your merge request comments and approvals
 
 First tab, events:
 ![Main view picture](https://raw.githubusercontent.com/wiki/emmanueltouzery/cigale/cigale-main.png)
@@ -26,7 +27,7 @@ Second tab, configured event sources:
 
 ## Installation
 
-This is a rust and gtk application. 
+This is a rust and gtk application.
 
 ### Linux
 
@@ -48,5 +49,5 @@ You must [install the rust compiler](https://www.rust-lang.org/tools/install), t
 Finally you can compile and run the application:
 
     cargo run --release
-    
+
 The binary will be in `target/release`, and is relocatable.
