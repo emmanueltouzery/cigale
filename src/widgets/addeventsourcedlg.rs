@@ -345,7 +345,10 @@ impl Widget for AddEventSourceDialog {
                 .map(|s| s.as_str())
                 .unwrap_or("");
             self.config_fields_grid.attach(
-                &gtk::LabelBuilder::new().label(field.0).build(),
+                &gtk::LabelBuilder::new()
+                    .label(field.0)
+                    .halign(gtk::Align::End)
+                    .build(),
                 1,
                 i,
                 1,
@@ -427,6 +430,7 @@ impl Widget for AddEventSourceDialog {
                 },
                 gtk::Label {
                     label: "Provider name:",
+                    halign: gtk::Align::End,
                     cell: {
                         left_attach: 1,
                         top_attach: 0,
