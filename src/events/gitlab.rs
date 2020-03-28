@@ -20,7 +20,7 @@ const PERSONAL_TOKEN_KEY: &str = "Personal Access Token";
 struct GitlabNote {
     body: String,
     #[serde(rename = "type")]
-    note_type: String,
+    note_type: Option<String>,
     noteable_type: String,
     position: Option<GitlabPosition>,
 }
