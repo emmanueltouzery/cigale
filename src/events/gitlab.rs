@@ -219,15 +219,19 @@ impl EventProvider for Gitlab {
             day.pred().format("%F"),
             day.succ().format("%F"),
         );
-        let gitlab_events: Vec<GitlabEvent> = client
+        let gitlab_events_str = client
             .get(&url)
             .header("PRIVATE-TOKEN", &gitlab_config.personal_access_token)
             .send()?
             .error_for_status()?
-            .json::<Vec<GitlabEvent>>()?
-            .into_iter()
-            .filter(|e| e.created_at >= day_start && e.created_at < next_day_start)
-            .collect();
+            .text()?;
+        log::debug!("gitlab events: {:?}", gitlab_events_str);
+
+        let gitlab_events: Vec<GitlabEvent> =
+            serde_json::from_str::<Vec<GitlabEvent>>(&gitlab_events_str)?
+                .into_iter()
+                .filter(|e| e.created_at >= day_start && e.created_at < next_day_start)
+                .collect();
 
         let mut events = Self::gather_merge_request_comments(&gitlab_events);
         events.append(&mut Self::gather_merge_request_accept_events(
