@@ -5,9 +5,11 @@ use super::ical::Ical;
 use super::redmine::Redmine;
 use crate::config::Config;
 use chrono::prelude::*;
+use rayon::prelude::*;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
+use std::time::Instant;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum ConfigType {
@@ -100,32 +102,32 @@ impl ProviderError {
     }
 }
 
-fn get_events_for_event_provider(
-    config: &Config,
-    ep: &dyn EventProvider,
-    day: Date<Local>,
-) -> Result<Vec<Event>> {
-    ep.get_config_names(&config)
-        .iter()
-        .map(|name| {
-            ep.get_events(&config, name, day).map_err(|err| {
-                Box::new(ProviderError::new(ep.name(), (*name).clone(), err))
-                    as Box<dyn std::error::Error>
-            })
-        })
-        .collect::<Result<Vec<Vec<Event>>>>()
-        .map(|es| es.into_iter().flatten().collect())
-}
-
 pub fn get_all_events(config: Config, day: Date<Local>) -> Result<Vec<Event>> {
+    let start = Instant::now();
     let mut events: Vec<Event> = get_event_providers()
         .iter()
-        .map(|ep| get_events_for_event_provider(&config, ep.as_ref(), day))
+        .flat_map(|ep| {
+            ep.get_config_names(&config)
+                .into_iter()
+                .map(move |cfg_name| (ep, cfg_name))
+        })
+        .map(|(ep, cfg_name)| {
+            let start_cfg = Instant::now();
+            let result = ep.get_events(&config, cfg_name, day);
+            println!(
+                "Fetched events for {}/{} in {:?}",
+                cfg_name,
+                ep.name(),
+                start_cfg.elapsed()
+            );
+            result
+        })
         .collect::<Result<Vec<Vec<Event>>>>()?
         .into_iter()
         .flatten()
         .collect();
     events.sort_by_key(|e| e.event_time);
+    println!("Fetched all events for {} in {:?}", day, start.elapsed());
     Ok(events)
 }
 
