@@ -51,7 +51,7 @@ impl Gitlab {
         }
     }
 
-    fn build_mr_comment_event(target_title: &String, evts: &Vec<&GitlabEvent>) -> Event {
+    fn build_mr_comment_event(target_title: &str, evts: &[&GitlabEvent]) -> Event {
         let contents = join(
             evts.iter().map(|evt| {
                 let note = evt.note.as_ref().unwrap();
