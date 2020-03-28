@@ -1,5 +1,7 @@
-use crate::events::events::Result;
+use crate::events::events::{EventProvider, Result};
 use chrono::prelude::*;
+use regex::Regex;
+use std::borrow::Cow;
 use std::collections::hash_map::*;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -79,13 +81,31 @@ impl Config {
 
     /// cache handling
 
-    pub fn get_cache_path(name: &str) -> Result<PathBuf> {
+    pub fn get_cache_path(
+        event_provider: &dyn EventProvider,
+        config_name: &str,
+    ) -> Result<PathBuf> {
         let config_folder = Self::config_folder()?;
-        Ok(config_folder.join(name))
+        Ok(config_folder.join(format!(
+            "{}_{}.cache",
+            event_provider.name(),
+            Self::sanitize_for_filename(config_name)
+        )))
     }
 
-    pub fn get_cached_file(name: &str, date: &DateTime<Local>) -> Result<Option<String>> {
-        let cache_file = Self::get_cache_path(name)?;
+    // sanitize is needed at least for / and * and such characters,
+    // but let's play it safe.
+    pub fn sanitize_for_filename(str: &str) -> Cow<str> {
+        let re = Regex::new(r"[^A-Za-z0-9]").unwrap();
+        re.replace_all(str, "_")
+    }
+
+    pub fn get_cached_file(
+        event_provider: &dyn EventProvider,
+        config_name: &str,
+        date: &DateTime<Local>,
+    ) -> Result<Option<String>> {
+        let cache_file = Self::get_cache_path(event_provider, config_name)?;
         if !cache_file.exists() {
             return Ok(None);
         }
@@ -95,8 +115,24 @@ impl Config {
             File::open(cache_file)?.read_to_string(&mut contents)?;
             Ok(Some(contents))
         } else {
-            println!("{} cache too old, refetching", name);
+            log::debug!(
+                "{} {} cache too old, refetching",
+                event_provider.name(),
+                config_name
+            );
             Ok(None)
         }
     }
+}
+
+#[test]
+fn it_properly_escapes_filenames() {
+    assert_eq!(
+        "simPleN123ame",
+        Config::sanitize_for_filename("simPleN123ame")
+    );
+    assert_eq!(
+        "simPle_N___12_____3am_e",
+        Config::sanitize_for_filename("simPle N!()12č>/\\*3amée")
+    );
 }

@@ -1,3 +1,4 @@
+use crate::config::Config;
 use crate::events::events::{get_event_providers, ConfigType, EventProvider};
 use gtk::prelude::*;
 use relm::{ContainerWidget, Widget};
@@ -61,6 +62,7 @@ pub struct Model {
     relm: relm::Relm<AddEventSourceDialog>,
     entry_components: Option<HashMap<&'static str, gtk::Widget>>,
     existing_source_names: HashSet<String>,
+    existing_source_names_sanitized: HashSet<String>,
     next_btn: gtk::Button,
     dialog: gtk::Dialog,
     edit_model: Option<EventSourceEditModel>,
@@ -141,6 +143,11 @@ impl Widget for AddEventSourceDialog {
         Model {
             relm: relm.clone(),
             entry_components: None,
+            existing_source_names_sanitized: dialog_params
+                .existing_source_names
+                .iter()
+                .map(|s| Config::sanitize_for_filename(&s).to_string())
+                .collect(),
             existing_source_names: dialog_params.existing_source_names,
             next_btn: dialog_params.next_btn,
             dialog: dialog_params.dialog,
@@ -243,7 +250,11 @@ impl Widget for AddEventSourceDialog {
                 let txt = self.provider_name_entry.get_text();
                 let source_name = txt.as_ref().map(|t| t.as_str()).unwrap_or("");
                 let form_is_valid = !source_name.is_empty()
-                    && !self.model.existing_source_names.contains(source_name);
+                    && !self.model.existing_source_names.contains(source_name)
+                    && !self
+                        .model
+                        .existing_source_names_sanitized
+                        .contains(&Config::sanitize_for_filename(source_name).to_string());
                 self.model.next_btn.set_sensitive(form_is_valid);
             }
             Msg::AddConfig(_, _, _) => {

@@ -10,8 +10,6 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 
-const REDMINE_CACHE_FNAME: &str = "redmine-cache.html";
-
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Clone, Debug)]
 pub struct RedmineConfig {
     pub server_url: String,
@@ -226,6 +224,7 @@ impl Redmine {
     }
 
     fn fetch_activity_html(
+        config_name: &str,
         redmine_config: &RedmineConfig,
     ) -> Result<(reqwest::blocking::Client, String)> {
         let (client, user_id) = Self::init_client(redmine_config)?;
@@ -238,7 +237,7 @@ impl Redmine {
             .send()?
             .error_for_status()?
             .text()?;
-        let mut file = File::create(Config::get_cache_path(REDMINE_CACHE_FNAME)?)?;
+        let mut file = File::create(Config::get_cache_path(&Redmine, config_name)?)?;
         file.write_all(html.as_bytes())?;
         Ok((client, html))
     }
@@ -408,9 +407,10 @@ impl EventProvider for Redmine {
         let day_start = day.and_hms(0, 0, 0);
         let next_day_start = day_start + chrono::Duration::days(1);
         let (client, activity_html) =
-            match Config::get_cached_file(REDMINE_CACHE_FNAME, &next_day_start)? {
+            match Config::get_cached_file(&Redmine, config_name, &next_day_start)? {
                 Some(t) => Ok((None, t)),
-                None => Self::fetch_activity_html(&redmine_config).map(|(a, b)| (Some(a), b)),
+                None => Self::fetch_activity_html(config_name, &redmine_config)
+                    .map(|(a, b)| (Some(a), b)),
             }?;
         Self::get_events_with_paging(day, activity_html, redmine_config, &redmine_locales, client)
     }

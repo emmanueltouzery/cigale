@@ -7,8 +7,6 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 
-const ICAL_CACHE_FNAME: &str = "ical-cache.ical";
-
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Clone, Debug)]
 pub struct IcalConfig {
     pub ical_url: String,
@@ -45,7 +43,7 @@ impl Ical {
             })
     }
 
-    fn fetch_ical(ical_url: &str) -> Result<String> {
+    fn fetch_ical(config_name: &str, ical_url: &str) -> Result<String> {
         let r = reqwest::blocking::ClientBuilder::new()
             .timeout(Duration::from_secs(30))
             .connect_timeout(Duration::from_secs(30))
@@ -54,7 +52,7 @@ impl Ical {
             .send()?
             .error_for_status()?
             .text()?;
-        let mut file = File::create(Config::get_cache_path(ICAL_CACHE_FNAME)?)?;
+        let mut file = File::create(Config::get_cache_path(&Ical, config_name)?)?;
         file.write_all(r.as_bytes())?;
         Ok(r)
     }
@@ -176,9 +174,9 @@ impl EventProvider for Ical {
         let ical_config = &config.ical[config_name];
         let day_start = day.and_hms(0, 0, 0);
         let next_day_start = day_start + chrono::Duration::days(1);
-        let ical_text = match Config::get_cached_file(ICAL_CACHE_FNAME, &next_day_start)? {
+        let ical_text = match Config::get_cached_file(&Ical, config_name, &next_day_start)? {
             Some(t) => Ok(t),
-            None => Ical::fetch_ical(&ical_config.ical_url),
+            None => Ical::fetch_ical(config_name, &ical_config.ical_url),
         }?;
         let bytes = ical_text.as_bytes();
         let reader = ical::IcalParser::new(std::io::BufReader::new(bytes));
