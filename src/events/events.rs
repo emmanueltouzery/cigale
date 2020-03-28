@@ -20,7 +20,7 @@ pub enum ConfigType {
     Combo,
 }
 
-pub type Result<T> = std::result::Result<T, Box<dyn Error>>;
+pub type Result<T> = std::result::Result<T, Box<dyn Error + Sync + Send>>;
 
 pub trait EventProvider: Sync {
     // TODO this could get derived automatically through a procedural macro
@@ -76,7 +76,7 @@ pub fn get_event_providers() -> Vec<Box<dyn EventProvider>> {
 struct ProviderError {
     pub provider_name: &'static str,
     pub config_name: String,
-    pub err: Box<dyn Error>,
+    pub err: Box<dyn Error + Send + Sync>,
 }
 
 impl fmt::Display for ProviderError {
@@ -93,7 +93,11 @@ impl Error for ProviderError {}
 
 /// lets us know from which event source the error came
 impl ProviderError {
-    fn new(provider_name: &'static str, config_name: String, err: Box<dyn Error>) -> ProviderError {
+    fn new(
+        provider_name: &'static str,
+        config_name: String,
+        err: Box<dyn Error + Send + Sync>,
+    ) -> ProviderError {
         ProviderError {
             provider_name,
             config_name,
@@ -104,17 +108,25 @@ impl ProviderError {
 
 pub fn get_all_events(config: Config, day: Date<Local>) -> Result<Vec<Event>> {
     let start = Instant::now();
-    let mut events: Vec<Event> = get_event_providers()
+    let eps = get_event_providers();
+    let configs_to_fetch: Vec<(&Box<dyn EventProvider>, &String)> = eps
         .iter()
         .flat_map(|ep| {
             ep.get_config_names(&config)
                 .into_iter()
                 .map(move |cfg_name| (ep, cfg_name))
         })
+        .collect();
+
+    let mut events: Vec<Event> = configs_to_fetch
+        .par_iter()
         .map(|(ep, cfg_name)| {
             let start_cfg = Instant::now();
-            let result = ep.get_events(&config, cfg_name, day);
-            println!(
+            let result = ep.get_events(&config, cfg_name, day).map_err(|err| {
+                Box::new(ProviderError::new(ep.name(), (*cfg_name).clone(), err))
+                    as Box<dyn std::error::Error + Send + Sync>
+            });
+            log::info!(
                 "Fetched events for {}/{} in {:?}",
                 cfg_name,
                 ep.name(),
@@ -127,7 +139,7 @@ pub fn get_all_events(config: Config, day: Date<Local>) -> Result<Vec<Event>> {
         .flatten()
         .collect();
     events.sort_by_key(|e| e.event_time);
-    println!("Fetched all events for {} in {:?}", day, start.elapsed());
+    log::info!("Fetched all events for {} in {:?}", day, start.elapsed());
     Ok(events)
 }
 
