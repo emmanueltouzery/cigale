@@ -303,6 +303,7 @@ fn it_can_get_events_for_the_cigale_repo() {
         email: HashMap::new(),
         redmine: HashMap::new(),
         ical: HashMap::new(),
+        gitlab: HashMap::new(),
     };
     let expected_fst = Event::new(
         "Git",
