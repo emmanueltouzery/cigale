@@ -50,6 +50,50 @@ impl Gitlab {
         }
     }
 
+    fn build_mr_comment_event(target_title: &String, evts: &Vec<&GitlabEvent>) -> Event {
+        let contents = join(
+            evts.iter().map(|evt| {
+                let note = evt.note.as_ref().unwrap();
+                format!(
+                    "<b>{}</b>:{}\n    {}",
+                    glib::markup_escape_text(
+                        &note
+                            .position
+                            .as_ref()
+                            .map(|p| p.new_path.as_str())
+                            .unwrap_or("")
+                    ),
+                    note.position.as_ref().map(|p| p.new_line).unwrap_or(0),
+                    glib::markup_escape_text(&note.body)
+                )
+            }),
+            "\n\n",
+        );
+        let note_type_desc = Self::noteable_type_desc(
+            &evts
+                .iter()
+                .next()
+                .unwrap()
+                .note
+                .as_ref()
+                .unwrap()
+                .noteable_type,
+        );
+        Event::new(
+            "Gitlab",
+            crate::icons::FONTAWESOME_COMMENT_DOTS_SVG,
+            evts.iter()
+                .min_by_key(|e| e.created_at)
+                .unwrap()
+                .created_at
+                .time(),
+            (*target_title).to_string(),
+            format!("{}: {}", note_type_desc, target_title),
+            EventBody::Markup(contents, WordWrapMode::WordWrap),
+            Some(note_type_desc),
+        )
+    }
+
     fn gather_merge_request_comments(gitlab_events: &[GitlabEvent]) -> Vec<Event> {
         let mut data_grouped: Vec<(&String, Vec<&GitlabEvent>)> = Vec::new();
         for (key, group) in &gitlab_events
@@ -61,49 +105,7 @@ impl Gitlab {
         }
         data_grouped
             .iter()
-            .map(|(target_title, evts)| {
-                let contents = join(
-                    evts.iter().map(|evt| {
-                        let note = evt.note.as_ref().unwrap();
-                        format!(
-                            "<b>{}</b>:{}\n    {}",
-                            glib::markup_escape_text(
-                                &note
-                                    .position
-                                    .as_ref()
-                                    .map(|p| p.new_path.as_str())
-                                    .unwrap_or("")
-                            ),
-                            note.position.as_ref().map(|p| p.new_line).unwrap_or(0),
-                            glib::markup_escape_text(&note.body)
-                        )
-                    }),
-                    "\n\n",
-                );
-                let note_type_desc = Self::noteable_type_desc(
-                    &evts
-                        .iter()
-                        .next()
-                        .unwrap()
-                        .note
-                        .as_ref()
-                        .unwrap()
-                        .noteable_type,
-                );
-                Event::new(
-                    "Gitlab",
-                    crate::icons::FONTAWESOME_COMMENT_DOTS_SVG,
-                    evts.iter()
-                        .min_by_key(|e| e.created_at)
-                        .unwrap()
-                        .created_at
-                        .time(),
-                    (*target_title).to_string(),
-                    format!("{}: {}", note_type_desc, target_title),
-                    EventBody::Markup(contents, WordWrapMode::WordWrap),
-                    Some(note_type_desc),
-                )
-            })
+            .map(|(target_title, evts)| Self::build_mr_comment_event(target_title, evts))
             .collect()
     }
 
