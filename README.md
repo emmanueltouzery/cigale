@@ -17,7 +17,7 @@ It will look at traces of your past activity in your system. Here are the event 
 - Ical sources (for instance Google calendar)
 - Source control activity - Git
 - Redmine bug activity
-- Gitlab: your merge request comments and approvals
+- Gitlab: issues activity, merge request comments and approvals
 
 First tab, events:
 ![Main view picture](https://raw.githubusercontent.com/wiki/emmanueltouzery/cigale/cigale-main.png)

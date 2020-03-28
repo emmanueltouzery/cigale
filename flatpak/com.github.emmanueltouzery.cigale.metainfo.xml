@@ -14,13 +14,14 @@
     <p>It will look at traces of your past activity in your system.
     Here are the event sources that it will take into account:</p>
     <ul>
-    <li>The emails you sent (mbox format, for instance
-    Thunderbird)</li>
-    <li>Ical sources (for instance Google calendar)</li>
-    <li>Source control activity - Git</li>
-    <li>Redmine bug activity</li>
-    <li>Gitlab: your merge request comments and
-    approvals</li>&gt;</ul>
+      <li>The emails you sent (mbox format, for instance
+      Thunderbird)</li>
+      <li>Ical sources (for instance Google calendar)</li>
+      <li>Source control activity - Git</li>
+      <li>Redmine bug activity</li>
+      <li>Gitlab: issues activity, merge request comments and
+      approvals</li>
+    </ul>
   </description>
   <screenshots>
     <screenshot type="default">

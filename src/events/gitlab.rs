@@ -23,6 +23,7 @@ struct GitlabNote {
     note_type: Option<String>,
     noteable_type: String,
     position: Option<GitlabPosition>,
+    noteable_iid: usize,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -44,7 +45,7 @@ struct GitlabEvent {
 impl Gitlab {
     fn noteable_type_desc(note_type: &str) -> String {
         if note_type == "MergeRequest" {
-            "Merge Request comment".to_string()
+            "Merge Request".to_string()
         } else {
             note_type.to_string()
         }
@@ -88,7 +89,18 @@ impl Gitlab {
                 .created_at
                 .time(),
             (*target_title).to_string(),
-            format!("{}: {}", note_type_desc, target_title),
+            format!(
+                "{} #{}: {}",
+                note_type_desc,
+                evts.iter()
+                    .next()
+                    .unwrap()
+                    .note
+                    .as_ref()
+                    .unwrap()
+                    .noteable_iid,
+                target_title
+            ),
             EventBody::Markup(contents, WordWrapMode::WordWrap),
             Some(note_type_desc),
         )
@@ -98,7 +110,11 @@ impl Gitlab {
         let mut data_grouped: Vec<(&String, Vec<&GitlabEvent>)> = Vec::new();
         for (key, group) in &gitlab_events
             .iter()
-            .filter(|evt| evt.note.is_some() && evt.target_title.is_some())
+            .filter(|evt| {
+                evt.note.is_some()
+                    && evt.target_title.is_some()
+                    && evt.target_type.as_deref() == Some("DiffNote")
+            })
             .group_by(|evt| evt.target_title.as_ref().unwrap())
         {
             data_grouped.push((key, group.collect()));
@@ -109,15 +125,22 @@ impl Gitlab {
             .collect()
     }
 
-    fn gather_merge_request_accept_events(gitlab_events: &[GitlabEvent]) -> Vec<Event> {
+    fn gather_accept_events(gitlab_events: &[GitlabEvent]) -> Vec<Event> {
         gitlab_events
             .iter()
             .filter(|evt| {
-                evt.action_name == "accepted" && evt.target_type.as_deref() == Some("MergeRequest")
+                (evt.action_name == "accepted"
+                    && evt.target_type.as_deref() == Some("MergeRequest"))
+                    || (evt.action_name == "closed" && evt.target_type.as_deref() == Some("Issue"))
             })
             .map(|g_evt| {
+                let desc = match g_evt.target_type.as_deref().unwrap() {
+                    "MergeRequest" => "Merge Request",
+                    x => x,
+                };
                 let body = format!(
-                    "Merge Request #{} Accepted: {}",
+                    "{} #{} Accepted: {}",
+                    desc,
                     g_evt.target_iid.unwrap(),
                     g_evt.target_title.as_ref().unwrap()
                 );
@@ -128,7 +151,59 @@ impl Gitlab {
                     g_evt.target_title.as_ref().unwrap().to_string(),
                     body.clone(),
                     EventBody::PlainText(body),
-                    Some("Merge Request accepted".to_string()),
+                    Some(format!("{} accepted", desc)),
+                )
+            })
+            .collect()
+    }
+
+    fn gather_issue_open_events(gitlab_events: &[GitlabEvent]) -> Vec<Event> {
+        gitlab_events
+            .iter()
+            .filter(|evt| {
+                evt.action_name == "opened" && evt.target_type.as_deref() == Some("Issue")
+            })
+            .map(|g_evt| {
+                let body = format!(
+                    "Issue #{} Opened: {}",
+                    g_evt.target_iid.unwrap(),
+                    g_evt.target_title.as_ref().unwrap()
+                );
+                Event::new(
+                    "Gitlab",
+                    crate::icons::FONTAWESOME_COMMENT_DOTS_SVG,
+                    g_evt.created_at.time(),
+                    g_evt.target_title.as_ref().unwrap().to_string(),
+                    body.clone(),
+                    EventBody::PlainText(body),
+                    Some("Issue opened".to_string()),
+                )
+            })
+            .collect()
+    }
+
+    fn gather_issue_comment_events(gitlab_events: &[GitlabEvent]) -> Vec<Event> {
+        gitlab_events
+            .iter()
+            .filter(|evt| {
+                evt.action_name == "commented on"
+                    && evt.target_type.as_deref() == Some("Note")
+                    && evt.note.is_some()
+            })
+            .map(|g_evt| {
+                let body = format!(
+                    "Issue #{} Comment: {}",
+                    g_evt.note.as_ref().unwrap().noteable_iid,
+                    g_evt.target_title.as_ref().unwrap()
+                );
+                Event::new(
+                    "Gitlab",
+                    crate::icons::FONTAWESOME_COMMENT_DOTS_SVG,
+                    g_evt.created_at.time(),
+                    g_evt.target_title.as_ref().unwrap().to_string(),
+                    body.clone(),
+                    EventBody::PlainText(body),
+                    Some("Issue comment".to_string()),
                 )
             })
             .collect()
@@ -234,9 +309,9 @@ impl EventProvider for Gitlab {
                 .collect();
 
         let mut events = Self::gather_merge_request_comments(&gitlab_events);
-        events.append(&mut Self::gather_merge_request_accept_events(
-            &gitlab_events,
-        ));
+        events.append(&mut Self::gather_accept_events(&gitlab_events));
+        events.append(&mut Self::gather_issue_open_events(&gitlab_events));
+        events.append(&mut Self::gather_issue_comment_events(&gitlab_events));
         Ok(events)
     }
 }
