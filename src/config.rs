@@ -43,10 +43,8 @@ impl Config {
         }
         let mut contents = String::new();
         File::open(config_file)?.read_to_string(&mut contents)?;
-        toml::from_str(&contents).map_err(|e| {
-            // TODO verbose.. https://www.reddit.com/r/rust/comments/esueur/returning_trait_objects/
-            Box::new(e) as Box<dyn error::Error>
-        })
+        let r = toml::from_str(&contents)?;
+        Ok(r)
     }
 
     pub fn save_config(config: &Config) -> Result<()> {
