@@ -4,8 +4,6 @@ use chrono::prelude::*;
 use core::time::Duration;
 use ical::parser::ical::component::IcalEvent;
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::Write;
 
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Clone, Debug)]
 pub struct IcalConfig {
@@ -52,8 +50,7 @@ impl Ical {
             .send()?
             .error_for_status()?
             .text()?;
-        let mut file = File::create(Config::get_cache_path(&Ical, config_name)?)?;
-        file.write_all(r.as_bytes())?;
+        Config::write_to_cache(&Ical, config_name, &r)?;
         Ok(r)
     }
 
@@ -174,7 +171,7 @@ impl EventProvider for Ical {
         let ical_config = &config.ical[config_name];
         let day_start = day.and_hms(0, 0, 0);
         let next_day_start = day_start + chrono::Duration::days(1);
-        let ical_text = match Config::get_cached_file(&Ical, config_name, &next_day_start)? {
+        let ical_text = match Config::get_cached_contents(&Ical, config_name, &next_day_start)? {
             Some(t) => Ok(t),
             None => Ical::fetch_ical(config_name, &ical_config.ical_url),
         }?;

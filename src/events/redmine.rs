@@ -7,8 +7,6 @@ use crate::config::Config;
 use chrono::prelude::*;
 use core::time::Duration;
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::Write;
 
 #[derive(serde_derive::Deserialize, serde_derive::Serialize, Clone, Debug)]
 pub struct RedmineConfig {
@@ -237,8 +235,7 @@ impl Redmine {
             .send()?
             .error_for_status()?
             .text()?;
-        let mut file = File::create(Config::get_cache_path(&Redmine, config_name)?)?;
-        file.write_all(html.as_bytes())?;
+        Config::write_to_cache(&Redmine, config_name, &html)?;
         Ok((client, html))
     }
 
@@ -407,7 +404,7 @@ impl EventProvider for Redmine {
         let day_start = day.and_hms(0, 0, 0);
         let next_day_start = day_start + chrono::Duration::days(1);
         let (client, activity_html) =
-            match Config::get_cached_file(&Redmine, config_name, &next_day_start)? {
+            match Config::get_cached_contents(&Redmine, config_name, &next_day_start)? {
                 Some(t) => Ok((None, t)),
                 None => Self::fetch_activity_html(config_name, &redmine_config)
                     .map(|(a, b)| (Some(a), b)),

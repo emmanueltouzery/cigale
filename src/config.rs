@@ -79,10 +79,7 @@ impl Config {
 
     /// cache handling
 
-    pub fn get_cache_path(
-        event_provider: &dyn EventProvider,
-        config_name: &str,
-    ) -> Result<PathBuf> {
+    fn get_cache_path(event_provider: &dyn EventProvider, config_name: &str) -> Result<PathBuf> {
         let config_folder = Self::config_folder()?;
         Ok(config_folder.join(format!(
             "{}_{}.cache",
@@ -98,7 +95,7 @@ impl Config {
         re.replace_all(str, "_")
     }
 
-    pub fn get_cached_file(
+    pub fn get_cached_contents(
         event_provider: &dyn EventProvider,
         config_name: &str,
         date: &DateTime<Local>,
@@ -120,6 +117,16 @@ impl Config {
             );
             Ok(None)
         }
+    }
+
+    pub fn write_to_cache(
+        event_provider: &dyn EventProvider,
+        config_name: &str,
+        contents: &str,
+    ) -> Result<()> {
+        let mut file = File::create(Self::get_cache_path(event_provider, config_name)?)?;
+        file.write_all(contents.as_bytes())?;
+        Ok(())
     }
 }
 
