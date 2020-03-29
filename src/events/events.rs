@@ -118,6 +118,15 @@ pub fn get_all_events(config: Config, day: Date<Local>) -> Result<Vec<Event>> {
         })
         .collect();
 
+    // use rayon's par_iter to fetch in parallel from multiple
+    // event sources -- it's not CPU bound, but some sources
+    // go to the network and parallelization helps a lot.
+    // maybe I should force the size of the rayon's thread pool:
+    // https://docs.rs/rayon/1.3.0/rayon/struct.ThreadPoolBuilder.html#method.build_global
+    // because I think currently rayon will tie it to the number
+    // of cores of the machine, but in our case it's really independent
+    // as the tasks are IO-bound. Possibly I should enforce let's say
+    // 3 threads always. But for now I'll leave the defaults.
     let mut events: Vec<Event> = configs_to_fetch
         .par_iter()
         .map(|(ep, cfg_name)| {
