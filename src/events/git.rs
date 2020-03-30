@@ -2,6 +2,7 @@ use super::events::{ConfigType, Event, EventBody, EventProvider, Result, WordWra
 use crate::config::Config;
 use chrono::prelude::*;
 use git2::{Commit, Repository};
+use regex::Regex;
 use std::collections::{HashMap, HashSet};
 
 // git2 revwalk
@@ -77,6 +78,86 @@ impl Git {
             common_prefix.push(first_component);
         }
         common_prefix.join("/")
+    }
+
+    // collaborate with the gitlab plugin... if this repo matches a configured
+    // gitlab event source, then we can build a URL to open the commit in the
+    // browser in the gitlab GUI.
+    fn get_commit_display_url(repo: &Repository, config: &Config) -> Result<Option<String>> {
+        let origin_url = match repo
+            .find_remote("origin")
+            .ok()
+            .and_then(|r| r.url().map(|url| url.to_string()))
+        {
+            Some(v) => v,
+            None => return Ok(None),
+        };
+
+        // we have the repo origin url, something like git@gitlab.lit-transit.com:afc/afc.git
+        // and we also have the gitlab URL, something like https://gitlab.lit-transit.com/
+        let url_protocol_regex = Regex::new(r"^[a-z]+://").unwrap();
+        let matching_gitlab_cfg = match config.gitlab.iter().find(|(_, v)| {
+            origin_url.contains(
+                &url_protocol_regex
+                    .replace_all(&v.gitlab_url, "")
+                    .to_string(),
+            )
+        }) {
+            Some((_, v)) => v,
+            None => return Ok(None),
+        };
+
+        // git@gitlab.lit-transit.com:afc/afc.git => afc/afc [keep between ':' and '.git']
+        let gitlab_projectname_regex = Regex::new(r":(.*?)\.git").unwrap();
+        let gitlab_project_name = match gitlab_projectname_regex.captures_iter(&origin_url).next() {
+            Some(v) => v[1].to_string(),
+            None => return Ok(None),
+        };
+
+        // combine the URL from the gitlab config plus the project name
+        // that we extracted from the repo upstream URL to get the URL
+        // to display a commit.
+        // (the commit sha will have to be appended to this URL)
+        Ok(Some(format!(
+            "{}/{}/commit/",
+            matching_gitlab_cfg.gitlab_url, gitlab_project_name
+        )))
+    }
+
+    fn build_event(
+        c: &Commit,
+        repo: &Repository,
+        branch: &String,
+        commit_display_url: &Option<String>,
+    ) -> Event {
+        let commit_date = Git::git2_time_to_datetime(c.time());
+        let diff = Git::get_commit_diff(repo, &c);
+        let contents_header = c.message().unwrap_or("").to_string();
+        let open_in_browser = match commit_display_url {
+            Some(cdu) => format!("<a href=\"{}/{}\">Open in browser</a>", cdu, c.id()),
+            None => "".to_string(),
+        };
+        let (contents, extra_details) = match diff {
+            None => (format!("{}\n{}", open_in_browser, branch.clone()), None),
+            Some(d) => (
+                format!(
+                    "{}\n\n<span font-family=\"monospace\">{}\n\n{}</span>",
+                    open_in_browser,
+                    branch,
+                    &Git::get_commit_full_diffstr(&d).unwrap_or_else(|| "".to_string())
+                ),
+                Git::get_commit_extra_info(&d),
+            ),
+        };
+        Event::new(
+            "Git",
+            crate::icons::FONTAWESOME_CODE_BRANCH_SVG,
+            commit_date.time(),
+            c.summary().unwrap_or("").to_string(),
+            contents_header,
+            EventBody::Markup(contents, WordWrapMode::NoWordWrap),
+            extra_details,
+        )
     }
 }
 
@@ -194,6 +275,8 @@ impl EventProvider for Git {
         let next_day_start = day_start + chrono::Duration::days(1);
         let repo = Repository::open(&git_config.repo_folder)?;
         let mut all_commits = HashMap::new();
+        let commit_display_url = Self::get_commit_display_url(&repo, config)?;
+        log::info!("gitlab commit display url: {:?}", commit_display_url);
         for branch in repo
             .branches(Some(git2::BranchType::Local))?
             .filter_map(|b| b.ok())
@@ -246,36 +329,11 @@ impl EventProvider for Git {
             .iter()
             .flat_map(|(branch, commits)| {
                 let rrepo = &repo;
+                let cdu = &commit_display_url;
                 commits
                     .iter()
                     .filter(move |c| branch == "master" || !master_commit_ids.contains(&c.id()))
-                    .map(move |c| {
-                        let branch = branch.clone();
-                        let commit_date = Git::git2_time_to_datetime(c.time());
-                        let diff = Git::get_commit_diff(rrepo, &c);
-                        let contents_header = c.message().unwrap_or("").to_string();
-                        let (contents, extra_details) = match diff {
-                            None => (branch, None),
-                            Some(d) => (
-                                ("<span font-family=\"monospace\">".to_owned()
-                                    + &branch
-                                    + "\n\n"
-                                    + &Git::get_commit_full_diffstr(&d)
-                                        .unwrap_or_else(|| "".to_string())
-                                    + "</span>"),
-                                Git::get_commit_extra_info(&d),
-                            ),
-                        };
-                        Event::new(
-                            "Git",
-                            crate::icons::FONTAWESOME_CODE_BRANCH_SVG,
-                            commit_date.time(),
-                            c.summary().unwrap_or("").to_string(),
-                            contents_header,
-                            EventBody::Markup(contents, WordWrapMode::NoWordWrap),
-                            extra_details,
-                        )
-                    })
+                    .map(move |c| Self::build_event(&c, rrepo, branch, cdu))
             })
             .collect::<Vec<Event>>();
         result.sort_by_key(|e| e.event_time); // need to sort for the dedup to work
