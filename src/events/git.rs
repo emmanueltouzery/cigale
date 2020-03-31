@@ -152,7 +152,7 @@ impl Git {
     fn build_event(
         c: &Commit,
         repo: &Repository,
-        branch: &String,
+        branch: &str,
         commit_display_url: &Option<String>,
     ) -> Event {
         let commit_date = Git::git2_time_to_datetime(c.time());
@@ -163,7 +163,7 @@ impl Git {
             None => "".to_string(),
         };
         let (contents, extra_details) = match diff {
-            None => (format!("{}\n{}", open_in_browser, branch.clone()), None),
+            None => (format!("{}\n{}", open_in_browser, branch), None),
             Some(d) => (
                 format!(
                     "{}\n\n<span font-family=\"monospace\">{}\n\n{}</span>",
