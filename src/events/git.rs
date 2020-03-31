@@ -93,8 +93,18 @@ impl Git {
             None => return Ok(None),
         };
 
+        let url = Self::get_commit_display_url_gitlab(&origin_url, config)?.or_else(|| {
+            Self::get_commit_display_url_github(&origin_url)
+                .ok()
+                .flatten()
+        });
+        Ok(url)
+    }
+
+    fn get_commit_display_url_gitlab(origin_url: &str, config: &Config) -> Result<Option<String>> {
         // we have the repo origin url, something like git@gitlab.lit-transit.com:afc/afc.git
         // and we also have the gitlab URL, something like https://gitlab.lit-transit.com/
+        // find out whether the origin URL contains the gitlab URL minus the protocol
         let url_protocol_regex = Regex::new(r"^[a-z]+://").unwrap();
         let matching_gitlab_cfg = match config.gitlab.iter().find(|(_, v)| {
             origin_url.contains(
@@ -121,6 +131,21 @@ impl Git {
         Ok(Some(format!(
             "{}/{}/commit/",
             matching_gitlab_cfg.gitlab_url, gitlab_project_name
+        )))
+    }
+
+    // autodetect github repos & offer to open the commits in the browser
+    fn get_commit_display_url_github(origin_url: &str) -> Result<Option<String>> {
+        let github_projectname_regex =
+            Regex::new(r"^git@github\.com:(.*)\.git$|https://github\.com/(.*)\.git").unwrap();
+        let github_project_name = match github_projectname_regex.captures_iter(&origin_url).next() {
+            Some(v) => v[1].to_string(),
+            None => return Ok(None),
+        };
+
+        Ok(Some(format!(
+            "https://github.com/{}/commit/",
+            github_project_name
         )))
     }
 
