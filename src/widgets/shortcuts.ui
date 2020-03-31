@@ -26,6 +26,13 @@
                 <property name="title" translatable="yes">Next day</property>
               </object>
             </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="direction">ltr</property>
+                <property name="accelerator">&lt;Ctl&gt;y</property>
+                <property name="title" translatable="yes">Copy header to the clipboard</property>
+              </object>
+            </child>
           </object>
         </child>
       </object>

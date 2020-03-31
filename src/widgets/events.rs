@@ -41,6 +41,14 @@ impl Widget for EventView {
             connect_row_selected(_, _),
             Msg::EventSelected
         );
+
+        self.copy_button.add_accelerator(
+            "activate",
+            &self.model.accel_group,
+            'y'.into(),
+            gdk::ModifierType::CONTROL_MASK,
+            gtk::AccelFlags::VISIBLE,
+        );
     }
 
     fn model(relm: &relm::Relm<Self>, params: (Config, gtk::AccelGroup)) -> Model {
@@ -232,6 +240,7 @@ impl Widget for EventView {
                                           .map(|e| e.event_contents_header.as_str())
                                           .unwrap_or("No current event")
                             },
+                            #[name="copy_button"]
                             gtk::Button {
                                 always_show_image: true,
                                 image: Some(&gtk::Image::new_from_pixbuf(
