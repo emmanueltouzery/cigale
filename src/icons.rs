@@ -9,6 +9,7 @@ macro_rules! include_fontawesome_svg {
 }
 
 const FONTAWESOME_COG_SVG: &[u8] = include_fontawesome_svg!("cog");
+const FONTAWESOME_COPY_SVG: &[u8] = include_fontawesome_svg!("copy");
 pub const FONTAWESOME_CODE_BRANCH_SVG: &[u8] = include_fontawesome_svg!("code-branch");
 pub const FONTAWESOME_ENVELOPE_SVG: &[u8] = include_fontawesome_svg!("envelope");
 pub const FONTAWESOME_TASKS_SVG: &[u8] = include_fontawesome_svg!("tasks");
@@ -38,6 +39,10 @@ pub fn app_icon(size: i32) -> gdk_pixbuf::Pixbuf {
 
 pub fn fontawesome_cog(size: i32) -> gdk_pixbuf::Pixbuf {
     load_pixbuf(FONTAWESOME_COG_SVG, size)
+}
+
+pub fn fontawesome_copy(size: i32) -> gdk_pixbuf::Pixbuf {
+    load_pixbuf(FONTAWESOME_COPY_SVG, size)
 }
 
 pub fn fontawesome_angle_left(size: i32) -> gdk_pixbuf::Pixbuf {

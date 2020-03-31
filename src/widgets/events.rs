@@ -14,6 +14,7 @@ pub enum Msg {
     DayChange(Date<Local>),
     GotEvents(Result<Vec<Event>, String>),
     ConfigUpdate(Box<Config>), // box to prevent large size difference between variants
+    CopyHeader,
 }
 
 pub struct Model {
@@ -135,6 +136,22 @@ impl Widget for EventView {
                 self.model.config = *config;
                 EventView::fetch_events(&self.model.config, &self.model.relm, self.model.day);
             }
+            Msg::CopyHeader => {
+                if let Some(clip) = self
+                    .events_stack
+                    .get_display()
+                    .as_ref()
+                    .and_then(gtk::Clipboard::get_default)
+                {
+                    clip.set_text(
+                        self.model
+                            .current_event
+                            .as_ref()
+                            .map(|e| e.event_contents_header.as_str())
+                            .unwrap_or("No current event"),
+                    );
+                }
+            }
         }
     }
 
@@ -189,24 +206,38 @@ impl Widget for EventView {
                             expand: true,
                             padding: 10, // horizontal padding for the label
                         },
-                        #[name="header_label"]
-                        gtk::Label {
-                            child: {
-                                padding: 10, // vertical padding for the label
-                                fill: true,
-                                expand: false,
-                                pack_type: gtk::PackType::Start,
+                        gtk::Box {
+                            orientation: gtk::Orientation::Horizontal,
+                            valign: gtk::Align::Fill,
+                            #[name="header_label"]
+                            gtk::Label {
+                                child: {
+                                    padding: 10, // vertical padding for the label
+                                    fill: true,
+                                    expand: false,
+                                    pack_type: gtk::PackType::Start,
+                                },
+                                xalign: 0.0,
+                                hexpand: true,
+                                halign: gtk::Align::Start,
+                                valign: gtk::Align::Center,
+                                line_wrap: true,
+                                selectable: true,
+                                text: self.model
+                                          .current_event
+                                          .as_ref()
+                                          .map(|e| e.event_contents_header.as_str())
+                                          .unwrap_or("No current event")
                             },
-                            xalign: 0.0,
-                            halign: gtk::Align::Start,
-                            valign: gtk::Align::Start,
-                            line_wrap: true,
-                            selectable: true,
-                            text: self.model
-                                      .current_event
-                                      .as_ref()
-                                      .map(|e| e.event_contents_header.as_str())
-                                      .unwrap_or("No current event")
+                            gtk::Button {
+                                always_show_image: true,
+                                image: Some(&gtk::Image::new_from_pixbuf(
+                                    Some(&crate::icons::fontawesome_copy(12)))),
+                                halign: gtk::Align::End,
+                                valign: gtk::Align::Start,
+                                tooltip_text: Some("Copy to the clipboard"),
+                                clicked => Msg::CopyHeader
+                            }
                         },
                         gtk::ScrolledWindow {
                             child: {
