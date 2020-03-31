@@ -43,6 +43,26 @@ https://hughsie.github.io/oars/index.html
 -->
   <content_rating type="oars-1.0" />
   <releases>
+    <release version="0.4.0" date="2020-03-31">
+      <description>
+        <ul>git: fix bug where one commit would be displayed
+        multiple times</ul>
+        <ul>new event source: gitlab, collecting merge
+        request+issues infos</ul>
+        <ul>fix bug with redmine and ical event source if you had
+        multiple event sources of those types</ul>
+        <ul>multithread events fetching for speed</ul>
+        <ul>git: if you configured a gitlab source, can open
+        commits in the browser for gitlab repos. Also autodetect
+        github repos and enable the same.</ul>
+        <ul>email: multipart/alternative email bodies now display
+        correctly.</ul>
+        <ul>new button to copy the current event header to the
+        clipboard</ul>
+        <ul>keyboard shortcuts for previous day, next day, and copy
+        header to the clipboard.</ul>
+      </description>
+    </release>
     <release version="0.3.0" date="2020-03-25">
       <description>
         <ul>when we get an error display from which event provider
