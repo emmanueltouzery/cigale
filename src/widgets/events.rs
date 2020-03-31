@@ -19,6 +19,7 @@ pub enum Msg {
 
 pub struct Model {
     config: Config,
+    accel_group: gtk::AccelGroup,
     relm: relm::Relm<EventView>,
     // events will be None while we're loading
     events: Option<Result<Vec<Event>, String>>,
@@ -42,11 +43,13 @@ impl Widget for EventView {
         );
     }
 
-    fn model(relm: &relm::Relm<Self>, config: Config) -> Model {
+    fn model(relm: &relm::Relm<Self>, params: (Config, gtk::AccelGroup)) -> Model {
+        let (config, accel_group) = params;
         let day = Local::today().pred();
         EventView::fetch_events(&config, relm, day);
         Model {
             config,
+            accel_group,
             relm: relm.clone(),
             events: None,
             current_event: None,
@@ -165,7 +168,7 @@ impl Widget for EventView {
                 orientation: gtk::Orientation::Vertical,
                 gtk::Box {
                     orientation: gtk::Orientation::Horizontal,
-                    DatePicker {
+                    DatePicker(self.model.accel_group.clone()) {
                         DatePickerDayPickedMsg(d) => Msg::DayChange(d)
                     },
                     gtk::Spinner {

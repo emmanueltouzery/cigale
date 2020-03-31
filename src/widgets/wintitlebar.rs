@@ -7,6 +7,8 @@ use relm::{init, Component, Widget};
 use relm_derive::{widget, Msg};
 use std::collections::{HashMap, HashSet};
 
+const SHORTCUTS_UI: &str = include_str!("shortcuts.ui");
+
 #[derive(Msg)]
 pub enum Msg {
     ScreenChanged,
@@ -15,6 +17,7 @@ pub enum Msg {
     AddConfig(&'static str, String, HashMap<&'static str, String>),
     EventSourceNamesChanged(HashSet<String>),
     DisplayAbout,
+    DisplayShortcuts,
 }
 
 pub struct Model {
@@ -35,6 +38,14 @@ impl Widget for WinTitleBar {
             .margin(10)
             .orientation(gtk::Orientation::Vertical)
             .build();
+        let shortcuts_btn = gtk::ModelButtonBuilder::new().label("Shortcuts").build();
+        relm::connect!(
+            self.model.relm,
+            &shortcuts_btn,
+            connect_clicked(_),
+            Msg::DisplayShortcuts
+        );
+        vbox.add(&shortcuts_btn);
         let about_btn = gtk::ModelButtonBuilder::new().label("About").build();
         relm::connect!(
             self.model.relm,
@@ -102,16 +113,20 @@ impl Widget for WinTitleBar {
         (dialog, dialog_contents)
     }
 
-    fn run_event_source_addedit_dlg(&self) {
-        let main_win = self
-            .model
+    fn get_main_window(&self) -> gtk::Window {
+        self.model
             .main_window_stack
             .as_ref()
             .unwrap()
             .get_toplevel()
-            .and_then(|w| w.dynamic_cast::<gtk::Window>().ok());
+            .and_then(|w| w.dynamic_cast::<gtk::Window>().ok())
+            .unwrap()
+    }
+
+    fn run_event_source_addedit_dlg(&self) {
+        let main_win = self.get_main_window();
         let (dialog, dialog_contents) = Self::prepare_addedit_eventsource_dlg(
-            &main_win.unwrap(),
+            &main_win,
             &self.model.existing_source_names,
             None,
         );
@@ -134,6 +149,15 @@ impl Widget for WinTitleBar {
             .build();
         dlg.run();
         dlg.destroy();
+    }
+
+    fn display_shortcuts(&self) {
+        let win = gtk::Builder::new_from_string(SHORTCUTS_UI)
+            .get_object::<gtk::Window>("shortcuts")
+            .unwrap();
+        win.set_title("Shortcuts");
+        win.set_transient_for(Some(&self.get_main_window()));
+        win.show();
     }
 
     fn update(&mut self, event: Msg) {
@@ -175,6 +199,7 @@ impl Widget for WinTitleBar {
                 // this is meant for win... we emit here, not interested by it ourselves
             }
             Msg::DisplayAbout => Self::display_about(),
+            Msg::DisplayShortcuts => self.display_shortcuts(),
         }
     }
 

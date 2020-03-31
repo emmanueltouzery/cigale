@@ -27,6 +27,7 @@ pub struct Model {
     relm: relm::Relm<Win>,
     config: Config,
     titlebar: Component<WinTitleBar>,
+    accel_group: gtk::AccelGroup,
 }
 
 #[widget]
@@ -35,6 +36,8 @@ impl Widget for Win {
         if let Err(err) = self.load_style() {
             println!("Error loading the CSS: {}", err);
         }
+
+        self.window.add_accel_group(&self.model.accel_group);
         // gtk::Settings::get_default() // maybe someday add an option for that. the text is too bright by default i'd say though.
         //     .unwrap()
         //     .set_property_gtk_application_prefer_dark_theme(true);
@@ -75,10 +78,12 @@ impl Widget for Win {
         });
         let titlebar = relm::init::<WinTitleBar>(Win::config_source_names(&config))
             .expect("win title bar init");
+        let accel_group = gtk::AccelGroup::new();
         Model {
             relm: relm.clone(),
             config,
             titlebar,
+            accel_group,
         }
     }
 
@@ -232,7 +237,7 @@ impl Widget for Win {
             #[name="main_window_stack"]
             gtk::Stack {
                 #[name="events"]
-                EventView(self.model.config.clone()) {
+                EventView((self.model.config.clone(), self.model.accel_group.clone())) {
                     child: {
                         name: Some("events"),
                         icon_name: Some("view-list-symbolic")

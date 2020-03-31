@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <object class="GtkShortcutsWindow" id="shortcuts">
+    <property name="modal">1</property>
+     <child>
+      <object class="GtkShortcutsSection">
+        <property name="section-name">shortcuts</property>
+        <property name="max-height">12</property>
+        <property name="visible">1</property>
+        <child>
+          <object class="GtkShortcutsGroup">
+           <property name="visible">1</property>
+            <property name="title" translatable="yes">Events view</property>
+            <property name="view">events</property>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="direction">ltr</property>
+                <property name="accelerator">&lt;Alt&gt;Left</property>
+                <property name="title" translatable="yes">Previous day</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="direction">ltr</property>
+                <property name="accelerator">&lt;Alt&gt;Right</property>
+                <property name="title" translatable="yes">Next day</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

@@ -15,6 +15,7 @@ pub enum DatePickerMsg {
 
 pub struct DatePickerModel {
     relm: relm::Relm<DatePicker>,
+    accel_group: gtk::AccelGroup,
     calendar_popover: gtk::Popover,
     calendar: gtk::Calendar,
     date: Date<Local>,
@@ -51,13 +52,29 @@ impl Widget for DatePicker {
             connect_month_changed(_),
             DatePickerMsg::MonthChanged
         );
+        // https://askubuntu.com/a/138520/188440
+        self.prev_button.add_accelerator(
+            "activate",
+            &self.model.accel_group,
+            65361, //arrow left
+            gdk::ModifierType::MOD1_MASK,
+            gtk::AccelFlags::VISIBLE,
+        );
+        self.next_button.add_accelerator(
+            "activate",
+            &self.model.accel_group,
+            65363, //arrow right
+            gdk::ModifierType::MOD1_MASK,
+            gtk::AccelFlags::VISIBLE,
+        )
     }
-    fn model(relm: &relm::Relm<Self>, _: ()) -> DatePickerModel {
+    fn model(relm: &relm::Relm<Self>, accel_group: gtk::AccelGroup) -> DatePickerModel {
         let date = Local::today().pred();
         let cal = gtk::Calendar::new();
         Self::calendar_set_date(&cal, date);
         DatePickerModel {
             relm: relm.clone(),
+            accel_group,
             calendar_popover: gtk::Popover::new(None::<&gtk::Button>),
             calendar: cal,
             date,
@@ -124,6 +141,7 @@ impl Widget for DatePicker {
     }
 
     view! {
+        #[name="picker_box"]
         gtk::Box {
             orientation: gtk::Orientation::Horizontal,
             margin_start: 10,
@@ -136,6 +154,7 @@ impl Widget for DatePicker {
                 },
                 label: "Day to display:"
             },
+            #[name="prev_button"]
             gtk::Button {
                 always_show_image: true,
                 image: Some(&gtk::Image::new_from_pixbuf(
@@ -155,6 +174,7 @@ impl Widget for DatePicker {
                 label: self.model.date.format("%A, %Y-%m-%d").to_string().as_str(),
                 clicked => DatePickerMsg::ButtonClicked
             },
+            #[name="next_button"]
             gtk::Button {
                 always_show_image: true,
                 image: Some(&gtk::Image::new_from_pixbuf(
