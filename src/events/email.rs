@@ -166,15 +166,37 @@ impl Email {
         }
     }
 
+    fn find_message_body(
+        email_contents: &mailparse::ParsedMail,
+        email_date: &DateTime<Local>,
+    ) -> Result<String> {
+        let r = if email_contents.subparts.len() > 1 {
+            let part = email_contents.subparts.iter().find(|p| {
+                p.ctype.mimetype.contains("text/plain")
+                    || p.ctype.mimetype.contains("multipart/alternative")
+            });
+            match part {
+                Some(p) if p.ctype.mimetype.contains("multipart/alternative") => {
+                    Self::find_message_body(p, email_date)?
+                }
+                Some(p) => p.get_body()?,
+                None => {
+                    return Err(
+                        format!("Email of {}: can't find a text/plain part", email_date).into(),
+                    )
+                }
+            }
+        } else {
+            email_contents.get_body()?
+        };
+        Ok(r)
+    }
+
     fn email_to_event(
         email_contents: &mailparse::ParsedMail,
         email_date: &DateTime<Local>,
     ) -> Result<Event> {
-        let message_body = if email_contents.subparts.len() > 1 {
-            email_contents.subparts[0].get_body()? // TODO check the mimetype, i want text, not html
-        } else {
-            email_contents.get_body()?
-        };
+        let message_body = Self::find_message_body(email_contents, email_date)?;
         let event_body = Email::get_header_val(&email_contents.headers, "To")
             .map(|t| format!("To: {}\n", t))
             .unwrap_or_else(|| "".to_string())
