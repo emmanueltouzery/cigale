@@ -85,7 +85,7 @@ impl Ical {
                 "End: {}; duration: {}:{:02}",
                 e.format("%H:%M"),
                 duration.num_hours(),
-                duration.num_minutes()
+                duration.num_minutes() % 60
             )
         });
         Event::new(
