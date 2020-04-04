@@ -375,19 +375,14 @@ impl EventProvider for Git {
 
 #[test]
 fn it_can_get_events_for_the_cigale_repo() {
-    let git_cfg = GitConfig {
-        repo_folder: ".".to_string(),
-        commit_author: "Emmanuel Touzery".to_string(),
-    };
-    let mut git = HashMap::new();
-    git.insert("test".to_string(), git_cfg);
-    let config = Config {
-        git,
-        email: HashMap::new(),
-        redmine: HashMap::new(),
-        ical: HashMap::new(),
-        gitlab: HashMap::new(),
-    };
+    let git_cfg_map = vec![
+        (REPO_FOLDER_KEY, ".".to_string()),
+        (COMMIT_AUTHOR_KEY, "Emmanuel Touzery".to_string()),
+    ]
+    .into_iter()
+    .collect();
+    let mut config = Config::default_config();
+    Git.add_config_values(&mut config, "test".to_string(), git_cfg_map);
     let expected_fst = Event::new(
         "Git",
         crate::icons::FONTAWESOME_CODE_BRANCH_SVG,
@@ -395,7 +390,9 @@ fn it_can_get_events_for_the_cigale_repo() {
         "include the icons in the binary".to_string(),
         "include the icons in the binary\n".to_string(),
         EventBody::Markup(
-            r#"<span font-family="monospace">master
+            r#"<a href="https://github.com/emmanueltouzery/cigale/commit//1225b0a0efceb2f9b8862fd1cd03bf5dc6cb54d4">Open in browser</a>
+
+<span font-family="monospace">master
 
  Cargo.lock                       | 11 ++++++-----
  Cargo.toml                       |  1 +
