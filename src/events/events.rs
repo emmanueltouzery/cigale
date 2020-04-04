@@ -187,10 +187,28 @@ impl EventBody {
     }
 }
 
+// newtype to enable a special Debug implementation that's less verbose
+// than printing all the bytes of the icon.
+// https://stackoverflow.com/a/46749785/516188
+#[derive(Clone, PartialEq)]
+pub struct Icon(&'static [u8]);
+
+impl Icon {
+    pub fn bytes(&self) -> &'static [u8] {
+        self.0
+    }
+}
+
+impl fmt::Debug for Icon {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "<icon>")
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Event {
     pub event_type_desc: &'static str,
-    pub event_type_icon: &'static [u8],
+    pub event_type_icon: Icon,
     pub event_time: NaiveTime,
     pub event_info: String,
     pub event_contents_header: String,
@@ -210,7 +228,7 @@ impl Event {
     ) -> Event {
         Event {
             event_type_desc,
-            event_type_icon,
+            event_type_icon: Icon(event_type_icon),
             event_time,
             event_info,
             event_contents_header,

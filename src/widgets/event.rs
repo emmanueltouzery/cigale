@@ -42,7 +42,7 @@ impl Widget for EventListItem {
                 },
                 gtk::Image {
                     from_pixbuf: Some(&crate::icons::load_pixbuf(
-                        self.model.event.event_type_icon, 32))
+                        self.model.event.event_type_icon.bytes(), 32))
                 },
                 #[name="event_type_label"]
                 gtk::Label {
