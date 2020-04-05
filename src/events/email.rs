@@ -271,12 +271,12 @@ impl EventProvider for Email {
         config: &Config,
         config_name: &str,
     ) -> HashMap<&'static str, String> {
-        let mut h = HashMap::new();
-        h.insert(
+        vec![(
             MBOX_FILE_PATH_KEY,
             config.email[config_name].mbox_file_path.to_string(),
-        );
-        h
+        )]
+        .into_iter()
+        .collect()
     }
 
     fn field_values(

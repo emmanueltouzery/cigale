@@ -373,16 +373,18 @@ impl EventProvider for Gitlab {
         config: &Config,
         config_name: &str,
     ) -> HashMap<&'static str, String> {
-        let mut h = HashMap::new();
-        h.insert(
-            GITLAB_URL_KEY,
-            config.gitlab[config_name].gitlab_url.to_string(),
-        );
-        h.insert(
-            PERSONAL_TOKEN_KEY,
-            config.gitlab[config_name].personal_access_token.to_string(),
-        );
-        h
+        vec![
+            (
+                GITLAB_URL_KEY,
+                config.gitlab[config_name].gitlab_url.to_string(),
+            ),
+            (
+                PERSONAL_TOKEN_KEY,
+                config.gitlab[config_name].personal_access_token.to_string(),
+            ),
+        ]
+        .into_iter()
+        .collect()
     }
 
     fn add_config_values(

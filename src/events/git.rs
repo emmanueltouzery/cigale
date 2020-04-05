@@ -258,16 +258,18 @@ impl EventProvider for Git {
         config: &Config,
         config_name: &str,
     ) -> HashMap<&'static str, String> {
-        let mut h = HashMap::new();
-        h.insert(
-            REPO_FOLDER_KEY,
-            config.git[config_name].repo_folder.to_string(),
-        );
-        h.insert(
-            COMMIT_AUTHOR_KEY,
-            config.git[config_name].commit_author.to_string(),
-        );
-        h
+        vec![
+            (
+                REPO_FOLDER_KEY,
+                config.git[config_name].repo_folder.to_string(),
+            ),
+            (
+                COMMIT_AUTHOR_KEY,
+                config.git[config_name].commit_author.to_string(),
+            ),
+        ]
+        .into_iter()
+        .collect()
     }
 
     fn add_config_values(

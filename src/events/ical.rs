@@ -131,9 +131,9 @@ impl EventProvider for Ical {
         config: &Config,
         config_name: &str,
     ) -> HashMap<&'static str, String> {
-        let mut h = HashMap::new();
-        h.insert(URL_KEY, config.ical[config_name].ical_url.to_string());
-        h
+        vec![(URL_KEY, config.ical[config_name].ical_url.to_string())]
+            .into_iter()
+            .collect()
     }
 
     fn field_values(
