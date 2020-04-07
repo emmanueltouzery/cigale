@@ -7,6 +7,7 @@ use super::wintitlebar::Msg as WinTitleBarMsg;
 use super::wintitlebar::WinTitleBar;
 use crate::config::Config;
 use crate::events::events::EventProvider;
+use glib::signal::Inhibit;
 use gtk::prelude::*;
 use relm::{Component, Widget};
 use relm_derive::{widget, Msg};
@@ -21,6 +22,7 @@ pub enum Msg {
     EditConfig(String, &'static str, String, HashMap<&'static str, String>),
     EditEventSource(&'static str, String),
     RemoveEventSource(&'static str, String),
+    KeyPress(gdk::EventKey),
 }
 
 pub struct Model {
@@ -225,6 +227,14 @@ impl Widget for Win {
                     _ => {}
                 }
             }
+            Msg::KeyPress(key) => {
+                if key.get_state().contains(gdk::ModifierType::CONTROL_MASK)
+                    && key.get_state().contains(gdk::ModifierType::MOD1_MASK)
+                    && key.get_keyval() == gdk::enums::key::y
+                {
+                    self.events.emit(super::events::Msg::CopyAllHeaders);
+                }
+            }
         }
     }
 
@@ -254,6 +264,7 @@ impl Widget for Win {
             // Use a tuple when you want to both send a message and return a value to
             // the GTK+ callback.
             delete_event(_, _) => (Msg::Quit, Inhibit(false)),
+            key_press_event(_, key) => (Msg::KeyPress(key.clone()), Inhibit(false)),
         }
     }
 }

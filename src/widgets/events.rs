@@ -15,6 +15,7 @@ pub enum Msg {
     GotEvents(Result<Vec<Event>, String>),
     ConfigUpdate(Box<Config>), // box to prevent large size difference between variants
     CopyHeader,
+    CopyAllHeaders,
 }
 
 pub struct Model {
@@ -160,6 +161,23 @@ impl Widget for EventView {
                             .as_ref()
                             .map(|e| e.event_contents_header.as_str())
                             .unwrap_or("No current event"),
+                    );
+                }
+            }
+            Msg::CopyAllHeaders => {
+                let m_clip = &self
+                    .events_stack
+                    .get_display()
+                    .as_ref()
+                    .and_then(gtk::Clipboard::get_default);
+                let m_events = &self.model.events;
+                if let (Some(clip), Some(Ok(event_list))) = (m_clip, m_events) {
+                    clip.set_text(
+                        &event_list
+                            .iter()
+                            .map(|e| format!("* {}", e.event_contents_header.trim()))
+                            .collect::<Vec<_>>()
+                            .join("\n"),
                     );
                 }
             }
