@@ -339,8 +339,8 @@ impl EventProvider for Redmine {
 
     fn get_config_fields(&self) -> Vec<(&'static str, ConfigType)> {
         vec![
-            (SERVER_URL_KEY, ConfigType::Text),
-            (USERNAME_KEY, ConfigType::Text),
+            (SERVER_URL_KEY, ConfigType::Text("")),
+            (USERNAME_KEY, ConfigType::Text("")),
             (PASSWORD_KEY, ConfigType::Password),
         ]
     }

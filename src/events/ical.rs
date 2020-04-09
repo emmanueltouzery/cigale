@@ -111,7 +111,7 @@ pub struct Ical;
 
 impl EventProvider for Ical {
     fn get_config_fields(&self) -> Vec<(&'static str, ConfigType)> {
-        vec![(URL_KEY, ConfigType::Text)]
+        vec![(URL_KEY, ConfigType::Text(""))]
     }
 
     fn name(&self) -> &'static str {

@@ -18,6 +18,8 @@ pub struct Config {
     pub redmine: HashMap<String, crate::events::redmine::RedmineConfig>,
     #[serde(default)] // gitlab was added later, after 0.3.0
     pub gitlab: HashMap<String, crate::events::gitlab::GitlabConfig>,
+    #[serde(default)] // stackexchange was added later, after 0.4.0
+    pub stackexchange: HashMap<String, crate::events::stackexchange::StackExchangeConfig>,
 }
 
 impl Config {
@@ -33,6 +35,7 @@ impl Config {
             ical: HashMap::new(),
             redmine: HashMap::new(),
             gitlab: HashMap::new(),
+            stackexchange: HashMap::new(),
         }
     }
 

@@ -343,7 +343,7 @@ impl Gitlab {
 impl EventProvider for Gitlab {
     fn get_config_fields(&self) -> Vec<(&'static str, ConfigType)> {
         vec![
-            (GITLAB_URL_KEY, ConfigType::Text),
+            (GITLAB_URL_KEY, ConfigType::Text("")),
             (PERSONAL_TOKEN_KEY, ConfigType::Password),
         ]
     }

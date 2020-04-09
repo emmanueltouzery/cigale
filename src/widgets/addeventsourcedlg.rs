@@ -175,7 +175,7 @@ impl Widget for AddEventSourceDialog {
                 .get_filename()
                 .and_then(|f| f.to_str().map(|s| s.to_string()))
                 .unwrap_or_else(|| "".to_string()),
-            ConfigType::Text | ConfigType::Password => entry
+            ConfigType::Text(_) | ConfigType::Password => entry
                 .clone()
                 .dynamic_cast::<gtk::Entry>()
                 .unwrap()
@@ -340,10 +340,7 @@ impl Widget for AddEventSourceDialog {
         let mut i = 1;
         let mut entry_components = HashMap::new();
         for field in p.get_config_fields() {
-            let field_val = event_source_values
-                .get(field.0)
-                .map(|s| s.as_str())
-                .unwrap_or("");
+            let field_val = event_source_values.get(field.0).map(|s| s.as_str());
             self.config_fields_grid.attach(
                 &gtk::LabelBuilder::new()
                     .label(field.0)
@@ -355,8 +352,8 @@ impl Widget for AddEventSourceDialog {
                 1,
             );
             let entry_widget = &match field.1 {
-                ConfigType::Text => gtk::EntryBuilder::new()
-                    .text(field_val)
+                ConfigType::Text(def) => gtk::EntryBuilder::new()
+                    .text(field_val.unwrap_or(&def))
                     .build()
                     .upcast::<gtk::Widget>(),
                 ConfigType::File => {
@@ -380,7 +377,7 @@ impl Widget for AddEventSourceDialog {
                     btn.upcast::<gtk::Widget>()
                 }
                 ConfigType::Password => gtk::EntryBuilder::new()
-                    .text(field_val)
+                    .text(field_val.unwrap_or(""))
                     .visibility(false) // password field
                     .secondary_icon_pixbuf(&crate::icons::fontawesome_exclamation_triangle(12))
                     .secondary_icon_tooltip_text("Passwords are not encrypted in the config file")
@@ -396,7 +393,7 @@ impl Widget for AddEventSourceDialog {
                     combo.set_active(
                         combo_items
                             .iter()
-                            .position(|i| i == field_val)
+                            .position(|i| i == field_val.unwrap_or(""))
                             .map(|p| p as u32),
                     );
                     combo.upcast::<gtk::Widget>()

@@ -3,6 +3,7 @@ use super::git::Git;
 use super::gitlab::Gitlab;
 use super::ical::Ical;
 use super::redmine::Redmine;
+use super::stackexchange::StackExchange;
 use crate::config::Config;
 use chrono::prelude::*;
 use rayon::prelude::*;
@@ -13,7 +14,7 @@ use std::time::Instant;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum ConfigType {
-    Text,
+    Text(&'static str),
     Password,
     File,
     Folder,
@@ -69,6 +70,7 @@ pub fn get_event_providers() -> Vec<Box<dyn EventProvider>> {
         Box::new(Ical),
         Box::new(Redmine),
         Box::new(Gitlab),
+        Box::new(StackExchange),
     ]
 }
 

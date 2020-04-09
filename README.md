@@ -18,6 +18,7 @@ It will look at traces of your past activity in your system. Here are the event 
 - Source control activity - Git
 - Redmine bug activity
 - Gitlab: issues activity, merge request comments and approvals
+- Stack Exchange sites: your votes
 
 First tab, events:
 ![Main view picture](https://raw.githubusercontent.com/wiki/emmanueltouzery/cigale/cigale-main.png)
