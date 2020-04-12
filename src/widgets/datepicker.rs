@@ -1,3 +1,4 @@
+use crate::icons::*;
 use chrono::prelude::*;
 use gtk::prelude::*;
 use relm::Widget;
@@ -157,8 +158,8 @@ impl Widget for DatePicker {
             #[name="prev_button"]
             gtk::Button {
                 always_show_image: true,
-                image: Some(&gtk::Image::new_from_pixbuf(
-                    Some(&crate::icons::fontawesome_angle_left(16)))),
+                image: Some(&gtk::Image::new_from_icon_name(
+                    Some(Icon::ANGLE_LEFT.name()), gtk::IconSize::Menu)),
                 valign: gtk::Align::Center,
                 relief: gtk::ReliefStyle::None,
                 clicked => DatePickerMsg::PreviousDay
@@ -169,16 +170,16 @@ impl Widget for DatePicker {
                     padding: 2,
                 },
                 always_show_image: true,
-                image: Some(&gtk::Image::new_from_pixbuf(
-                    Some(&crate::icons::fontawesome_calendar_alt(16)))),
+                image: Some(&gtk::Image::new_from_icon_name(
+                    Some(Icon::CALENDAR_ALT.name()), gtk::IconSize::Menu)),
                 label: self.model.date.format("%A, %Y-%m-%d").to_string().as_str(),
                 clicked => DatePickerMsg::ButtonClicked
             },
             #[name="next_button"]
             gtk::Button {
                 always_show_image: true,
-                image: Some(&gtk::Image::new_from_pixbuf(
-                    Some(&crate::icons::fontawesome_angle_right(16)))),
+                image: Some(&gtk::Image::new_from_icon_name(
+                    Some(Icon::ANGLE_RIGHT.name()), gtk::IconSize::Menu)),
                 valign: gtk::Align::Center,
                 relief: gtk::ReliefStyle::None,
                 clicked => DatePickerMsg::NextDay

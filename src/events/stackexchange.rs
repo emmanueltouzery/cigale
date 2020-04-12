@@ -6,6 +6,7 @@
 // https://meta.stackexchange.com/a/446/218504
 use super::events::{ConfigType, Event, EventBody, EventProvider, Result, WordWrapMode};
 use crate::config::Config;
+use crate::icons::*;
 use chrono::prelude::*;
 use core::time::Duration;
 use std::collections::HashMap;
@@ -187,7 +188,7 @@ impl StackExchange {
             .map(|(date, title, link)| {
                 Event::new(
                     "S.Exch",
-                    crate::icons::FONTAWESOME_THUMBS_UP_SVG,
+                    Icon::THUMBS_UP,
                     date.time(),
                     title.clone(),
                     format!("Vote: {}", title),
@@ -212,8 +213,8 @@ impl EventProvider for StackExchange {
         "StackExchange"
     }
 
-    fn default_icon(&self) -> &'static [u8] {
-        crate::icons::FONTAWESOME_THUMBS_UP_SVG
+    fn default_icon(&self) -> Icon {
+        Icon::THUMBS_UP
     }
 
     fn get_config_names<'a>(&self, config: &'a Config) -> Vec<&'a String> {

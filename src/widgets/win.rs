@@ -58,6 +58,9 @@ impl Widget for Win {
     }
 
     fn model(relm: &relm::Relm<Self>, _: ()) -> Model {
+        gtk::IconTheme::get_default().unwrap().add_resource_path(
+            "/icons",
+        );
         let config = Config::read_config().unwrap_or_else(|e| {
             let dialog = gtk::MessageDialog::new(
                 None::<&gtk::Window>,

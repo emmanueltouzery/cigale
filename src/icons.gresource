@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gresources>
+	<gresource prefix="/icons/scalable/actions">
+	  <file alias="angle-left-symbolic.svg">fontawesome-free-5.12.0-desktop/svgs/solid/angle-left.svg</file>
+	  <file alias="angle-right-symbolic.svg">fontawesome-free-5.12.0-desktop/svgs/solid/angle-right.svg</file>
+	  <file alias="calendar-alt-symbolic.svg">fontawesome-free-5.12.0-desktop/svgs/solid/calendar-alt.svg</file>
+	  <file alias="envelope-symbolic.svg">fontawesome-free-5.12.0-desktop/svgs/solid/envelope.svg</file>
+	  <file alias="tasks-symbolic.svg">fontawesome-free-5.12.0-desktop/svgs/solid/tasks.svg</file>
+	  <file alias="thumbs-up-symbolic.svg">fontawesome-free-5.12.0-desktop/svgs/solid/thumbs-up.svg</file>
+	  <file alias="comment-dots-symbolic.svg">fontawesome-free-5.12.0-desktop/svgs/solid/comment-dots.svg</file>
+	  <file alias="check-square-symbolic.svg">fontawesome-free-5.12.0-desktop/svgs/solid/check-square.svg</file>
+	  <file alias="code-branch-symbolic.svg">fontawesome-free-5.12.0-desktop/svgs/solid/code-branch.svg</file>
+	  <file alias="copy-symbolic.svg">fontawesome-free-5.12.0-desktop/svgs/solid/copy.svg</file>
+	  <file alias="cog-symbolic.svg">fontawesome-free-5.12.0-desktop/svgs/solid/cog.svg</file>
+	  <file alias="exclamation-triangle-symbolic.svg">fontawesome-free-5.12.0-desktop/svgs/solid/exclamation-triangle.svg</file>
+	  <file>com.github.emmanueltouzery.cigale.svg</file>
+  </gresource>
+</gresources>

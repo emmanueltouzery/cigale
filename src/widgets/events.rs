@@ -3,6 +3,7 @@ use super::datepicker::*;
 use super::event::EventListItem;
 use crate::config::Config;
 use crate::events::events::Event;
+use crate::icons::*;
 use chrono::prelude::*;
 use gtk::prelude::*;
 use relm::{Channel, ContainerWidget, Widget};
@@ -261,8 +262,8 @@ impl Widget for EventView {
                             #[name="copy_button"]
                             gtk::Button {
                                 always_show_image: true,
-                                image: Some(&gtk::Image::new_from_pixbuf(
-                                    Some(&crate::icons::fontawesome_copy(12)))),
+                                image: Some(&gtk::Image::new_from_icon_name(
+                                    Some(Icon::COPY.name()), gtk::IconSize::Menu)),
                                 halign: gtk::Align::End,
                                 valign: gtk::Align::Start,
                                 tooltip_text: Some("Copy to the clipboard"),

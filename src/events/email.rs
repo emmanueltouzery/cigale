@@ -1,5 +1,6 @@
 use super::events::{ConfigType, Event, EventBody, EventProvider, Result};
 use crate::config::Config;
+use crate::icons::*;
 use chrono::prelude::*;
 use std::collections::HashMap;
 use std::fs::File;
@@ -208,7 +209,7 @@ impl Email {
             .unwrap_or_else(|| "-".to_string());
         Ok(Event::new(
             "Email",
-            crate::icons::FONTAWESOME_ENVELOPE_SVG,
+            Icon::ENVELOPE,
             email_date.time(),
             email_subject.clone(),
             email_subject,
@@ -258,8 +259,8 @@ impl EventProvider for Email {
         "Email"
     }
 
-    fn default_icon(&self) -> &'static [u8] {
-        crate::icons::FONTAWESOME_ENVELOPE_SVG
+    fn default_icon(&self) -> Icon {
+        Icon::ENVELOPE
     }
 
     fn get_config_names<'a>(&self, config: &'a Config) -> Vec<&'a String> {

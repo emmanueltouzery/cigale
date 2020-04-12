@@ -2,6 +2,7 @@ use super::addeventsourcedlg::Msg as AddEventSourceDialogMsg;
 use super::addeventsourcedlg::{
     AddEventSourceDialog, AddEventSourceDialogParams, EventSourceEditModel,
 };
+use crate::icons::*;
 use gtk::prelude::*;
 use relm::{init, Component, Widget};
 use relm_derive::{widget, Msg};
@@ -143,7 +144,7 @@ impl Widget for WinTitleBar {
         let dlg = gtk::AboutDialogBuilder::new()
             .name("Cigale")
             .version(env!("CARGO_PKG_VERSION"))
-            .logo(&crate::icons::app_icon(128))
+            .logo_icon_name(Icon::APP_ICON.name())
             .website("https://github.com/emmanueltouzery/cigale/")
             .comments("Review your past activity")
             .build();

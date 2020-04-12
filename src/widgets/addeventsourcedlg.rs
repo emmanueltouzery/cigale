@@ -1,5 +1,6 @@
 use crate::config::Config;
 use crate::events::events::{get_event_providers, ConfigType, EventProvider};
+use crate::icons::*;
 use gtk::prelude::*;
 use relm::{ContainerWidget, Widget};
 use relm_derive::{widget, Msg};
@@ -12,7 +13,7 @@ pub enum ProviderItemMsg {}
 
 pub struct ProviderItemModel {
     name: &'static str,
-    icon: &'static [u8],
+    icon: Icon,
 }
 
 #[widget]
@@ -36,8 +37,9 @@ impl Widget for ProviderItem {
                 child: {
                     padding: 10,
                 },
-                from_pixbuf: Some(&crate::icons::load_pixbuf(
-                    self.model.icon, 32))
+                property_icon_name: Some(self.model.icon.name()),
+                // https://github.com/gtk-rs/gtk/issues/837
+                property_icon_size: 5, // gtk::IconSize::Dnd,
             },
             gtk::Label {
                 text: self.model.name
@@ -331,7 +333,7 @@ impl Widget for AddEventSourceDialog {
         let p = self.model.event_provider.as_ref().unwrap();
         self.provider_name_entry.set_text(event_source_name);
         self.config_fields_grid.attach(
-            &gtk::Image::new_from_pixbuf(Some(&crate::icons::load_pixbuf(p.default_icon(), 32))),
+            &gtk::Image::new_from_icon_name(Some(p.default_icon().name()), gtk::IconSize::Dnd),
             0,
             0,
             1,
@@ -379,7 +381,7 @@ impl Widget for AddEventSourceDialog {
                 ConfigType::Password => gtk::EntryBuilder::new()
                     .text(field_val.unwrap_or(""))
                     .visibility(false) // password field
-                    .secondary_icon_pixbuf(&crate::icons::fontawesome_exclamation_triangle(12))
+                    .secondary_icon_name(Icon::EXCLAMATION_TRIANGLE.name())
                     .secondary_icon_tooltip_text("Passwords are not encrypted in the config file")
                     .build()
                     .upcast::<gtk::Widget>(),

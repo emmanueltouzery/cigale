@@ -4,6 +4,7 @@
 //    without such an API, this would be very painful and very slow
 use super::events::{ConfigType, Event, EventBody, EventProvider, Result, WordWrapMode};
 use crate::config::Config;
+use crate::icons::*;
 use chrono::prelude::*;
 use core::time::Duration;
 use std::collections::HashMap;
@@ -158,7 +159,7 @@ impl Redmine {
                 let link_elt = &it_links.next().ok_or_else(|| "Redmine event: no link?")?;
                 result.push(Event::new(
                     "Redmine",
-                    crate::icons::FONTAWESOME_TASKS_SVG,
+                    Icon::TASKS,
                     time,
                     link_elt.inner_html(),
                     link_elt.inner_html(),
@@ -329,8 +330,8 @@ impl EventProvider for Redmine {
         "Redmine"
     }
 
-    fn default_icon(&self) -> &'static [u8] {
-        crate::icons::FONTAWESOME_TASKS_SVG
+    fn default_icon(&self) -> Icon {
+        Icon::TASKS
     }
 
     fn get_config_names<'a>(&self, config: &'a Config) -> Vec<&'a String> {

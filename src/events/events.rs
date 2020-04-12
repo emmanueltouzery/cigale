@@ -5,6 +5,7 @@ use super::ical::Ical;
 use super::redmine::Redmine;
 use super::stackexchange::StackExchange;
 use crate::config::Config;
+use crate::icons::*;
 use chrono::prelude::*;
 use rayon::prelude::*;
 use std::collections::HashMap;
@@ -53,7 +54,7 @@ pub trait EventProvider: Sync {
 
     fn name(&self) -> &'static str;
 
-    fn default_icon(&self) -> &'static [u8];
+    fn default_icon(&self) -> Icon;
 
     fn get_events(
         &self,
@@ -189,24 +190,6 @@ impl EventBody {
     }
 }
 
-// newtype to enable a special Debug implementation that's less verbose
-// than printing all the bytes of the icon.
-// https://stackoverflow.com/a/46749785/516188
-#[derive(Clone, PartialEq)]
-pub struct Icon(&'static [u8]);
-
-impl Icon {
-    pub fn bytes(&self) -> &'static [u8] {
-        self.0
-    }
-}
-
-impl fmt::Debug for Icon {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "<icon>")
-    }
-}
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Event {
     pub event_type_desc: &'static str,
@@ -221,7 +204,7 @@ pub struct Event {
 impl Event {
     pub fn new(
         event_type_desc: &'static str,
-        event_type_icon: &'static [u8],
+        event_type_icon: Icon,
         event_time: NaiveTime,
         event_info: String,
         event_contents_header: String,
@@ -230,7 +213,7 @@ impl Event {
     ) -> Event {
         Event {
             event_type_desc,
-            event_type_icon: Icon(event_type_icon),
+            event_type_icon,
             event_time,
             event_info,
             event_contents_header,

@@ -4,3 +4,4 @@
 repo/
 vendor/
 helpers/redmine_locales/target
+src/icons.bin

@@ -1,5 +1,6 @@
 use super::events::{ConfigType, Event, EventBody, EventProvider, Result, WordWrapMode};
 use crate::config::Config;
+use crate::icons::*;
 use chrono::prelude::*;
 use core::time::Duration;
 use itertools::{join, Itertools};
@@ -101,7 +102,7 @@ impl Gitlab {
         );
         Event::new(
             "Gitlab",
-            crate::icons::FONTAWESOME_COMMENT_DOTS_SVG,
+            Icon::COMMENT_DOTS,
             evts.iter()
                 .min_by_key(|e| e.created_at)
                 .unwrap()
@@ -184,7 +185,7 @@ impl Gitlab {
                 );
                 Event::new(
                     "Gitlab",
-                    crate::icons::FONTAWESOME_CHECK_SQUARE_SVG,
+                    Icon::CHECK_SQUARE,
                     g_evt.created_at.time(),
                     g_evt.target_title.as_ref().unwrap().to_string(),
                     title,
@@ -219,7 +220,7 @@ impl Gitlab {
                 );
                 Event::new(
                     "Gitlab",
-                    crate::icons::FONTAWESOME_COMMENT_DOTS_SVG,
+                    Icon::COMMENT_DOTS,
                     g_evt.created_at.time(),
                     g_evt.target_title.as_ref().unwrap().to_string(),
                     title,
@@ -256,7 +257,7 @@ impl Gitlab {
                 );
                 Event::new(
                     "Gitlab",
-                    crate::icons::FONTAWESOME_COMMENT_DOTS_SVG,
+                    Icon::COMMENT_DOTS,
                     g_evt.created_at.time(),
                     g_evt.target_title.as_ref().unwrap().to_string(),
                     title,
@@ -352,8 +353,8 @@ impl EventProvider for Gitlab {
         "Gitlab"
     }
 
-    fn default_icon(&self) -> &'static [u8] {
-        crate::icons::FONTAWESOME_COMMENT_DOTS_SVG
+    fn default_icon(&self) -> Icon {
+        Icon::COMMENT_DOTS
     }
 
     fn get_config_names<'a>(&self, config: &'a Config) -> Vec<&'a String> {

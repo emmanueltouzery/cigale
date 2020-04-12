@@ -1,5 +1,6 @@
 use super::events::{ConfigType, Event, EventBody, EventProvider, Result};
 use crate::config::Config;
+use crate::icons::*;
 use chrono::prelude::*;
 use core::time::Duration;
 use ical::parser::ical::component::IcalEvent;
@@ -90,7 +91,7 @@ impl Ical {
         });
         Event::new(
             "Ical",
-            crate::icons::FONTAWESOME_CALENDAR_ALT_SVG,
+            Icon::CALENDAR_ALT,
             st.time(),
             summary.to_string(),
             summary,
@@ -118,8 +119,8 @@ impl EventProvider for Ical {
         "Ical"
     }
 
-    fn default_icon(&self) -> &'static [u8] {
-        crate::icons::FONTAWESOME_CALENDAR_ALT_SVG
+    fn default_icon(&self) -> Icon {
+        Icon::CALENDAR_ALT
     }
 
     fn get_config_names<'a>(&self, config: &'a Config) -> Vec<&'a String> {

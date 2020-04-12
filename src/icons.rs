@@ -1,63 +1,22 @@
-macro_rules! include_fontawesome_svg {
-    ($ file : expr) => {
-        include_bytes!(concat!(
-            "../fontawesome-free-5.12.0-desktop/svgs/solid/",
-            $file,
-            ".svg"
-        ))
-    };
-}
+#[derive(PartialEq, Debug, Clone)]
+pub struct Icon(&'static str);
 
-const FONTAWESOME_COG_SVG: &[u8] = include_fontawesome_svg!("cog");
-const FONTAWESOME_COPY_SVG: &[u8] = include_fontawesome_svg!("copy");
-pub const FONTAWESOME_CODE_BRANCH_SVG: &[u8] = include_fontawesome_svg!("code-branch");
-pub const FONTAWESOME_ENVELOPE_SVG: &[u8] = include_fontawesome_svg!("envelope");
-pub const FONTAWESOME_TASKS_SVG: &[u8] = include_fontawesome_svg!("tasks");
-const FONTAWESOME_ANGLE_LEFT_SVG: &[u8] = include_fontawesome_svg!("angle-left");
-const FONTAWESOME_ANGLE_RIGHT_SVG: &[u8] = include_fontawesome_svg!("angle-right");
-pub const FONTAWESOME_CALENDAR_ALT_SVG: &[u8] = include_fontawesome_svg!("calendar-alt");
-const FONTAWESOME_EXCLAMATION_TRIANGLE_SVG: &[u8] =
-    include_fontawesome_svg!("exclamation-triangle");
-pub const FONTAWESOME_COMMENT_DOTS_SVG: &[u8] = include_fontawesome_svg!("comment-dots");
-pub const FONTAWESOME_CHECK_SQUARE_SVG: &[u8] = include_fontawesome_svg!("check-square");
-pub const FONTAWESOME_THUMBS_UP_SVG: &[u8] = include_fontawesome_svg!("thumbs-up");
-const APPICON_SVG: &[u8] = include_bytes!("../com.github.emmanueltouzery.cigale.svg");
+impl Icon {
+    pub fn name(&self) -> &'static str {
+        self.0
+    }
 
-pub fn load_pixbuf(icon_bytes: &'static [u8], size: i32) -> gdk_pixbuf::Pixbuf {
-    gdk_pixbuf::Pixbuf::new_from_stream_at_scale(
-        &gio::MemoryInputStream::new_from_bytes(&glib::Bytes::from_static(icon_bytes)),
-        size,
-        size,
-        true,
-        gio::NONE_CANCELLABLE,
-    )
-    .expect("loading icon")
-}
-
-pub fn app_icon(size: i32) -> gdk_pixbuf::Pixbuf {
-    load_pixbuf(APPICON_SVG, size)
-}
-
-pub fn fontawesome_cog(size: i32) -> gdk_pixbuf::Pixbuf {
-    load_pixbuf(FONTAWESOME_COG_SVG, size)
-}
-
-pub fn fontawesome_copy(size: i32) -> gdk_pixbuf::Pixbuf {
-    load_pixbuf(FONTAWESOME_COPY_SVG, size)
-}
-
-pub fn fontawesome_angle_left(size: i32) -> gdk_pixbuf::Pixbuf {
-    load_pixbuf(FONTAWESOME_ANGLE_LEFT_SVG, size)
-}
-
-pub fn fontawesome_angle_right(size: i32) -> gdk_pixbuf::Pixbuf {
-    load_pixbuf(FONTAWESOME_ANGLE_RIGHT_SVG, size)
-}
-
-pub fn fontawesome_calendar_alt(size: i32) -> gdk_pixbuf::Pixbuf {
-    load_pixbuf(FONTAWESOME_CALENDAR_ALT_SVG, size)
-}
-
-pub fn fontawesome_exclamation_triangle(size: i32) -> gdk_pixbuf::Pixbuf {
-    load_pixbuf(FONTAWESOME_EXCLAMATION_TRIANGLE_SVG, size)
+    pub const ANGLE_LEFT: Icon = Icon("angle-left-symbolic");
+    pub const ANGLE_RIGHT: Icon = Icon("angle-left-symbolic");
+    pub const CALENDAR_ALT: Icon = Icon("calendar-alt-symbolic");
+    pub const TASKS: Icon = Icon("tasks-symbolic");
+    pub const COMMENT_DOTS: Icon = Icon("comment-dots-symbolic");
+    pub const CODE_BRANCH: Icon = Icon("code-branch-symbolic");
+    pub const ENVELOPE: Icon = Icon("envelope-symbolic");
+    pub const THUMBS_UP: Icon = Icon("thumbs-up-symbolic");
+    pub const CHECK_SQUARE: Icon = Icon("check-square-symbolic");
+    pub const COPY: Icon = Icon("copy-symbolic");
+    pub const COG: Icon = Icon("cog-symbolic");
+    pub const EXCLAMATION_TRIANGLE: Icon = Icon("exclamation-triangle-symbolic");
+    pub const APP_ICON: Icon = Icon("com.github.emmanueltouzery.cigale");
 }

@@ -1,4 +1,5 @@
 use crate::events::events::{get_event_providers, ConfigType};
+use crate::icons::*;
 use gtk::prelude::*;
 use relm::Widget;
 use relm_derive::{widget, Msg};
@@ -10,7 +11,7 @@ pub enum EventSourceListItemMsg {
 }
 
 pub struct EventSourceListItemInfo {
-    pub event_provider_icon: &'static [u8],
+    pub event_provider_icon: Icon,
     pub event_provider_name: &'static str,
     pub config_name: String,
     pub event_source: HashMap<&'static str, String>,
@@ -29,6 +30,7 @@ impl Widget for EventSourceListItem {
         self.event_source_actions_btn
             .get_style_context()
             .remove_class("image-button");
+
         let ep = get_event_providers()
             .into_iter()
             .find(|ep| ep.name() == self.model.list_item_info.event_provider_name)
@@ -107,8 +109,10 @@ impl Widget for EventSourceListItem {
                         width: 2
                     },
                     gtk::Image {
-                        from_pixbuf: Some(&crate::icons::load_pixbuf(
-                            self.model.list_item_info.event_provider_icon, 16)),
+                        property_icon_name: Some(
+                            self.model.list_item_info.event_provider_icon.name()),
+                        // https://github.com/gtk-rs/gtk/issues/837
+                        property_icon_size: 1, // gtk::IconSize::Menu,
                     },
                     gtk::Label {
                         margin_start: 5,
@@ -120,8 +124,8 @@ impl Widget for EventSourceListItem {
                 #[name="event_source_actions_btn"]
                 gtk::Button {
                     always_show_image: true,
-                    image: Some(&gtk::Image::new_from_pixbuf(
-                        Some(&crate::icons::fontawesome_cog(12)))), // emblem-system-symbolic
+                    image: Some(&gtk::Image::new_from_icon_name(
+                        Some(Icon::COG.name()), gtk::IconSize::Menu)),
                     hexpand: true,
                     halign: gtk::Align::End,
                     cell: {
