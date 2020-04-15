@@ -7,7 +7,7 @@ impl Icon {
     }
 
     pub const ANGLE_LEFT: Icon = Icon("angle-left-symbolic");
-    pub const ANGLE_RIGHT: Icon = Icon("angle-left-symbolic");
+    pub const ANGLE_RIGHT: Icon = Icon("angle-right-symbolic");
     pub const CALENDAR_ALT: Icon = Icon("calendar-alt-symbolic");
     pub const TASKS: Icon = Icon("tasks-symbolic");
     pub const COMMENT_DOTS: Icon = Icon("comment-dots-symbolic");
