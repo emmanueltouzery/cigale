@@ -1,3 +1,4 @@
+use crate::config::PrevNextDaySkipWeekends;
 use crate::icons::*;
 use chrono::prelude::*;
 use gtk::prelude::*;
@@ -12,6 +13,7 @@ pub enum DatePickerMsg {
     NextDay,
     PreviousDay,
     DayPicked(Date<Local>),
+    PrevNextDaySkipChanged(PrevNextDaySkipWeekends),
 }
 
 pub struct DatePickerModel {
@@ -30,6 +32,7 @@ pub struct DatePickerModel {
     // we want to close the popover only when the
     // user clicks on a specific day.
     month_change_ongoing: bool,
+    prev_next_skip: PrevNextDaySkipWeekends,
 }
 
 #[widget]
@@ -69,7 +72,11 @@ impl Widget for DatePicker {
             gtk::AccelFlags::VISIBLE,
         )
     }
-    fn model(relm: &relm::Relm<Self>, accel_group: gtk::AccelGroup) -> DatePickerModel {
+    fn model(
+        relm: &relm::Relm<Self>,
+        params: (gtk::AccelGroup, PrevNextDaySkipWeekends),
+    ) -> DatePickerModel {
+        let (accel_group, prev_next_skip) = params;
         let date = Local::today().pred();
         let cal = gtk::Calendar::new();
         Self::calendar_set_date(&cal, date);
@@ -80,6 +87,7 @@ impl Widget for DatePicker {
             calendar: cal,
             date,
             month_change_ongoing: false,
+            prev_next_skip,
         }
     }
 
@@ -87,6 +95,30 @@ impl Widget for DatePicker {
         cal.set_property_year(date.year());
         cal.set_property_month(date.month() as i32 - 1);
         cal.set_property_day(date.day() as i32);
+    }
+
+    fn next_date<Tz: TimeZone>(&self, dt: Date<Tz>) -> Date<Tz> {
+        if self.model.prev_next_skip == PrevNextDaySkipWeekends::DontSkip {
+            dt.succ()
+        } else {
+            let mut dt = dt.succ();
+            while dt.weekday() == Weekday::Sat || dt.weekday() == Weekday::Sun {
+                dt = dt.succ();
+            }
+            dt
+        }
+    }
+
+    fn previous_date<Tz: TimeZone>(&self, dt: Date<Tz>) -> Date<Tz> {
+        if self.model.prev_next_skip == PrevNextDaySkipWeekends::DontSkip {
+            dt.pred()
+        } else {
+            let mut dt = dt.pred();
+            while dt.weekday() == Weekday::Sat || dt.weekday() == Weekday::Sun {
+                dt = dt.pred();
+            }
+            dt
+        }
     }
 
     fn update(&mut self, event: DatePickerMsg) {
@@ -132,12 +164,13 @@ impl Widget for DatePicker {
                 .model
                 .relm
                 .stream()
-                .emit(DatePickerMsg::DayPicked(self.model.date.succ())),
-            DatePickerMsg::PreviousDay => self
-                .model
-                .relm
-                .stream()
-                .emit(DatePickerMsg::DayPicked(self.model.date.pred())),
+                .emit(DatePickerMsg::DayPicked(self.next_date(self.model.date))),
+            DatePickerMsg::PreviousDay => self.model.relm.stream().emit(DatePickerMsg::DayPicked(
+                self.previous_date(self.model.date),
+            )),
+            DatePickerMsg::PrevNextDaySkipChanged(new_prev_next) => {
+                self.model.prev_next_skip = new_prev_next
+            }
         }
     }
 

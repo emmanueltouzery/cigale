@@ -1,6 +1,8 @@
 use crate::events::events::{EventProvider, Result};
 use chrono::prelude::*;
+use gtk::prelude::*;
 use regex::Regex;
+use serde_derive::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::hash_map::*;
 use std::fs::File;
@@ -10,8 +12,23 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 use std::*;
 
-#[derive(serde_derive::Deserialize, serde_derive::Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Copy, Debug, PartialEq)]
+pub enum PrevNextDaySkipWeekends {
+    Skip,
+    DontSkip,
+}
+impl Default for PrevNextDaySkipWeekends {
+    fn default() -> Self {
+        PrevNextDaySkipWeekends::Skip
+    }
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Config {
+    #[serde(default)] // prefer_dark_theme was added later, after 0.4.0
+    pub prefer_dark_theme: bool,
+    #[serde(default)] // was added later, after 0.4.0
+    pub prev_next_day_skip_weekends: PrevNextDaySkipWeekends,
     pub git: HashMap<String, crate::events::git::GitConfig>,
     pub email: HashMap<String, crate::events::email::EmailConfig>,
     pub ical: HashMap<String, crate::events::ical::IcalConfig>,
@@ -36,10 +53,12 @@ impl Config {
             redmine: HashMap::new(),
             gitlab: HashMap::new(),
             stackexchange: HashMap::new(),
+            prefer_dark_theme: false,
+            prev_next_day_skip_weekends: PrevNextDaySkipWeekends::Skip,
         }
     }
 
-    pub fn read_config() -> Result<Config> {
+    fn read_config_file() -> Result<Config> {
         let config_file = Self::config_path()?;
         if !config_file.is_file() {
             return Ok(Self::default_config());
@@ -50,10 +69,48 @@ impl Config {
         Ok(r)
     }
 
-    pub fn save_config(config: &Config) -> Result<()> {
+    pub fn read_config() -> Config {
+        Config::read_config_file().unwrap_or_else(|e| {
+            let dialog = gtk::MessageDialog::new(
+                None::<&gtk::Window>,
+                gtk::DialogFlags::all(),
+                gtk::MessageType::Error,
+                gtk::ButtonsType::Close,
+                "Error loading the configuration",
+            );
+            dialog.set_property_secondary_text(Some(&format!(
+                "{}: {:}",
+                Config::config_path()
+                    .ok()
+                    .map(|p| p.to_string_lossy().to_string())
+                    .unwrap_or_else(|| "".to_string()),
+                e
+            )));
+            let _r = dialog.run();
+            dialog.destroy();
+            Config::default_config()
+        })
+    }
+
+    fn save_config_file(&self) -> Result<()> {
         let mut file = File::create(Self::config_path()?)?;
-        file.write_all(toml::to_string_pretty(config)?.as_bytes())?;
+        file.write_all(toml::to_string_pretty(self)?.as_bytes())?;
         Ok(())
+    }
+
+    pub fn save_config(&self, parent_win: &gtk::Window) {
+        self.save_config_file().unwrap_or_else(|e| {
+            let dialog = gtk::MessageDialog::new(
+                Some(parent_win),
+                gtk::DialogFlags::all(),
+                gtk::MessageType::Error,
+                gtk::ButtonsType::Close,
+                "Error saving the configuration",
+            );
+            dialog.set_property_secondary_text(Some(&format!("{}", e)));
+            let _r = dialog.run();
+            dialog.destroy();
+        });
     }
 
     #[cfg(unix)]

@@ -148,6 +148,9 @@ impl Widget for EventView {
             Msg::ConfigUpdate(config) => {
                 self.model.config = *config;
                 EventView::fetch_events(&self.model.config, &self.model.relm, self.model.day);
+                self.date_picker.emit(DatePickerMsg::PrevNextDaySkipChanged(
+                    self.model.config.prev_next_day_skip_weekends,
+                ));
             }
             Msg::CopyHeader => {
                 if let Some(clip) = self
@@ -195,7 +198,9 @@ impl Widget for EventView {
                 orientation: gtk::Orientation::Vertical,
                 gtk::Box {
                     orientation: gtk::Orientation::Horizontal,
-                    DatePicker(self.model.accel_group.clone()) {
+                    #[name="date_picker"]
+                    DatePicker(self.model.accel_group.clone(),
+                               self.model.config.prev_next_day_skip_weekends) {
                         DatePickerDayPickedMsg(d) => Msg::DayChange(d)
                     },
                     gtk::Spinner {

@@ -23,6 +23,7 @@ pub enum Msg {
     EditEventSource(&'static str, String),
     RemoveEventSource(&'static str, String),
     KeyPress(gdk::EventKey),
+    ConfigUpdated(Config),
 }
 
 pub struct Model {
@@ -49,6 +50,8 @@ impl Widget for Win {
         ));
         relm::connect!(titlebar@WinTitleBarMsg::AddConfig(ref providername, ref name, ref cfg),
                                self.model.relm, Msg::AddConfig(providername, name.clone(), cfg.clone()));
+        relm::connect!(titlebar@WinTitleBarMsg::ConfigUpdated(ref cfg),
+                       self.model.relm, Msg::ConfigUpdated(cfg.clone()));
         let event_sources = &self.event_sources;
         relm::connect!(event_sources@EventSourcesMsg::RemoveEventSource(ref providername, ref name),
                                self.model.relm, Msg::RemoveEventSource(providername, name.clone()));
@@ -58,29 +61,13 @@ impl Widget for Win {
     }
 
     fn model(relm: &relm::Relm<Self>, _: ()) -> Model {
-        gtk::IconTheme::get_default().unwrap().add_resource_path(
-            "/icons",
-        );
-        let config = Config::read_config().unwrap_or_else(|e| {
-            let dialog = gtk::MessageDialog::new(
-                None::<&gtk::Window>,
-                gtk::DialogFlags::all(),
-                gtk::MessageType::Error,
-                gtk::ButtonsType::Close,
-                "Error loading the configuration",
-            );
-            dialog.set_property_secondary_text(Some(&format!(
-                "{}: {:}",
-                Config::config_path()
-                    .ok()
-                    .map(|p| p.to_string_lossy().to_string())
-                    .unwrap_or_else(|| "".to_string()),
-                e
-            )));
-            let _r = dialog.run();
-            dialog.destroy();
-            Config::default_config()
-        });
+        gtk::IconTheme::get_default()
+            .unwrap()
+            .add_resource_path("/icons");
+        let config = Config::read_config();
+        gtk::Settings::get_default()
+            .unwrap()
+            .set_property_gtk_application_prefer_dark_theme(config.prefer_dark_theme);
         let titlebar = relm::init::<WinTitleBar>(Win::config_source_names(&config))
             .expect("win title bar init");
         let accel_group = gtk::AccelGroup::new();
@@ -137,19 +124,12 @@ impl Widget for Win {
             .as_ref()
     }
 
-    fn save_config(&self) {
-        Config::save_config(&self.model.config).unwrap_or_else(|e| {
-            let dialog = gtk::MessageDialog::new(
-                Some(&self.window),
-                gtk::DialogFlags::all(),
-                gtk::MessageType::Error,
-                gtk::ButtonsType::Close,
-                "Error saving the configuration",
-            );
-            dialog.set_property_secondary_text(Some(&format!("{}", e)));
-            let _r = dialog.run();
-            dialog.destroy();
-        });
+    pub fn save_event_providers(&self) {
+        self.model.config.save_config(&self.window);
+        self.propagate_config_change();
+    }
+
+    fn propagate_config_change(&self) {
         self.event_sources
             .stream()
             .emit(super::eventsources::Msg::ConfigUpdate(Box::new(
@@ -175,13 +155,13 @@ impl Widget for Win {
             Msg::AddConfig(providername, name, contents) => {
                 let ep = Win::get_event_provider_by_name(providers, providername);
                 ep.add_config_values(&mut self.model.config, name, contents);
-                self.save_config();
+                self.save_event_providers();
             }
             Msg::EditConfig(configname, providername, name, contents) => {
                 let ep = Win::get_event_provider_by_name(providers, providername);
                 ep.remove_config(&mut self.model.config, configname);
                 ep.add_config_values(&mut self.model.config, name, contents);
-                self.save_config();
+                self.save_event_providers();
             }
             Msg::RemoveEventSource(ep_name, config_name) => {
                 let dialog = gtk::MessageDialog::new(
@@ -205,7 +185,7 @@ impl Widget for Win {
                 if r == gtk::ResponseType::Yes {
                     let ep = Win::get_event_provider_by_name(providers, ep_name);
                     ep.remove_config(&mut self.model.config, config_name);
-                    self.save_config();
+                    self.model.config.save_config(&self.window);
                 }
             }
             Msg::EditEventSource(ep_name, config_name) => {
@@ -237,6 +217,10 @@ impl Widget for Win {
                 {
                     self.events.emit(super::events::Msg::CopyAllHeaders);
                 }
+            }
+            Msg::ConfigUpdated(cfg) => {
+                self.model.config = cfg;
+                self.propagate_config_change();
             }
         }
     }

@@ -2,6 +2,9 @@ use super::addeventsourcedlg::Msg as AddEventSourceDialogMsg;
 use super::addeventsourcedlg::{
     AddEventSourceDialog, AddEventSourceDialogParams, EventSourceEditModel,
 };
+use super::preferences::Msg as PreferencesMsg;
+use super::preferences::Preferences;
+use crate::config::Config;
 use crate::icons::*;
 use gtk::prelude::*;
 use relm::{init, Component, Widget};
@@ -19,6 +22,8 @@ pub enum Msg {
     EventSourceNamesChanged(HashSet<String>),
     DisplayAbout,
     DisplayShortcuts,
+    DisplayPreferences,
+    ConfigUpdated(Config),
 }
 
 pub struct Model {
@@ -27,6 +32,7 @@ pub struct Model {
     main_window_stack: Option<gtk::Stack>,
     existing_source_names: HashSet<String>,
     menu_popover: gtk::Popover,
+    prefs_win: Option<Component<Preferences>>,
 }
 
 #[widget]
@@ -39,6 +45,14 @@ impl Widget for WinTitleBar {
             .margin(10)
             .orientation(gtk::Orientation::Vertical)
             .build();
+        let preferences_btn = gtk::ModelButtonBuilder::new().label("Preferences").build();
+        relm::connect!(
+            self.model.relm,
+            &preferences_btn,
+            connect_clicked(_),
+            Msg::DisplayPreferences
+        );
+        vbox.add(&preferences_btn);
         let shortcuts_btn = gtk::ModelButtonBuilder::new().label("Shortcuts").build();
         relm::connect!(
             self.model.relm,
@@ -67,6 +81,7 @@ impl Widget for WinTitleBar {
             main_window_stack: None,
             existing_source_names,
             menu_popover: gtk::Popover::new(None::<&gtk::MenuButton>),
+            prefs_win: None,
         }
     }
 
@@ -161,6 +176,20 @@ impl Widget for WinTitleBar {
         win.show();
     }
 
+    fn display_preferences(&mut self) {
+        self.model.prefs_win = Some(
+            init::<Preferences>(self.get_main_window())
+                .expect("error initializing the preferences window"),
+        );
+        let prefs_win = self.model.prefs_win.as_ref().unwrap();
+        relm::connect!(prefs_win@PreferencesMsg::ConfigUpdated(ref cfg),
+                               self.model.relm, Msg::ConfigUpdated(cfg.clone()));
+        prefs_win
+            .widget()
+            .set_transient_for(Some(&self.get_main_window()));
+        prefs_win.widget().show();
+    }
+
     fn update(&mut self, event: Msg) {
         match event {
             Msg::MainWindowStackReady(stack) => {
@@ -201,6 +230,10 @@ impl Widget for WinTitleBar {
             }
             Msg::DisplayAbout => Self::display_about(),
             Msg::DisplayShortcuts => self.display_shortcuts(),
+            Msg::DisplayPreferences => self.display_preferences(),
+            Msg::ConfigUpdated(_) => {
+                // this is meant for win... we emit here, not interested by it ourselves
+            }
         }
     }
 
