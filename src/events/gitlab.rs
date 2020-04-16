@@ -32,7 +32,7 @@ struct GitlabNote {
 #[derive(Deserialize, Serialize, Clone, Debug)]
 struct GitlabPosition {
     new_path: String,
-    new_line: usize,
+    new_line: Option<usize>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -83,7 +83,7 @@ impl Gitlab {
                                 .map(|p| p.new_path.as_str())
                                 .unwrap_or("")
                         ),
-                        note.position.as_ref().map(|p| p.new_line).unwrap_or(0),
+                        note.position.as_ref().and_then(|p| p.new_line).unwrap_or(0),
                         glib::markup_escape_text(&note.body)
                     )
                 }),
@@ -424,7 +424,13 @@ impl EventProvider for Gitlab {
 
         let gitlab_events_str = Self::call_gitlab_rest(&url, &gitlab_config)?;
 
-        let gitlab_events: Vec<_> = serde_json::from_str::<Vec<GitlabEvent>>(&gitlab_events_str)?
+        let gitlab_events: Vec<_> = serde_json::from_str::<Vec<GitlabEvent>>(&gitlab_events_str)
+            .map_err(|e| {
+                format!(
+                    "Failed parsing gitlab events {:?} -- {}",
+                    e, gitlab_events_str
+                )
+            })?
             .into_iter()
             .filter(|e| e.created_at >= day_start && e.created_at < next_day_start)
             .collect();
