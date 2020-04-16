@@ -388,7 +388,7 @@ fn it_can_get_events_for_the_cigale_repo() {
     Git.add_config_values(&mut config, "test".to_string(), git_cfg_map);
     let expected_fst = Event::new(
         "Git",
-        crate::icons::FONTAWESOME_CODE_BRANCH_SVG,
+        crate::icons::Icon::CODE_BRANCH,
         NaiveTime::from_hms(17, 1, 35),
         "include the icons in the binary".to_string(),
         "include the icons in the binary\n".to_string(),
