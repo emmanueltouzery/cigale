@@ -74,6 +74,7 @@ impl Widget for EventView {
         }
         match &self.model.events {
             Some(Ok(events)) => {
+                log::info!("Fetched events: no errors");
                 for event in events {
                     let _child = self.event_list.add_widget::<EventListItem>(event.clone());
                 }
@@ -88,6 +89,7 @@ impl Widget for EventView {
                 for child in info_contents.get_children() {
                     info_contents.remove(&child);
                 }
+                log::error!("Fetched events: errors present: {}", err.to_string());
                 info_contents.add(
                     &gtk::LabelBuilder::new()
                         .label(err.to_string().as_str())
