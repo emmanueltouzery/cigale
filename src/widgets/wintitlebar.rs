@@ -23,7 +23,7 @@ pub enum Msg {
     DisplayAbout,
     DisplayShortcuts,
     DisplayPreferences,
-    ConfigUpdated(Config),
+    ConfigUpdated(Box<Config>),
 }
 
 pub struct Model {

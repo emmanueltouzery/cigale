@@ -23,7 +23,7 @@ pub enum Msg {
     EditEventSource(&'static str, String),
     RemoveEventSource(&'static str, String),
     KeyPress(gdk::EventKey),
-    ConfigUpdated(Config),
+    ConfigUpdated(Box<Config>),
 }
 
 pub struct Model {
@@ -219,7 +219,7 @@ impl Widget for Win {
                 }
             }
             Msg::ConfigUpdated(cfg) => {
-                self.model.config = cfg;
+                self.model.config = *cfg;
                 self.propagate_config_change();
             }
         }

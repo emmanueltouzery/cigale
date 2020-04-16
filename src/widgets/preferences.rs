@@ -8,7 +8,7 @@ pub enum HeaderMsg {}
 
 #[widget]
 impl Widget for Header {
-    fn model() -> () {}
+    fn model() {}
 
     fn update(&mut self, _event: HeaderMsg) {}
 
@@ -24,7 +24,7 @@ impl Widget for Header {
 pub enum Msg {
     DarkThemeToggled(bool),
     PrevNextSkipWeekendsToggled(bool),
-    ConfigUpdated(Config),
+    ConfigUpdated(Box<Config>),
     KeyPress(gdk::EventKey),
 }
 
@@ -61,7 +61,7 @@ impl Widget for Preferences {
         self.model
             .relm
             .stream()
-            .emit(Msg::ConfigUpdated(self.model.config.clone()));
+            .emit(Msg::ConfigUpdated(Box::new(self.model.config.clone())));
     }
 
     fn update(&mut self, event: Msg) {
