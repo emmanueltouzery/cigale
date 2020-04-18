@@ -44,8 +44,8 @@ to install any dependencies yourself: `sh flatpak/build-and-install-flatpak.sh`.
 You must [install the rust compiler](https://www.rust-lang.org/tools/install), then use homebrew to install a few dependencies:
 
     brew install gtk+3
-    brew install librsvg
     brew install adwaita-icon-theme
+    brew install librsvg [may not be needed anymore, please report]
 
 Finally you can compile and run the application:
 
