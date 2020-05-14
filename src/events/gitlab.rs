@@ -5,6 +5,7 @@ use chrono::prelude::*;
 use core::time::Duration;
 use itertools::{join, Itertools};
 use serde_derive::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
 type ProjectId = usize;
@@ -26,7 +27,7 @@ struct GitlabNote {
     note_type: Option<String>,
     noteable_type: String,
     position: Option<GitlabPosition>,
-    noteable_iid: usize,
+    noteable_iid: Option<usize>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -61,16 +62,28 @@ impl Gitlab {
         }
     }
 
+    fn build_openinbrowser_link(
+        project_infos: &HashMap<ProjectId, String>,
+        evt: &GitlabEvent,
+    ) -> Cow<'static, str> {
+        if let Some(iid) = evt.note.as_ref().unwrap().noteable_iid {
+            Cow::from(format!(
+                "<a href=\"{}{}{}\">Open in browser</a>\n\n",
+                project_infos[&evt.project_id], "/merge_requests/", iid
+            ))
+        } else {
+            Cow::from("")
+        }
+    }
+
     fn build_mr_comment_event(
         target_title: &str,
         evts: &[&GitlabEvent],
         project_infos: &HashMap<ProjectId, String>,
     ) -> Event {
         let contents = format!(
-            "<a href=\"{}{}{}\">Open in browser</a>\n\n{}",
-            project_infos[&evts.first().unwrap().project_id],
-            "/merge_requests/",
-            evts.first().unwrap().note.as_ref().unwrap().noteable_iid,
+            "{}{}",
+            Self::build_openinbrowser_link(project_infos, evts.first().unwrap()),
             join(
                 evts.iter().map(|evt| {
                     let note = evt.note.as_ref().unwrap();
@@ -100,6 +113,19 @@ impl Gitlab {
                 .unwrap()
                 .noteable_type,
         );
+        let header = if let Some(iid) = evts
+            .iter()
+            .next()
+            .unwrap()
+            .note
+            .as_ref()
+            .unwrap()
+            .noteable_iid
+        {
+            format!("{} #{}: {}", note_type_desc, iid, target_title)
+        } else {
+            format!("{}: {}", note_type_desc, target_title)
+        };
         Event::new(
             "Gitlab",
             Icon::COMMENT_DOTS,
@@ -109,18 +135,7 @@ impl Gitlab {
                 .created_at
                 .time(),
             (*target_title).to_string(),
-            format!(
-                "{} #{}: {}",
-                note_type_desc,
-                evts.iter()
-                    .next()
-                    .unwrap()
-                    .note
-                    .as_ref()
-                    .unwrap()
-                    .noteable_iid,
-                target_title
-            ),
+            header,
             EventBody::Markup(contents, WordWrapMode::WordWrap),
             Some(note_type_desc),
         )
@@ -243,18 +258,23 @@ impl Gitlab {
                     && evt.note.is_some()
             })
             .map(|g_evt| {
-                let title = format!(
-                    "Issue #{} Comment: {}",
-                    g_evt.note.as_ref().unwrap().noteable_iid,
-                    g_evt.target_title.as_ref().unwrap()
-                );
-                let body = format!(
-                    "<a href=\"{}{}{}\">Open in browser</a>\n\n{}",
-                    project_infos[&g_evt.project_id],
-                    "/issues/",
-                    g_evt.note.as_ref().unwrap().noteable_iid,
-                    title
-                );
+                let title = if let Some(iid) = g_evt.note.as_ref().unwrap().noteable_iid {
+                    format!(
+                        "Issue #{} Comment: {}",
+                        iid,
+                        g_evt.target_title.as_ref().unwrap()
+                    )
+                } else {
+                    format!("Comment: {}", g_evt.target_title.as_ref().unwrap())
+                };
+                let body = if let Some(iid) = g_evt.note.as_ref().unwrap().noteable_iid {
+                    format!(
+                        "<a href=\"{}{}{}\">Open in browser</a>\n\n{}",
+                        project_infos[&g_evt.project_id], "/issues/", iid, title
+                    )
+                } else {
+                    title.clone()
+                };
                 Event::new(
                     "Gitlab",
                     Icon::COMMENT_DOTS,
