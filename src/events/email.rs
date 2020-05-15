@@ -101,8 +101,8 @@ impl Email {
         headers
             .iter()
             // TODO change to Result::contains when it stabilizes
-            .find(|h| h.get_key().ok() == Some(header_name.to_string()))
-            .and_then(|h| h.get_value().ok())
+            .find(|h| h.get_key() == header_name)
+            .map(|h| h.get_value())
     }
 
     fn parse_email_headers_date(headers: &[mailparse::MailHeader]) -> Option<DateTime<Local>> {

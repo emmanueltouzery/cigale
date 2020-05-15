@@ -318,7 +318,7 @@ impl EventProvider for Git {
                     continue;
                 }
                 let mut revwalk = repo.revwalk()?;
-                revwalk.set_sorting(/*git2::Sort::REVERSE |*/ git2::Sort::TIME);
+                revwalk.set_sorting(/*git2::Sort::REVERSE |*/ git2::Sort::TIME)?;
                 revwalk.push(branch_oid)?;
                 let mut commits: Vec<Commit> = revwalk
                     .map(|r| {
