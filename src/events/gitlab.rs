@@ -311,10 +311,7 @@ impl Gitlab {
                 // projects (it's outdated) => refetch & store to cache
                 let projects = Self::call_gitlab_rest::<GitlabProject>(
                     "/api/v4/projects",
-                    &[
-                        ("simple", "yes".to_string()),
-                        ("membership", "yes".to_string()),
-                    ],
+                    &[("simple", "yes"), ("membership", "yes")],
                     gitlab_config,
                 )?;
                 Config::write_to_cache(&Gitlab, config_name, &serde_json::to_string(&projects)?)?;
@@ -351,7 +348,7 @@ impl Gitlab {
 
     fn call_gitlab_rest<T>(
         get_url: &str,
-        get_params: &[(&'static str, String)],
+        get_params: &[(&'static str, &str)],
         gitlab_config: &GitlabConfig,
     ) -> Result<Vec<T>>
     where
@@ -483,8 +480,8 @@ impl EventProvider for Gitlab {
         let gitlab_events: Vec<_> = Self::call_gitlab_rest::<GitlabEvent>(
             "/api/v4/events",
             &[
-                ("after", day.pred().format("%F").to_string()),
-                ("before", day.succ().format("%F").to_string()),
+                ("after", &day.pred().format("%F").to_string()),
+                ("before", &day.succ().format("%F").to_string()),
             ],
             &gitlab_config,
         )?
