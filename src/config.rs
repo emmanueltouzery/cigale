@@ -165,7 +165,8 @@ impl Config {
             return Ok(None);
         }
         let metadata = std::fs::metadata(&cache_file)?;
-        if DateTime::from(metadata.modified()?) >= *date {
+        let file_date: DateTime<Local> = DateTime::from(metadata.modified()?);
+        if file_date >= *date {
             let mut contents = String::new();
             File::open(cache_file)?.read_to_string(&mut contents)?;
             Ok(Some(contents))
