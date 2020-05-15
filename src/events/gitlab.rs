@@ -298,32 +298,37 @@ impl Gitlab {
             config_name,
             &Local.ymd(1970, 1, 1).and_hms(0, 0, 0),
         )?;
-        match cache.and_then(|cached_json| {
-            Self::get_projects_from_json_str(&cached_json, project_ids)
-                .ok()
-                .flatten()
-        }) {
+        match cache
+            .and_then(|cached_json| serde_json::from_str::<Vec<GitlabProject>>(&cached_json).ok())
+            .and_then(|projects| {
+                Self::get_projects_from_json(projects, project_ids)
+                    .ok()
+                    .flatten()
+            }) {
             Some(hash) => Ok(hash),
             None => {
                 // either no cache or the cache doesn't know some of the
                 // projects (it's outdated) => refetch & store to cache
-                let response = Self::call_gitlab_rest(
-                    "/api/v4/projects?simple=yes&membership=yes",
+                let projects = Self::call_gitlab_rest::<GitlabProject>(
+                    "/api/v4/projects",
+                    &[
+                        ("simple", "yes".to_string()),
+                        ("membership", "yes".to_string()),
+                    ],
                     gitlab_config,
                 )?;
-                Config::write_to_cache(&Gitlab, config_name, &response)?;
-                let hash = Self::get_projects_from_json_str(&response, project_ids)?
+                Config::write_to_cache(&Gitlab, config_name, &serde_json::to_string(&projects)?)?;
+                let hash = Self::get_projects_from_json(projects, project_ids)?
                     .ok_or("Can't find all projects?")?;
                 Ok(hash)
             }
         }
     }
 
-    fn get_projects_from_json_str(
-        json_str: &str,
+    fn get_projects_from_json(
+        projects: Vec<GitlabProject>,
         project_ids: &HashSet<ProjectId>,
     ) -> Result<Option<HashMap<ProjectId, String>>> {
-        let projects = serde_json::from_str::<Vec<GitlabProject>>(json_str)?;
         let filtered_projects: Vec<_> = projects
             .into_iter()
             .filter(|p| project_ids.contains(&p.id))
@@ -344,20 +349,59 @@ impl Gitlab {
         }
     }
 
-    fn call_gitlab_rest(get_url: &str, gitlab_config: &GitlabConfig) -> Result<String> {
+    fn call_gitlab_rest<T>(
+        get_url: &str,
+        get_params: &[(&'static str, String)],
+        gitlab_config: &GitlabConfig,
+    ) -> Result<Vec<T>>
+    where
+        T: serde::de::DeserializeOwned,
+    {
         let client = reqwest::blocking::ClientBuilder::new()
             .timeout(Duration::from_secs(30))
             .connect_timeout(Duration::from_secs(30))
             .connection_verbose(true)
             .build()?;
-        let str = client
-            .get(&format!("{}/{}", gitlab_config.gitlab_url, get_url))
-            .header("PRIVATE-TOKEN", &gitlab_config.personal_access_token)
-            .send()?
-            .error_for_status()?
-            .text()?;
-        log::debug!("{}: {}", get_url, str);
-        Ok(str)
+        let get_params = if get_params.is_empty() {
+            "".to_string()
+        } else {
+            format!(
+                "{}&",
+                get_params
+                    .iter()
+                    .map(|(k, v)| format!("{}={}", k, v))
+                    .join("&")
+            )
+        };
+        let mut page_idx = 1;
+        let mut records = vec![];
+        loop {
+            let resp = client
+                .get(&format!(
+                    "{}/{}?{}page={}",
+                    gitlab_config.gitlab_url, get_url, get_params, page_idx
+                ))
+                .header("PRIVATE-TOKEN", &gitlab_config.personal_access_token)
+                .send()?
+                .error_for_status()?;
+            let page_count = resp
+                .headers()
+                .get("X-Total-Pages")
+                .ok_or("Missing X-Total-Pages header")?
+                .to_str()?
+                .parse::<usize>()?;
+            let json = resp.text()?;
+            log::debug!("{}, page count: {}, text: {}", get_url, page_count, json);
+            records.append(
+                &mut serde_json::from_str::<Vec<T>>(&json)
+                    .map_err(|e| format!("Failed parsing json {} {:?} -- {}", get_url, e, json))?,
+            );
+            if page_idx == page_count {
+                break;
+            }
+            page_idx += 1;
+        }
+        Ok(records)
     }
 }
 
@@ -436,24 +480,17 @@ impl EventProvider for Gitlab {
         let gitlab_config = &config.gitlab[config_name];
         let day_start = day.and_hms(0, 0, 0);
         let next_day_start = day_start + chrono::Duration::days(1);
-        let url = format!(
-            "/api/v4/events?after={}&before={}",
-            day.pred().format("%F"),
-            day.succ().format("%F"),
-        );
-
-        let gitlab_events_str = Self::call_gitlab_rest(&url, &gitlab_config)?;
-
-        let gitlab_events: Vec<_> = serde_json::from_str::<Vec<GitlabEvent>>(&gitlab_events_str)
-            .map_err(|e| {
-                format!(
-                    "Failed parsing gitlab events {:?} -- {}",
-                    e, gitlab_events_str
-                )
-            })?
-            .into_iter()
-            .filter(|e| e.created_at >= day_start && e.created_at < next_day_start)
-            .collect();
+        let gitlab_events: Vec<_> = Self::call_gitlab_rest::<GitlabEvent>(
+            "/api/v4/events",
+            &[
+                ("after", day.pred().format("%F").to_string()),
+                ("before", day.succ().format("%F").to_string()),
+            ],
+            &gitlab_config,
+        )?
+        .into_iter()
+        .filter(|e| e.created_at >= day_start && e.created_at < next_day_start)
+        .collect();
 
         let project_infos = Self::get_projects_info(
             config_name,
