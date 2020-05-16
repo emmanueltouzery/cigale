@@ -4,7 +4,7 @@ cp flatpak/com.github.emmanueltouzery.cigale.metainfo.xml .
 mkdir .cargo
 cargo vendor > .cargo/config
 rm flatpak-cargo-generator.py
-wget https://raw.githubusercontent.com/flatpak/flatpak-builder-tools/d7cfbeaf8d1a2165d917d048511353d6f6e59ab3/cargo/flatpak-cargo-generator.py
+wget https://raw.githubusercontent.com/flatpak/flatpak-builder-tools/2982bbca0bef22559325dacdd7847fb5e3e0e332/cargo/flatpak-cargo-generator.py
 python3 flatpak-cargo-generator.py ./Cargo.lock -o cargo-sources.json
 flatpak-builder --install repo com.github.emmanueltouzery.cigale.json --force-clean --user
 rm flatpak-cargo-generator.py
