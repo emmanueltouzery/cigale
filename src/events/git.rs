@@ -138,16 +138,14 @@ impl Git {
     // autodetect github repos & offer to open the commits in the browser
     fn get_commit_display_url_github(origin_url: &str) -> Result<Option<String>> {
         let github_projectname_regex =
-            Regex::new(r"^git@github\.com:(.*)\.git$|https://github\.com/(.*)\.git").unwrap();
-        let github_project_name = match github_projectname_regex.captures_iter(&origin_url).next() {
-            Some(v) => v[1].to_string(),
-            None => return Ok(None),
-        };
+            Regex::new(r"^git@github\.com:(?P<reponame1>.*)\.git$|^https://github\.com/(?P<reponame2>.*)\.git$").unwrap();
+        let github_project_name = github_projectname_regex
+            .captures_iter(&origin_url)
+            .next()
+            .and_then(|v| v.name("reponame1").or_else(|| v.name("reponame2")))
+            .map(|m| m.as_str());
 
-        Ok(Some(format!(
-            "https://github.com/{}/commit/",
-            github_project_name
-        )))
+        Ok(github_project_name.map(|n| format!("https://github.com/{}/commit/", n)))
     }
 
     fn build_event(
@@ -374,6 +372,32 @@ impl EventProvider for Git {
         });
         Ok(result)
     }
+}
+
+#[test]
+fn it_parses_ssh_remote_github_url() {
+    assert_eq!(
+        Some("https://github.com/emmanueltouzery/cigale/commit/".to_string()),
+        Git::get_commit_display_url_github("git@github.com:emmanueltouzery/cigale.git").unwrap()
+    );
+}
+
+#[test]
+fn it_parses_http_remote_github_url() {
+    assert_eq!(
+        Some("https://github.com/emmanueltouzery/cigale/commit/".to_string()),
+        Git::get_commit_display_url_github("https://github.com/emmanueltouzery/cigale.git")
+            .unwrap()
+    );
+}
+
+#[test]
+fn it_rejects_a_non_remote_github_url() {
+    assert_eq!(
+        None,
+        Git::get_commit_display_url_github("https://mycompany.com/emmanueltouzery/cigale.git")
+            .unwrap()
+    );
 }
 
 #[test]
