@@ -44,6 +44,12 @@ https://hughsie.github.io/oars/index.html
 -->
   <content_rating type="oars-1.0" />
   <releases>
+    <release version="0.5.2" date="2020-05-26">
+      <description>
+        <ul>git: would fail importing events for https github repos</ul>
+        <ul>removed event sources would only disappear after an application restart</ul>
+      </description>
+    </release>
     <release version="0.5.1" date="2020-05-16">
       <description>
         <ul>gitlab: fix code comments outside of merge requests that would break parsing</ul>
