@@ -185,7 +185,7 @@ impl Widget for Win {
                 if r == gtk::ResponseType::Yes {
                     let ep = Win::get_event_provider_by_name(providers, ep_name);
                     ep.remove_config(&mut self.model.config, config_name);
-                    self.model.config.save_config(&self.window);
+                    self.save_event_providers();
                 }
             }
             Msg::EditEventSource(ep_name, config_name) => {
