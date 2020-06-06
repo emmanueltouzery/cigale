@@ -11,7 +11,7 @@ use relm_derive::{widget, Msg};
 
 #[derive(Msg)]
 pub enum Msg {
-    EventSelected,
+    EventSelected(Option<usize>),
     DayChange(Date<Local>),
     GotEvents(Result<Vec<Event>, String>),
     ConfigUpdate(Box<Config>), // box to prevent large size difference between variants
@@ -36,13 +36,6 @@ impl Widget for EventView {
             .get_style_context()
             .add_class("event_header_label");
         self.update_events();
-
-        relm::connect!(
-            self.model.relm,
-            self.event_list,
-            connect_row_selected(_, _),
-            Msg::EventSelected
-        );
 
         self.copy_button.add_accelerator(
             "activate",
@@ -126,15 +119,9 @@ impl Widget for EventView {
 
     fn update(&mut self, event: Msg) {
         match event {
-            Msg::EventSelected => {
+            Msg::EventSelected(row_idx) => {
                 if let Some(Ok(events)) = &self.model.events {
-                    let selected_index_maybe = self
-                        .event_list
-                        .get_selected_row()
-                        .map(|r| r.get_index() as usize);
-                    self.model.current_event = selected_index_maybe
-                        .and_then(|idx| events.get(idx))
-                        .cloned();
+                    self.model.current_event = row_idx.and_then(|idx| events.get(idx)).cloned();
                 }
             }
             Msg::DayChange(day) => {
@@ -231,7 +218,8 @@ impl Widget for EventView {
                                 child: {
                                     fill: true,
                                     expand: true,
-                                }
+                                },
+                                row_selected(_, row) => Msg::EventSelected(row.map(|r| r.get_index() as usize))
                             }
                         }
                     },
