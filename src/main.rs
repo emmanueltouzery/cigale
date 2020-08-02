@@ -9,7 +9,7 @@ fn main() {
 
     let res_bytes = include_bytes!("icons.bin");
     let data = glib::Bytes::from(&res_bytes[..]);
-    let resource = gio::Resource::new_from_data(&data).unwrap();
+    let resource = gio::Resource::from_data(&data).unwrap();
     gio::resources_register(&resource);
 
     widgets::win::Win::run(()).unwrap();

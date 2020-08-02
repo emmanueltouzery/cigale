@@ -181,7 +181,7 @@ impl Widget for Win {
                     .get_style_context()
                     .add_class("destructive-action");
                 let r = dialog.run();
-                dialog.destroy();
+                dialog.close();
                 if r == gtk::ResponseType::Yes {
                     let ep = Win::get_event_provider_by_name(providers, ep_name);
                     ep.remove_config(&mut self.model.config, config_name);
@@ -206,14 +206,14 @@ impl Widget for Win {
                                self.model.relm, Msg::EditConfig(configname.clone(), providername, name.clone(), cfg.clone()));
                 let resp = dialog.run();
                 match resp {
-                    gtk::ResponseType::Cancel | gtk::ResponseType::DeleteEvent => dialog.destroy(),
+                    gtk::ResponseType::Cancel | gtk::ResponseType::DeleteEvent => dialog.close(),
                     _ => {}
                 }
             }
             Msg::KeyPress(key) => {
                 if key.get_state().contains(gdk::ModifierType::CONTROL_MASK)
                     && key.get_state().contains(gdk::ModifierType::MOD1_MASK)
-                    && key.get_keyval() == gdk::enums::key::y
+                    && key.get_keyval() == gdk::keys::constants::y
                 {
                     self.events.emit(super::events::Msg::CopyAllHeaders);
                 }

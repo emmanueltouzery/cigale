@@ -182,7 +182,6 @@ impl Widget for AddEventSourceDialog {
                 .dynamic_cast::<gtk::Entry>()
                 .unwrap()
                 .get_text()
-                .unwrap()
                 .to_string(),
             ConfigType::Combo => entry
                 .clone()
@@ -222,10 +221,7 @@ impl Widget for AddEventSourceDialog {
                         [self.get_provider_index_if_step2()];
                     self.model.relm.stream().emit(Msg::AddConfig(
                         ep.name(),
-                        self.provider_name_entry
-                            .get_text()
-                            .map(|t| t.to_string())
-                            .unwrap_or_else(|| "".to_string()),
+                        self.provider_name_entry.get_text().to_string(),
                         self.get_entry_values(),
                     ));
                     self.model.dialog.emit_close();
@@ -240,17 +236,14 @@ impl Widget for AddEventSourceDialog {
                         .event_source_name
                         .clone(),
                     self.model.edit_model.as_ref().unwrap().event_provider_name,
-                    self.provider_name_entry
-                        .get_text()
-                        .map(|t| t.to_string())
-                        .unwrap_or_else(|| "".to_string()),
+                    self.provider_name_entry.get_text().to_string(),
                     self.get_entry_values(),
                 ));
                 self.model.dialog.emit_close();
             }
             Msg::SourceNameChanged => {
                 let txt = self.provider_name_entry.get_text();
-                let source_name = txt.as_ref().map(|t| t.as_str()).unwrap_or("");
+                let source_name = txt.as_str();
                 let form_is_valid = !source_name.is_empty()
                     && !self.model.existing_source_names.contains(source_name)
                     && !self
@@ -333,7 +326,7 @@ impl Widget for AddEventSourceDialog {
         let p = self.model.event_provider.as_ref().unwrap();
         self.provider_name_entry.set_text(event_source_name);
         self.config_fields_grid.attach(
-            &gtk::Image::new_from_icon_name(Some(p.default_icon().name()), gtk::IconSize::Dnd),
+            &gtk::Image::from_icon_name(Some(p.default_icon().name()), gtk::IconSize::Dnd),
             0,
             0,
             1,

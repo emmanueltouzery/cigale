@@ -191,7 +191,7 @@ impl Widget for DatePicker {
             #[name="prev_button"]
             gtk::Button {
                 always_show_image: true,
-                image: Some(&gtk::Image::new_from_icon_name(
+                image: Some(&gtk::Image::from_icon_name(
                     Some(Icon::ANGLE_LEFT.name()), gtk::IconSize::Menu)),
                 valign: gtk::Align::Center,
                 relief: gtk::ReliefStyle::None,
@@ -203,7 +203,7 @@ impl Widget for DatePicker {
                     padding: 2,
                 },
                 always_show_image: true,
-                image: Some(&gtk::Image::new_from_icon_name(
+                image: Some(&gtk::Image::from_icon_name(
                     Some(Icon::CALENDAR_ALT.name()), gtk::IconSize::Menu)),
                 label: self.model.date.format("%A, %Y-%m-%d").to_string().as_str(),
                 clicked => DatePickerMsg::ButtonClicked
@@ -211,7 +211,7 @@ impl Widget for DatePicker {
             #[name="next_button"]
             gtk::Button {
                 always_show_image: true,
-                image: Some(&gtk::Image::new_from_icon_name(
+                image: Some(&gtk::Image::from_icon_name(
                     Some(Icon::ANGLE_RIGHT.name()), gtk::IconSize::Menu)),
                 valign: gtk::Align::Center,
                 relief: gtk::ReliefStyle::None,

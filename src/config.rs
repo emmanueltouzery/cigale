@@ -87,7 +87,7 @@ impl Config {
                 e
             )));
             let _r = dialog.run();
-            dialog.destroy();
+            dialog.close();
             Config::default_config()
         })
     }
@@ -109,7 +109,7 @@ impl Config {
             );
             dialog.set_property_secondary_text(Some(&format!("{}", e)));
             let _r = dialog.run();
-            dialog.destroy();
+            dialog.close();
         });
     }
 

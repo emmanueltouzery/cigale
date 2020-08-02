@@ -124,7 +124,7 @@ impl Widget for EventSourceListItem {
                 #[name="event_source_actions_btn"]
                 gtk::Button {
                     always_show_image: true,
-                    image: Some(&gtk::Image::new_from_icon_name(
+                    image: Some(&gtk::Image::from_icon_name(
                         Some(Icon::COG.name()), gtk::IconSize::Menu)),
                     hexpand: true,
                     halign: gtk::Align::End,

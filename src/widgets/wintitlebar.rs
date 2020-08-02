@@ -110,7 +110,7 @@ impl Widget for WinTitleBar {
         // because i've had problems with relm events
         // not propagating when using those. worked
         // fine when i started using my own buttons.
-        let btn = gtk::Button::new_with_label("Next");
+        let btn = gtk::Button::with_label("Next");
         btn.get_style_context().add_class("suggested-action");
         header_bar.pack_end(&btn);
         btn.show();
@@ -150,7 +150,7 @@ impl Widget for WinTitleBar {
                                self.model.relm, Msg::AddConfig(providername, name.clone(), cfg.clone()));
         let resp = dialog.run();
         match resp {
-            gtk::ResponseType::Cancel | gtk::ResponseType::DeleteEvent => dialog.destroy(),
+            gtk::ResponseType::Cancel | gtk::ResponseType::DeleteEvent => dialog.close(),
             _ => {}
         }
     }
@@ -164,11 +164,11 @@ impl Widget for WinTitleBar {
             .comments("Review your past activity")
             .build();
         dlg.run();
-        dlg.destroy();
+        dlg.close();
     }
 
     fn display_shortcuts(&self) {
-        let win = gtk::Builder::new_from_string(SHORTCUTS_UI)
+        let win = gtk::Builder::from_string(SHORTCUTS_UI)
             .get_object::<gtk::Window>("shortcuts")
             .unwrap();
         win.set_title("Shortcuts");
@@ -250,7 +250,7 @@ impl Widget for WinTitleBar {
             title: Some("Cigale"),
             #[name="menu_button"]
             gtk::MenuButton {
-                image: Some(&gtk::Image::new_from_icon_name(Some("open-menu-symbolic"), gtk::IconSize::Menu)),
+                image: Some(&gtk::Image::from_icon_name(Some("open-menu-symbolic"), gtk::IconSize::Menu)),
                 child: {
                     pack_type: gtk::PackType::End
                 },

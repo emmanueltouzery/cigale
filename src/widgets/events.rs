@@ -76,7 +76,6 @@ impl Widget for EventView {
                 let info_contents = self
                     .info_bar
                     .get_content_area()
-                    .unwrap()
                     .dynamic_cast::<gtk::Box>() // https://github.com/gtk-rs/gtk/issues/947
                     .unwrap();
                 for child in info_contents.get_children() {
@@ -142,12 +141,7 @@ impl Widget for EventView {
                 ));
             }
             Msg::CopyHeader => {
-                if let Some(clip) = self
-                    .events_stack
-                    .get_display()
-                    .as_ref()
-                    .and_then(gtk::Clipboard::get_default)
-                {
+                if let Some(clip) = gtk::Clipboard::get_default(&self.events_stack.get_display()) {
                     clip.set_text(
                         self.model
                             .current_event
@@ -158,11 +152,7 @@ impl Widget for EventView {
                 }
             }
             Msg::CopyAllHeaders => {
-                let m_clip = &self
-                    .events_stack
-                    .get_display()
-                    .as_ref()
-                    .and_then(gtk::Clipboard::get_default);
+                let m_clip = &gtk::Clipboard::get_default(&self.events_stack.get_display());
                 let m_events = &self.model.events;
                 if let (Some(clip), Some(Ok(event_list))) = (m_clip, m_events) {
                     clip.set_text(
@@ -257,7 +247,7 @@ impl Widget for EventView {
                             #[name="copy_button"]
                             gtk::Button {
                                 always_show_image: true,
-                                image: Some(&gtk::Image::new_from_icon_name(
+                                image: Some(&gtk::Image::from_icon_name(
                                     Some(Icon::COPY.name()), gtk::IconSize::Menu)),
                                 halign: gtk::Align::End,
                                 valign: gtk::Align::Start,

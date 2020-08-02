@@ -85,7 +85,7 @@ impl Widget for Preferences {
                 // meant for my parent, not for me
             }
             Msg::KeyPress(key) => {
-                if key.get_keyval() == gdk::enums::key::Escape {
+                if key.get_keyval() == gdk::keys::constants::Escape {
                     self.prefs_win.close();
                 }
             }
