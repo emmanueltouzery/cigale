@@ -421,7 +421,7 @@ impl Widget for AddEventSourceDialog {
                     name: Some("step2")
                 },
                 gtk::Label {
-                    label: "Provider name:",
+                    label: "Provider name",
                     halign: gtk::Align::End,
                     cell: {
                         left_attach: 1,
