@@ -187,6 +187,10 @@ impl Widget for WinTitleBar {
         prefs_win
             .widget()
             .set_transient_for(Some(&self.get_main_window()));
+        prefs_win
+            .widget()
+            .set_position(gtk::WindowPosition::CenterOnParent);
+        prefs_win.widget().set_modal(true);
         prefs_win.widget().show();
     }
 
