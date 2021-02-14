@@ -169,10 +169,7 @@ pub enum EventBody {
 
 impl EventBody {
     pub fn is_markup(&self) -> bool {
-        match self {
-            EventBody::Markup(_, _) => true,
-            _ => false,
-        }
+        matches!(self, EventBody::Markup(_, _))
     }
 
     pub fn as_str(&self) -> &str {
@@ -183,10 +180,7 @@ impl EventBody {
     }
 
     pub fn is_word_wrap(&self) -> bool {
-        match self {
-            EventBody::Markup(_, WordWrapMode::WordWrap) => true,
-            _ => false,
-        }
+        matches!(self, EventBody::Markup(_, WordWrapMode::WordWrap))
     }
 }
 

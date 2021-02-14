@@ -155,8 +155,8 @@ impl Redmine {
                 let time = Self::parse_time(&time_str)?;
                 let description_elt = &it_descriptions
                     .next()
-                    .ok_or_else(|| "Redmine event: no description?")?;
-                let link_elt = &it_links.next().ok_or_else(|| "Redmine event: no link?")?;
+                    .ok_or("Redmine event: no description?")?;
+                let link_elt = &it_links.next().ok_or("Redmine event: no link?")?;
                 result.push(Event::new(
                     "Redmine",
                     Icon::TASKS,
