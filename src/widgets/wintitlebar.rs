@@ -53,7 +53,9 @@ impl Widget for WinTitleBar {
             Msg::DisplayPreferences
         );
         vbox.add(&preferences_btn);
-        let shortcuts_btn = gtk::ModelButtonBuilder::new().label("Shortcuts").build();
+        let shortcuts_btn = gtk::ModelButtonBuilder::new()
+            .label("Keyboard Shortcuts")
+            .build();
         relm::connect!(
             self.model.relm,
             &shortcuts_btn,
@@ -61,7 +63,7 @@ impl Widget for WinTitleBar {
             Msg::DisplayShortcuts
         );
         vbox.add(&shortcuts_btn);
-        let about_btn = gtk::ModelButtonBuilder::new().label("About").build();
+        let about_btn = gtk::ModelButtonBuilder::new().label("About Cigale").build();
         relm::connect!(
             self.model.relm,
             &about_btn,
@@ -117,6 +119,7 @@ impl Widget for WinTitleBar {
         let dialog_contents = init::<AddEventSourceDialog>(AddEventSourceDialogParams {
             existing_source_names: existing_source_names.clone(),
             next_btn: btn,
+            //
             dialog: dialog.clone(),
             edit_model,
         })
