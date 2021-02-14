@@ -216,10 +216,10 @@ impl Redmine {
         let user_id = doc
             .select(&user_sel)
             .next()
-            .ok_or_else(|| "Failed getting the user id#1")?
+            .ok_or("Failed getting the user id#1")?
             .value()
             .attr("href")
-            .ok_or_else(|| "Failed getting the user id#2")?
+            .ok_or("Failed getting the user id#2")?
             .replace("/users/", "");
         Ok((client, user_id))
     }
