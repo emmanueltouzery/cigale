@@ -32,12 +32,13 @@ pub struct Model {
 #[widget]
 impl Widget for EventView {
     fn init_view(&mut self) {
-        self.header_label
+        self.widgets
+            .header_label
             .get_style_context()
             .add_class("event_header_label");
         self.update_events();
 
-        self.copy_button.add_accelerator(
+        self.widgets.copy_button.add_accelerator(
             "activate",
             &self.model.accel_group,
             'y'.into(),
@@ -62,18 +63,22 @@ impl Widget for EventView {
 
     fn update_events(&mut self) {
         self.model.current_event = None;
-        for child in self.event_list.get_children() {
-            self.event_list.remove(&child);
+        for child in self.widgets.event_list.get_children() {
+            self.widgets.event_list.remove(&child);
         }
         match &self.model.events {
             Some(Ok(events)) => {
                 log::info!("Fetched events: no errors");
                 for event in events {
-                    let _child = self.event_list.add_widget::<EventListItem>(event.clone());
+                    let _child = self
+                        .widgets
+                        .event_list
+                        .add_widget::<EventListItem>(event.clone());
                 }
             }
             Some(Err(err)) => {
                 let info_contents = self
+                    .widgets
                     .info_bar
                     .get_content_area()
                     .dynamic_cast::<gtk::Box>() // https://github.com/gtk-rs/gtk/issues/947
@@ -95,7 +100,8 @@ impl Widget for EventView {
 
         let has_event_sources =
             !super::win::Win::config_source_names(&self.model.config).is_empty();
-        self.events_stack
+        self.widgets
+            .events_stack
             .set_visible_child_name(if has_event_sources {
                 "events"
             } else {
@@ -136,12 +142,16 @@ impl Widget for EventView {
             Msg::ConfigUpdate(config) => {
                 self.model.config = *config;
                 EventView::fetch_events(&self.model.config, &self.model.relm, self.model.day);
-                self.date_picker.emit(DatePickerMsg::PrevNextDaySkipChanged(
-                    self.model.config.prev_next_day_skip_weekends,
-                ));
+                self.components
+                    .date_picker
+                    .emit(DatePickerMsg::PrevNextDaySkipChanged(
+                        self.model.config.prev_next_day_skip_weekends,
+                    ));
             }
             Msg::CopyHeader => {
-                if let Some(clip) = gtk::Clipboard::get_default(&self.events_stack.get_display()) {
+                if let Some(clip) =
+                    gtk::Clipboard::get_default(&self.widgets.events_stack.get_display())
+                {
                     clip.set_text(
                         self.model
                             .current_event
@@ -152,7 +162,7 @@ impl Widget for EventView {
                 }
             }
             Msg::CopyAllHeaders => {
-                let m_clip = &gtk::Clipboard::get_default(&self.events_stack.get_display());
+                let m_clip = &gtk::Clipboard::get_default(&self.widgets.events_stack.get_display());
                 let m_events = &self.model.events;
                 if let (Some(clip), Some(Ok(event_list))) = (m_clip, m_events) {
                     clip.set_text(

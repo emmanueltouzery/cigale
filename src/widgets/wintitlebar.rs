@@ -38,7 +38,8 @@ pub struct Model {
 #[widget]
 impl Widget for WinTitleBar {
     fn init_view(&mut self) {
-        self.new_event_source_btn
+        self.widgets
+            .new_event_source_btn
             .get_style_context()
             .add_class("suggested-action");
         let vbox = gtk::BoxBuilder::new()
@@ -73,7 +74,9 @@ impl Widget for WinTitleBar {
         vbox.add(&about_btn);
         vbox.show_all();
         self.model.menu_popover.add(&vbox);
-        self.menu_button.set_popover(Some(&self.model.menu_popover));
+        self.widgets
+            .menu_button
+            .set_popover(Some(&self.model.menu_popover));
     }
 
     fn model(relm: &relm::Relm<Self>, existing_source_names: HashSet<String>) -> Model {
@@ -201,7 +204,8 @@ impl Widget for WinTitleBar {
         match event {
             Msg::MainWindowStackReady(stack) => {
                 self.model.main_window_stack = Some(stack.clone());
-                self.main_window_stack_switcher
+                self.widgets
+                    .main_window_stack_switcher
                     .set_stack(self.model.main_window_stack.as_ref());
                 relm::connect!(
                     self.model.relm,
@@ -220,10 +224,11 @@ impl Widget for WinTitleBar {
                     .as_ref()
                     .map(|s| s.as_str())
                     == Some("event-sources");
-                self.header_bar.set_subtitle(
+                self.widgets.header_bar.set_subtitle(
                     Some("Event Sources").filter(|_| self.model.displaying_event_sources),
                 );
-                self.new_event_source_btn
+                self.widgets
+                    .new_event_source_btn
                     .set_visible(self.model.displaying_event_sources);
             }
             Msg::NewEventSourceClick => {

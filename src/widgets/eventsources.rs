@@ -22,7 +22,8 @@ pub struct Model {
 #[widget]
 impl Widget for EventSources {
     fn init_view(&mut self) {
-        self.eventsources_list
+        self.widgets
+            .eventsources_list
             .get_style_context()
             .add_class("item_list");
         self.update_eventsources();
@@ -91,22 +92,23 @@ impl Widget for EventSources {
     }
 
     fn update_eventsources(&mut self) {
-        for child in self.eventsources_list.get_children() {
-            self.eventsources_list.remove(&child);
+        for child in self.widgets.eventsources_list.get_children() {
+            self.widgets.eventsources_list.remove(&child);
         }
         let event_providers = crate::events::events::get_event_providers();
         for event_provider in event_providers {
             for event_config_name in event_provider.get_config_names(&self.model.config) {
                 let event_config =
                     event_provider.get_config_values(&self.model.config, event_config_name);
-                let child = self.eventsources_list.add_widget::<EventSourceListItem>(
-                    EventSourceListItemInfo {
+                let child = self
+                    .widgets
+                    .eventsources_list
+                    .add_widget::<EventSourceListItem>(EventSourceListItemInfo {
                         event_provider_name: event_provider.name(),
                         event_provider_icon: event_provider.default_icon(),
                         config_name: event_config_name.to_string(),
                         event_source: event_config.clone(),
-                    },
-                );
+                    });
                 let ep_name = event_provider.name();
                 let cfg_name = event_config_name.to_string();
                 // this is a little confusing for me here, but somehow
@@ -119,8 +121,9 @@ impl Widget for EventSources {
                 );
             }
         }
-        let children = self.eventsources_list.get_children();
-        self.eventsources_stack
+        let children = self.widgets.eventsources_list.get_children();
+        self.widgets
+            .eventsources_stack
             .set_visible_child_name(if children.is_empty() {
                 "no-events"
             } else {

@@ -27,7 +27,8 @@ impl Widget for EventSourceListItem {
         // remove the gtk-added 'image-button' CSS class.
         // i want a gray background instead of white:
         // consistent with the gnome printers dialog, and more visible in dark mode
-        self.event_source_actions_btn
+        self.widgets
+            .event_source_actions_btn
             .get_style_context()
             .remove_class("image-button");
 
@@ -46,8 +47,8 @@ impl Widget for EventSourceListItem {
             let desc = gtk::LabelBuilder::new().label(kv.0).xalign(0.0).build();
             desc.get_style_context()
                 .add_class("event_source_config_label");
-            self.items_box.attach(&desc, 0, i, 1, 1);
-            self.items_box.attach(
+            self.widgets.items_box.attach(&desc, 0, i, 1, 1);
+            self.widgets.items_box.attach(
                 &gtk::LabelBuilder::new()
                     .label(if field_type == ConfigType::Password {
                         "●●●●●"
@@ -64,11 +65,13 @@ impl Widget for EventSourceListItem {
             );
             i += 1;
         }
-        self.items_box.show_all();
-        self.event_source_name
+        self.widgets.items_box.show_all();
+        self.widgets
+            .event_source_name
             .get_style_context()
             .add_class("event_source_name");
-        self.items_frame
+        self.widgets
+            .items_frame
             .get_style_context()
             .add_class("items_frame");
     }

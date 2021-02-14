@@ -40,7 +40,7 @@ impl Widget for DatePicker {
     fn init_view(&mut self) {
         self.model
             .calendar_popover
-            .set_relative_to(Some(&self.calendar_button));
+            .set_relative_to(Some(&self.widgets.calendar_button));
         self.model.calendar_popover.hide();
         self.model.calendar_popover.add(&self.model.calendar);
         self.model.calendar.show();
@@ -57,14 +57,14 @@ impl Widget for DatePicker {
             DatePickerMsg::MonthChanged
         );
         // https://askubuntu.com/a/138520/188440
-        self.prev_button.add_accelerator(
+        self.widgets.prev_button.add_accelerator(
             "activate",
             &self.model.accel_group,
             65361, //arrow left
             gdk::ModifierType::MOD1_MASK,
             gtk::AccelFlags::VISIBLE,
         );
-        self.next_button.add_accelerator(
+        self.widgets.next_button.add_accelerator(
             "activate",
             &self.model.accel_group,
             65363, //arrow right

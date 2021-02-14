@@ -103,6 +103,7 @@ impl Widget for AddEventSourceDialog {
         );
         for provider in get_event_providers() {
             let _child = self
+                .widgets
                 .provider_list
                 .add_widget::<ProviderItem>(ProviderItemModel {
                     name: provider.name(),
@@ -110,8 +111,8 @@ impl Widget for AddEventSourceDialog {
                 });
         }
         // select the first event provider by default
-        self.provider_list.select_row(Some(
-            &self.provider_list.get_children()[0]
+        self.widgets.provider_list.select_row(Some(
+            &self.widgets.provider_list.get_children()[0]
                 .clone()
                 .dynamic_cast::<gtk::ListBoxRow>()
                 .unwrap(),
@@ -137,7 +138,7 @@ impl Widget for AddEventSourceDialog {
             &edit_model.event_source_name,
             &edit_model.event_source_values,
         );
-        self.wizard_stack.set_visible_child_name("step2");
+        self.widgets.wizard_stack.set_visible_child_name("step2");
         self.model.next_btn.set_label("Save");
     }
 
@@ -211,7 +212,7 @@ impl Widget for AddEventSourceDialog {
                     let provider = crate::events::events::get_event_providers()
                         .remove(self.get_provider_index_if_step2());
                     self.populate_second_step(provider, &"".to_string(), &HashMap::new());
-                    self.wizard_stack.set_visible_child_name("step2");
+                    self.widgets.wizard_stack.set_visible_child_name("step2");
 
                     self.model.next_btn.set_label("Add");
                     self.model.next_btn.set_sensitive(false); // must enter an event source name
@@ -221,7 +222,7 @@ impl Widget for AddEventSourceDialog {
                         [self.get_provider_index_if_step2()];
                     self.model.relm.stream().emit(Msg::AddConfig(
                         ep.name(),
-                        self.provider_name_entry.get_text().to_string(),
+                        self.widgets.provider_name_entry.get_text().to_string(),
                         self.get_entry_values(),
                     ));
                     self.model.dialog.emit_close();
@@ -236,13 +237,13 @@ impl Widget for AddEventSourceDialog {
                         .event_source_name
                         .clone(),
                     self.model.edit_model.as_ref().unwrap().event_provider_name,
-                    self.provider_name_entry.get_text().to_string(),
+                    self.widgets.provider_name_entry.get_text().to_string(),
                     self.get_entry_values(),
                 ));
                 self.model.dialog.emit_close();
             }
             Msg::SourceNameChanged => {
-                let txt = self.provider_name_entry.get_text();
+                let txt = self.widgets.provider_name_entry.get_text();
                 let source_name = txt.as_str();
                 let form_is_valid = !source_name.is_empty()
                     && !self.model.existing_source_names.contains(source_name)
@@ -265,7 +266,8 @@ impl Widget for AddEventSourceDialog {
     }
 
     fn get_provider_index_if_step2(&self) -> usize {
-        self.provider_list
+        self.widgets
+            .provider_list
             .get_selected_row()
             .map(|r| r.get_index() as usize)
             .unwrap()
@@ -324,8 +326,8 @@ impl Widget for AddEventSourceDialog {
     ) {
         self.model.event_provider = Some(provider);
         let p = self.model.event_provider.as_ref().unwrap();
-        self.provider_name_entry.set_text(event_source_name);
-        self.config_fields_grid.attach(
+        self.widgets.provider_name_entry.set_text(event_source_name);
+        self.widgets.config_fields_grid.attach(
             &gtk::Image::from_icon_name(Some(p.default_icon().name()), gtk::IconSize::Dnd),
             0,
             0,
@@ -336,7 +338,7 @@ impl Widget for AddEventSourceDialog {
         let mut entry_components = HashMap::new();
         for field in p.get_config_fields() {
             let field_val = event_source_values.get(field.0).map(|s| s.as_str());
-            self.config_fields_grid.attach(
+            self.widgets.config_fields_grid.attach(
                 &gtk::LabelBuilder::new()
                     .label(field.0)
                     .halign(gtk::Align::End)
@@ -395,11 +397,13 @@ impl Widget for AddEventSourceDialog {
                 }
             };
             entry_components.insert(field.0, entry_widget.clone());
-            self.config_fields_grid.attach(entry_widget, 2, i, 1, 1);
+            self.widgets
+                .config_fields_grid
+                .attach(entry_widget, 2, i, 1, 1);
             i += 1;
         }
         self.model.entry_components = Some(entry_components);
-        self.config_fields_grid.show_all();
+        self.widgets.config_fields_grid.show_all();
     }
 
     view! {

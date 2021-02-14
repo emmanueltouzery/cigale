@@ -40,16 +40,16 @@ impl Widget for Win {
             println!("Error loading the CSS: {}", err);
         }
 
-        self.window.add_accel_group(&self.model.accel_group);
+        self.widgets.window.add_accel_group(&self.model.accel_group);
         let titlebar = &self.model.titlebar;
         titlebar.emit(super::wintitlebar::Msg::MainWindowStackReady(
-            self.main_window_stack.clone(),
+            self.widgets.main_window_stack.clone(),
         ));
         relm::connect!(titlebar@WinTitleBarMsg::AddConfig(ref providername, ref name, ref cfg),
                                self.model.relm, Msg::AddConfig(providername, name.clone(), cfg.clone()));
         relm::connect!(titlebar@WinTitleBarMsg::ConfigUpdated(ref cfg),
                        self.model.relm, Msg::ConfigUpdated(cfg.clone()));
-        let event_sources = &self.event_sources;
+        let event_sources = &self.components.event_sources;
         relm::connect!(event_sources@EventSourcesMsg::RemoveEventSource(ref providername, ref name),
                                self.model.relm, Msg::RemoveEventSource(providername, name.clone()));
         relm::connect!(event_sources@EventSourcesMsg::EditEventSource(ref providername, ref name),
@@ -92,14 +92,14 @@ impl Widget for Win {
     // tab when there are no event sources configured, because
     // the app won't be useful until we have event sources.
     fn update_event_sources_need_attention(&self) {
-        self.main_window_stack.set_child_needs_attention(
-            self.event_sources.widget(),
+        self.widgets.main_window_stack.set_child_needs_attention(
+            self.components.event_sources.widget(),
             Self::config_source_names(&self.model.config).is_empty(),
         );
     }
 
     fn load_style(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let screen = self.window.get_screen().unwrap();
+        let screen = self.widgets.window.get_screen().unwrap();
         let css = gtk::CssProvider::new();
         css.load_from_data(CSS_DATA)?;
         gtk::StyleContext::add_provider_for_screen(
@@ -122,17 +122,19 @@ impl Widget for Win {
     }
 
     pub fn save_event_providers(&self) {
-        self.model.config.save_config(&self.window);
+        self.model.config.save_config(&self.widgets.window);
         self.propagate_config_change();
     }
 
     fn propagate_config_change(&self) {
-        self.event_sources
+        self.components
+            .event_sources
             .stream()
             .emit(super::eventsources::Msg::ConfigUpdate(Box::new(
                 self.model.config.clone(),
             )));
-        self.events
+        self.components
+            .events
             .stream()
             .emit(super::events::Msg::ConfigUpdate(Box::new(
                 self.model.config.clone(),
@@ -162,7 +164,7 @@ impl Widget for Win {
             }
             Msg::RemoveEventSource(ep_name, config_name) => {
                 let dialog = gtk::MessageDialog::new(
-                    Some(&self.window),
+                    Some(&self.widgets.window),
                     gtk::DialogFlags::all(),
                     gtk::MessageType::Warning,
                     gtk::ButtonsType::None,
@@ -191,7 +193,7 @@ impl Widget for Win {
                 let ep = Win::get_event_provider_by_name(providers, ep_name);
                 let event_source_values = ep.get_config_values(&self.model.config, &config_name);
                 let (dialog, dialog_contents) = WinTitleBar::prepare_addedit_eventsource_dlg(
-                    &self.window,
+                    &self.widgets.window,
                     &config_source_names,
                     Some(EventSourceEditModel {
                         event_provider_name: ep_name,
@@ -212,7 +214,9 @@ impl Widget for Win {
                     && key.get_state().contains(gdk::ModifierType::MOD1_MASK)
                     && key.get_keyval() == gdk::keys::constants::y
                 {
-                    self.events.emit(super::events::Msg::CopyAllHeaders);
+                    self.components
+                        .events
+                        .emit(super::events::Msg::CopyAllHeaders);
                 }
             }
             Msg::ConfigUpdated(cfg) => {

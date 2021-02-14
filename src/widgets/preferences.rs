@@ -86,7 +86,7 @@ impl Widget for Preferences {
             }
             Msg::KeyPress(key) => {
                 if key.get_keyval() == gdk::keys::constants::Escape {
-                    self.prefs_win.close();
+                    self.widgets.prefs_win.close();
                 }
             }
         }

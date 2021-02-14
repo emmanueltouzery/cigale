@@ -13,10 +13,12 @@ pub struct EventListItemModel {
 #[widget]
 impl Widget for EventListItem {
     fn init_view(&mut self) {
-        self.event_type_label
+        self.widgets
+            .event_type_label
             .get_style_context()
             .add_class("event_provider_name");
-        self.event_time_label
+        self.widgets
+            .event_time_label
             .get_style_context()
             .add_class("event_time");
     }
