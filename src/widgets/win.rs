@@ -93,7 +93,7 @@ impl Widget for Win {
     // the app won't be useful until we have event sources.
     fn update_event_sources_need_attention(&self) {
         self.widgets.main_window_stack.set_child_needs_attention(
-            self.components.event_sources.widget(),
+            &self.widgets.event_sources,
             Self::config_source_names(&self.model.config).is_empty(),
         );
     }
@@ -127,15 +127,13 @@ impl Widget for Win {
     }
 
     fn propagate_config_change(&self) {
-        self.components
+        self.streams
             .event_sources
-            .stream()
             .emit(super::eventsources::Msg::ConfigUpdate(Box::new(
                 self.model.config.clone(),
             )));
-        self.components
+        self.streams
             .events
-            .stream()
             .emit(super::events::Msg::ConfigUpdate(Box::new(
                 self.model.config.clone(),
             )));
