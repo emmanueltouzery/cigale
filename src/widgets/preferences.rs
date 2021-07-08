@@ -1,25 +1,8 @@
 use crate::config::{Config, PrevNextDaySkipWeekends};
 use gtk::prelude::*;
 use gtk::traits::SettingsExt;
-use relm::{Component, Widget};
+use relm::Widget;
 use relm_derive::{widget, Msg};
-
-#[derive(Msg)]
-pub enum HeaderMsg {}
-
-#[widget]
-impl Widget for Header {
-    fn model() {}
-
-    fn update(&mut self, _event: HeaderMsg) {}
-
-    view! {
-        gtk::HeaderBar {
-            title: Some("Preferences"),
-            show_close_button: true,
-        }
-    }
-}
 
 #[derive(Msg)]
 pub enum Msg {
@@ -34,7 +17,6 @@ pub struct Model {
     prefer_dark_theme: bool,
     prev_next_day_skip_weekends: PrevNextDaySkipWeekends,
     config: Config,
-    header: Component<Header>,
     win: gtk::Window,
 }
 
@@ -46,14 +28,12 @@ impl Widget for Preferences {
         let config = Config::read_config();
         let prefer_dark_theme = config.prefer_dark_theme;
         let prev_next_day_skip_weekends = config.prev_next_day_skip_weekends;
-        let header = relm::init(()).expect("header");
         Model {
             relm: relm.clone(),
             prefer_dark_theme,
             prev_next_day_skip_weekends,
             config,
             win,
-            header,
         }
     }
 
@@ -96,7 +76,12 @@ impl Widget for Preferences {
     view! {
         #[name="prefs_win"]
         gtk::Window {
-            titlebar: Some(self.model.header.widget()),
+            titlebar: view! {
+                gtk::HeaderBar {
+                    title: Some("Preferences"),
+                    show_close_button: true,
+                },
+            },
             default_width: 600,
             default_height: 200,
             gtk::Box {
