@@ -32,10 +32,6 @@ pub struct Model {
 #[widget]
 impl Widget for EventView {
     fn init_view(&mut self) {
-        self.widgets
-            .header_label
-            .style_context()
-            .add_class("event_header_label");
         self.update_events();
 
         self.widgets.copy_button.add_accelerator(
@@ -232,7 +228,7 @@ impl Widget for EventView {
                         gtk::Box {
                             orientation: gtk::Orientation::Horizontal,
                             valign: gtk::Align::Fill,
-                            #[name="header_label"]
+                            #[style_class="event_header_label"]
                             gtk::Label {
                                 child: {
                                     padding: 10, // vertical padding for the label

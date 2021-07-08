@@ -38,10 +38,6 @@ pub struct Model {
 #[widget]
 impl Widget for WinTitleBar {
     fn init_view(&mut self) {
-        self.widgets
-            .new_event_source_btn
-            .style_context()
-            .add_class("suggested-action");
         let vbox = gtk::BoxBuilder::new()
             .margin(10)
             .orientation(gtk::Orientation::Vertical)
@@ -253,6 +249,7 @@ impl Widget for WinTitleBar {
         #[name="header_bar"]
         gtk::HeaderBar {
             #[name="new_event_source_btn"]
+            #[style_class="suggested-action"]
             gtk::Button {
                 label: "New",
                 visible:false,

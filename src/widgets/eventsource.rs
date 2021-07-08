@@ -65,14 +65,6 @@ impl Widget for EventSourceListItem {
             i += 1;
         }
         self.widgets.items_box.show_all();
-        self.widgets
-            .event_source_name
-            .style_context()
-            .add_class("event_source_name");
-        self.widgets
-            .items_frame
-            .style_context()
-            .add_class("items_frame");
     }
 
     fn model(list_item_info: EventSourceListItemInfo) -> Model {
@@ -88,7 +80,7 @@ impl Widget for EventSourceListItem {
     }
 
     view! {
-        #[name="items_frame"]
+        #[style_class="items_frame"]
         gtk::Frame {
             margin_start: 20,
             margin_end: 20,
@@ -102,7 +94,7 @@ impl Widget for EventSourceListItem {
                 margin_bottom: 5,
                 row_spacing: 5,
                 column_spacing: 10,
-                #[name="event_source_name"]
+                #[style_class="event_source_name"]
                 gtk::Box {
                     orientation: gtk::Orientation::Horizontal,
                     cell: {

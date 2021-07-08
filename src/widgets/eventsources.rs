@@ -24,10 +24,6 @@ pub struct Model {
 #[widget]
 impl Widget for EventSources {
     fn init_view(&mut self) {
-        self.widgets
-            .eventsources_list
-            .style_context()
-            .add_class("item_list");
         self.update_eventsources();
     }
 
@@ -149,6 +145,7 @@ impl Widget for EventSources {
                     name: Some("events")
                 },
                 #[name="eventsources_list"]
+                #[style_class="item_list"]
                 gtk::ListBox {
                     selection_mode: gtk::SelectionMode::None,
                 }

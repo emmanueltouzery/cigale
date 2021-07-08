@@ -12,16 +12,7 @@ pub struct EventListItemModel {
 
 #[widget]
 impl Widget for EventListItem {
-    fn init_view(&mut self) {
-        self.widgets
-            .event_type_label
-            .style_context()
-            .add_class("event_provider_name");
-        self.widgets
-            .event_time_label
-            .style_context()
-            .add_class("event_time");
-    }
+    fn init_view(&mut self) {}
 
     fn model(event: Event) -> EventListItemModel {
         EventListItemModel { event }
@@ -46,7 +37,7 @@ impl Widget for EventListItem {
                     icon_name: Some(self.model.event.event_type_icon.name()),
                     icon_size: gtk::IconSize::Dnd
                 },
-                #[name="event_type_label"]
+                #[style_class="event_provider_name"]
                 gtk::Label {
                     text: self.model.event.event_type_desc,
                 },
@@ -67,6 +58,7 @@ impl Widget for EventListItem {
                         fill: true,
                     },
                     #[name="event_time_label"]
+                    #[style_class="event_time"]
                     gtk::Label {
                         child: {
                             pack_type: gtk::PackType::Start,
