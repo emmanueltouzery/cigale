@@ -34,7 +34,7 @@ impl Widget for EventView {
     fn init_view(&mut self) {
         self.widgets
             .header_label
-            .get_style_context()
+            .style_context()
             .add_class("event_header_label");
         self.update_events();
 
@@ -63,7 +63,7 @@ impl Widget for EventView {
 
     fn update_events(&mut self) {
         self.model.current_event = None;
-        for child in self.widgets.event_list.get_children() {
+        for child in self.widgets.event_list.children() {
             self.widgets.event_list.remove(&child);
         }
         match &self.model.events {
@@ -80,10 +80,10 @@ impl Widget for EventView {
                 let info_contents = self
                     .widgets
                     .info_bar
-                    .get_content_area()
+                    .content_area()
                     .dynamic_cast::<gtk::Box>() // https://github.com/gtk-rs/gtk/issues/947
                     .unwrap();
-                for child in info_contents.get_children() {
+                for child in info_contents.children() {
                     info_contents.remove(&child);
                 }
                 log::error!("Fetched events: errors present: {}", err.to_string());
@@ -149,9 +149,7 @@ impl Widget for EventView {
                     ));
             }
             Msg::CopyHeader => {
-                if let Some(clip) =
-                    gtk::Clipboard::get_default(&self.widgets.events_stack.get_display())
-                {
+                if let Some(clip) = gtk::Clipboard::default(&self.widgets.events_stack.display()) {
                     clip.set_text(
                         self.model
                             .current_event
@@ -162,7 +160,7 @@ impl Widget for EventView {
                 }
             }
             Msg::CopyAllHeaders => {
-                let m_clip = &gtk::Clipboard::get_default(&self.widgets.events_stack.get_display());
+                let m_clip = &gtk::Clipboard::default(&self.widgets.events_stack.display());
                 let m_events = &self.model.events;
                 if let (Some(clip), Some(Ok(event_list))) = (m_clip, m_events) {
                     clip.set_text(
@@ -193,7 +191,7 @@ impl Widget for EventView {
                         DatePickerDayPickedMsg(d) => Msg::DayChange(d)
                     },
                     gtk::Spinner {
-                        property_active: self.model.events.is_none()
+                        active: self.model.events.is_none()
                     }
                 },
                 #[name="info_bar"]
@@ -211,7 +209,7 @@ impl Widget for EventView {
                     },
                     gtk::ScrolledWindow {
                         halign: gtk::Align::Start,
-                        property_width_request: 350,
+                        width_request: 350,
                         gtk::Box {
                             #[name="event_list"]
                             gtk::ListBox {
@@ -219,7 +217,7 @@ impl Widget for EventView {
                                     fill: true,
                                     expand: true,
                                 },
-                                row_selected(_, row) => Msg::EventSelected(row.map(|r| r.get_index() as usize))
+                                row_selected(_, row) => Msg::EventSelected(row.map(|r| r.index() as usize))
                             }
                         }
                     },

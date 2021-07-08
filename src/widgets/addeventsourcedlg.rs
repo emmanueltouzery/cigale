@@ -37,9 +37,9 @@ impl Widget for ProviderItem {
                 child: {
                     padding: 10,
                 },
-                property_icon_name: Some(self.model.icon.name()),
+                icon_name: Some(self.model.icon.name()),
                 // https://github.com/gtk-rs/gtk/issues/837
-                property_icon_size: 5, // gtk::IconSize::Dnd,
+                icon_size: gtk::IconSize::Dnd,
             },
             gtk::Label {
                 text: self.model.name
@@ -112,7 +112,7 @@ impl Widget for AddEventSourceDialog {
         }
         // select the first event provider by default
         self.widgets.provider_list.select_row(Some(
-            &self.widgets.provider_list.get_children()[0]
+            &self.widgets.provider_list.children()[0]
                 .clone()
                 .dynamic_cast::<gtk::ListBoxRow>()
                 .unwrap(),
@@ -175,20 +175,20 @@ impl Widget for AddEventSourceDialog {
                 .clone()
                 .dynamic_cast::<gtk::FileChooserButton>()
                 .unwrap()
-                .get_filename()
+                .filename()
                 .and_then(|f| f.to_str().map(|s| s.to_string()))
                 .unwrap_or_else(|| "".to_string()),
             ConfigType::Text(_) | ConfigType::Password => entry
                 .clone()
                 .dynamic_cast::<gtk::Entry>()
                 .unwrap()
-                .get_text()
+                .text()
                 .to_string(),
             ConfigType::Combo => entry
                 .clone()
                 .dynamic_cast::<gtk::ComboBoxText>()
                 .unwrap()
-                .get_active_text()
+                .active_text()
                 .map(|s| s.to_string())
                 .unwrap_or_else(|| "".to_string()),
         }
@@ -222,7 +222,7 @@ impl Widget for AddEventSourceDialog {
                         [self.get_provider_index_if_step2()];
                     self.model.relm.stream().emit(Msg::AddConfig(
                         ep.name(),
-                        self.widgets.provider_name_entry.get_text().to_string(),
+                        self.widgets.provider_name_entry.text().to_string(),
                         self.get_entry_values(),
                     ));
                     self.model.dialog.emit_close();
@@ -237,13 +237,13 @@ impl Widget for AddEventSourceDialog {
                         .event_source_name
                         .clone(),
                     self.model.edit_model.as_ref().unwrap().event_provider_name,
-                    self.widgets.provider_name_entry.get_text().to_string(),
+                    self.widgets.provider_name_entry.text().to_string(),
                     self.get_entry_values(),
                 ));
                 self.model.dialog.emit_close();
             }
             Msg::SourceNameChanged => {
-                let txt = self.widgets.provider_name_entry.get_text();
+                let txt = self.widgets.provider_name_entry.text();
                 let source_name = txt.as_str();
                 let form_is_valid = !source_name.is_empty()
                     && !self.model.existing_source_names.contains(source_name)
@@ -268,8 +268,8 @@ impl Widget for AddEventSourceDialog {
     fn get_provider_index_if_step2(&self) -> usize {
         self.widgets
             .provider_list
-            .get_selected_row()
-            .map(|r| r.get_index() as usize)
+            .selected_row()
+            .map(|r| r.index() as usize)
             .unwrap()
     }
 

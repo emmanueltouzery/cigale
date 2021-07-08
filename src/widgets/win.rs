@@ -9,6 +9,7 @@ use crate::config::Config;
 use crate::events::events::EventProvider;
 use glib::signal::Inhibit;
 use gtk::prelude::*;
+use gtk::traits::SettingsExt;
 use relm::{Component, Widget};
 use relm_derive::{widget, Msg};
 use std::collections::{HashMap, HashSet};
@@ -58,13 +59,13 @@ impl Widget for Win {
     }
 
     fn model(relm: &relm::Relm<Self>, _: ()) -> Model {
-        gtk::IconTheme::get_default()
+        gtk::IconTheme::default()
             .unwrap()
             .add_resource_path("/icons");
         let config = Config::read_config();
-        gtk::Settings::get_default()
+        gtk::Settings::default()
             .unwrap()
-            .set_property_gtk_application_prefer_dark_theme(config.prefer_dark_theme);
+            .set_gtk_application_prefer_dark_theme(config.prefer_dark_theme);
         let titlebar = relm::init::<WinTitleBar>(Win::config_source_names(&config))
             .expect("win title bar init");
         let accel_group = gtk::AccelGroup::new();
@@ -99,7 +100,7 @@ impl Widget for Win {
     }
 
     fn load_style(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let screen = self.widgets.window.get_screen().unwrap();
+        let screen = self.widgets.window.screen().unwrap();
         let css = gtk::CssProvider::new();
         css.load_from_data(CSS_DATA)?;
         gtk::StyleContext::add_provider_for_screen(
@@ -168,15 +169,13 @@ impl Widget for Win {
                     gtk::ButtonsType::None,
                     "Remove event source",
                 );
-                dialog.set_property_secondary_text(Some(&format!(
+                dialog.set_secondary_text(Some(&format!(
                     "Are you sure you want to remove the '{}' event source?",
                     config_name
                 )));
                 dialog.add_button("Cancel", gtk::ResponseType::Cancel);
                 let remove_btn = dialog.add_button("Remove", gtk::ResponseType::Yes);
-                remove_btn
-                    .get_style_context()
-                    .add_class("destructive-action");
+                remove_btn.style_context().add_class("destructive-action");
                 let r = dialog.run();
                 dialog.close();
                 if r == gtk::ResponseType::Yes {
@@ -208,9 +207,9 @@ impl Widget for Win {
                 }
             }
             Msg::KeyPress(key) => {
-                if key.get_state().contains(gdk::ModifierType::CONTROL_MASK)
-                    && key.get_state().contains(gdk::ModifierType::MOD1_MASK)
-                    && key.get_keyval() == gdk::keys::constants::y
+                if key.state().contains(gdk::ModifierType::CONTROL_MASK)
+                    && key.state().contains(gdk::ModifierType::MOD1_MASK)
+                    && key.keyval() == gdk::keys::constants::y
                 {
                     self.components
                         .events
@@ -228,8 +227,8 @@ impl Widget for Win {
         #[name="window"]
         gtk::Window {
             titlebar: Some(self.model.titlebar.widget()),
-            property_default_width: 1000,
-            property_default_height: 650,
+            default_width: 1000,
+            default_height: 650,
             #[name="main_window_stack"]
             gtk::Stack {
                 #[name="events"]

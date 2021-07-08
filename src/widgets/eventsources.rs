@@ -17,6 +17,8 @@ pub struct Model {
     config: Config,
     relm: relm::Relm<EventSources>,
     eventsource_action_popover: gtk::Popover,
+
+    eventsource_list_items: Vec<relm::Component<EventSourceListItem>>,
 }
 
 #[widget]
@@ -24,7 +26,7 @@ impl Widget for EventSources {
     fn init_view(&mut self) {
         self.widgets
             .eventsources_list
-            .get_style_context()
+            .style_context()
             .add_class("item_list");
         self.update_eventsources();
     }
@@ -36,6 +38,7 @@ impl Widget for EventSources {
             eventsource_action_popover: gtk::PopoverBuilder::new()
                 .position(gtk::PositionType::Bottom)
                 .build(),
+            eventsource_list_items: vec![],
         }
     }
 
@@ -51,7 +54,7 @@ impl Widget for EventSources {
                 let popover = &self.model.eventsource_action_popover;
                 popover.popdown();
 
-                for child in popover.get_children() {
+                for child in popover.children() {
                     popover.remove(&child);
                 }
                 popover.set_relative_to(Some(&btn));
@@ -92,9 +95,10 @@ impl Widget for EventSources {
     }
 
     fn update_eventsources(&mut self) {
-        for child in self.widgets.eventsources_list.get_children() {
+        for child in self.widgets.eventsources_list.children() {
             self.widgets.eventsources_list.remove(&child);
         }
+        self.model.eventsource_list_items.clear();
         let event_providers = crate::events::events::get_event_providers();
         for event_provider in event_providers {
             for event_config_name in event_provider.get_config_names(&self.model.config) {
@@ -111,17 +115,15 @@ impl Widget for EventSources {
                     });
                 let ep_name = event_provider.name();
                 let cfg_name = event_config_name.to_string();
-                // this is a little confusing for me here, but somehow
-                // the child doesn't get notified of an event triggered
-                // there, but I as the parent get notified. So handle it here.
                 relm::connect!(
                     child@EventSourceListItemMsg::ActionsClicked(ref btn),
                     self.model.relm,
                     Msg::ActionsClicked(btn.clone(), ep_name, cfg_name.clone())
                 );
+                self.model.eventsource_list_items.push(child);
             }
         }
-        let children = self.widgets.eventsources_list.get_children();
+        let children = self.widgets.eventsources_list.children();
         self.widgets
             .eventsources_stack
             .set_visible_child_name(if children.is_empty() {

@@ -15,11 +15,11 @@ impl Widget for EventListItem {
     fn init_view(&mut self) {
         self.widgets
             .event_type_label
-            .get_style_context()
+            .style_context()
             .add_class("event_provider_name");
         self.widgets
             .event_time_label
-            .get_style_context()
+            .style_context()
             .add_class("event_time");
     }
 
@@ -43,9 +43,8 @@ impl Widget for EventListItem {
                     padding: 3,
                 },
                 gtk::Image {
-                    property_icon_name: Some(self.model.event.event_type_icon.name()),
-                    // https://github.com/gtk-rs/gtk/issues/837
-                    property_icon_size: 5, // gtk::IconSize::Dnd
+                    icon_name: Some(self.model.event.event_type_icon.name()),
+                    icon_size: gtk::IconSize::Dnd
                 },
                 #[name="event_type_label"]
                 gtk::Label {

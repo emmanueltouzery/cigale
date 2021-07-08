@@ -29,7 +29,7 @@ impl Widget for EventSourceListItem {
         // consistent with the gnome printers dialog, and more visible in dark mode
         self.widgets
             .event_source_actions_btn
-            .get_style_context()
+            .style_context()
             .remove_class("image-button");
 
         let ep = get_event_providers()
@@ -45,8 +45,7 @@ impl Widget for EventSourceListItem {
                 .unwrap()
                 .1;
             let desc = gtk::LabelBuilder::new().label(kv.0).xalign(0.0).build();
-            desc.get_style_context()
-                .add_class("event_source_config_label");
+            desc.style_context().add_class("event_source_config_label");
             self.widgets.items_box.attach(&desc, 0, i, 1, 1);
             self.widgets.items_box.attach(
                 &gtk::LabelBuilder::new()
@@ -68,11 +67,11 @@ impl Widget for EventSourceListItem {
         self.widgets.items_box.show_all();
         self.widgets
             .event_source_name
-            .get_style_context()
+            .style_context()
             .add_class("event_source_name");
         self.widgets
             .items_frame
-            .get_style_context()
+            .style_context()
             .add_class("items_frame");
     }
 
@@ -83,9 +82,7 @@ impl Widget for EventSourceListItem {
     fn update(&mut self, event: EventSourceListItemMsg) {
         match event {
             EventSourceListItemMsg::ActionsClicked(_) => {
-                // it's confusing to me why this is never called. For sure because
-                // this is created through add_widget<>, but even so...
-                println!("never called");
+                // meant for my parent
             }
         }
     }
@@ -112,10 +109,10 @@ impl Widget for EventSourceListItem {
                         width: 2
                     },
                     gtk::Image {
-                        property_icon_name: Some(
+                        icon_name: Some(
                             self.model.list_item_info.event_provider_icon.name()),
                         // https://github.com/gtk-rs/gtk/issues/837
-                        property_icon_size: 1, // gtk::IconSize::Menu,
+                        icon_size: gtk::IconSize::Menu,
                     },
                     gtk::Label {
                         margin_start: 5,

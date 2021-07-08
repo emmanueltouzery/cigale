@@ -40,7 +40,7 @@ impl Widget for WinTitleBar {
     fn init_view(&mut self) {
         self.widgets
             .new_event_source_btn
-            .get_style_context()
+            .style_context()
             .add_class("suggested-action");
         let vbox = gtk::BoxBuilder::new()
             .margin(10)
@@ -107,7 +107,7 @@ impl Widget for WinTitleBar {
             .transient_for(main_win)
             .build();
         let header_bar = dialog
-            .get_header_bar()
+            .header_bar()
             .unwrap()
             .dynamic_cast::<gtk::HeaderBar>()
             .unwrap();
@@ -116,7 +116,7 @@ impl Widget for WinTitleBar {
         // not propagating when using those. worked
         // fine when i started using my own buttons.
         let btn = gtk::Button::with_label("Next");
-        btn.get_style_context().add_class("suggested-action");
+        btn.style_context().add_class("suggested-action");
         header_bar.pack_end(&btn);
         btn.show();
         let dialog_contents = init::<AddEventSourceDialog>(AddEventSourceDialogParams {
@@ -128,7 +128,7 @@ impl Widget for WinTitleBar {
         })
         .expect("error initializing the add event source modal");
         dialog
-            .get_content_area()
+            .content_area()
             .pack_start(dialog_contents.widget(), true, true, 0);
 
         dialog.add_button("Cancel", gtk::ResponseType::Cancel);
@@ -140,7 +140,7 @@ impl Widget for WinTitleBar {
             .main_window_stack
             .as_ref()
             .unwrap()
-            .get_toplevel()
+            .toplevel()
             .and_then(|w| w.dynamic_cast::<gtk::Window>().ok())
             .unwrap()
     }
@@ -175,7 +175,7 @@ impl Widget for WinTitleBar {
 
     fn display_shortcuts(&self) {
         let win = gtk::Builder::from_string(SHORTCUTS_UI)
-            .get_object::<gtk::Window>("shortcuts")
+            .object::<gtk::Window>("shortcuts")
             .unwrap();
         win.set_title("Shortcuts");
         win.set_transient_for(Some(&self.get_main_window()));
@@ -210,7 +210,7 @@ impl Widget for WinTitleBar {
                 relm::connect!(
                     self.model.relm,
                     &stack,
-                    connect_property_visible_child_name_notify(_),
+                    connect_visible_child_name_notify(_),
                     Msg::ScreenChanged
                 );
             }
@@ -220,7 +220,7 @@ impl Widget for WinTitleBar {
                     .main_window_stack
                     .as_ref()
                     .unwrap()
-                    .get_visible_child_name()
+                    .visible_child_name()
                     .as_ref()
                     .map(|s| s.as_str())
                     == Some("event-sources");

@@ -1,5 +1,6 @@
 use crate::config::{Config, PrevNextDaySkipWeekends};
 use gtk::prelude::*;
+use gtk::traits::SettingsExt;
 use relm::{Component, Widget};
 use relm_derive::{widget, Msg};
 
@@ -67,9 +68,9 @@ impl Widget for Preferences {
     fn update(&mut self, event: Msg) {
         match event {
             Msg::DarkThemeToggled(t) => {
-                gtk::Settings::get_default()
+                gtk::Settings::default()
                     .unwrap()
-                    .set_property_gtk_application_prefer_dark_theme(t);
+                    .set_gtk_application_prefer_dark_theme(t);
                 self.model.config.prefer_dark_theme = t;
                 self.update_config();
             }
@@ -85,7 +86,7 @@ impl Widget for Preferences {
                 // meant for my parent, not for me
             }
             Msg::KeyPress(key) => {
-                if key.get_keyval() == gdk::keys::constants::Escape {
+                if key.keyval() == gdk::keys::constants::Escape {
                     self.widgets.prefs_win.close();
                 }
             }
@@ -96,8 +97,8 @@ impl Widget for Preferences {
         #[name="prefs_win"]
         gtk::Window {
             titlebar: Some(self.model.header.widget()),
-            property_default_width: 600,
-            property_default_height: 200,
+            default_width: 600,
+            default_height: 200,
             gtk::Box {
                 orientation: gtk::Orientation::Vertical,
                 margin_top: 10,
@@ -108,12 +109,12 @@ impl Widget for Preferences {
                 gtk::CheckButton {
                     label: "Prefer dark theme",
                     active: self.model.prefer_dark_theme,
-                    toggled(t) => Msg::DarkThemeToggled(t.get_active())
+                    toggled(t) => Msg::DarkThemeToggled(t.is_active())
                 },
                 gtk::CheckButton {
                     label: "Previous & Next day skip week-ends",
                     active: self.model.prev_next_day_skip_weekends == PrevNextDaySkipWeekends::Skip,
-                    toggled(t) => Msg::PrevNextSkipWeekendsToggled(t.get_active())
+                    toggled(t) => Msg::PrevNextSkipWeekendsToggled(t.is_active())
                 },
             },
             key_press_event(_, key) => (Msg::KeyPress(key.clone()), Inhibit(false)), // just for the ESC key.. surely there's a better way..

@@ -9,7 +9,7 @@ use std::fs::File;
 use std::io::{Read, Write};
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::*;
 
 #[derive(Deserialize, Serialize, Clone, Copy, Debug, PartialEq)]
@@ -78,7 +78,7 @@ impl Config {
                 gtk::ButtonsType::Close,
                 "Error loading the configuration",
             );
-            dialog.set_property_secondary_text(Some(&format!(
+            dialog.set_secondary_text(Some(&format!(
                 "{}: {:}",
                 Config::config_path()
                     .ok()
@@ -107,14 +107,14 @@ impl Config {
                 gtk::ButtonsType::Close,
                 "Error saving the configuration",
             );
-            dialog.set_property_secondary_text(Some(&format!("{}", e)));
+            dialog.set_secondary_text(Some(&format!("{}", e)));
             let _r = dialog.run();
             dialog.close();
         });
     }
 
     #[cfg(unix)]
-    fn set_private_folder(path: &PathBuf) -> Result<()> {
+    fn set_private_folder(path: &Path) -> Result<()> {
         let mut p = File::open(path)?.metadata()?.permissions();
         p.set_mode(0o700);
         fs::set_permissions(path, p)?;

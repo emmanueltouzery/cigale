@@ -92,9 +92,9 @@ impl Widget for DatePicker {
     }
 
     fn calendar_set_date(cal: &gtk::Calendar, date: Date<Local>) {
-        cal.set_property_year(date.year());
-        cal.set_property_month(date.month() as i32 - 1);
-        cal.set_property_day(date.day() as i32);
+        cal.set_year(date.year());
+        cal.set_month(date.month() as i32 - 1);
+        cal.set_day(date.day() as i32);
     }
 
     fn next_date<Tz: TimeZone>(&self, dt: Date<Tz>) -> Date<Tz> {
@@ -134,7 +134,7 @@ impl Widget for DatePicker {
                 }
             }
             DatePickerMsg::DayClicked => {
-                let (y, m, d) = self.model.calendar.get_date();
+                let (y, m, d) = self.model.calendar.date();
                 // the if is useful for instance because we update the calendar when
                 // opening it (it could be outdated due to previous/next navigation)
                 // without the if that would trigger a reload of the current day
@@ -157,7 +157,7 @@ impl Widget for DatePicker {
             DatePickerMsg::MonthChanged => {
                 // getting false positives, because this is called even if the month
                 // was changed by API call to the same value as before...
-                let (_y, m, _d) = self.model.calendar.get_date();
+                let (_y, m, _d) = self.model.calendar.date();
                 self.model.month_change_ongoing = m + 1 != self.model.date.month();
             }
             DatePickerMsg::NextDay => self
