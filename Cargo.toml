@@ -4,7 +4,11 @@ version = "0.5.2"
 authors = ["Emmanuel Touzery <etouzery@gmail.com>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[build-dependencies]
+reqwest = { version = "0.11.4", features = ["blocking"] }
+flate2 = "1.0.20"
+tar = "0.4.35"
+includedir_codegen = "0.6.0"
 
 [dependencies]
 glib = "0.14.0"
