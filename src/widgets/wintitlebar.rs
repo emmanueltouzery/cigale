@@ -35,6 +35,16 @@ pub struct Model {
     prefs_win: Option<Component<Preferences>>,
 }
 
+pub fn left_align_menu(menu: &gtk::ModelButton) {
+    if let Some(label) = menu
+        .child()
+        .and_then(|c| c.dynamic_cast::<gtk::Label>().ok())
+    {
+        label.set_xalign(0.0);
+        label.set_hexpand(true);
+    }
+}
+
 #[widget]
 impl Widget for WinTitleBar {
     fn init_view(&mut self) {
@@ -43,6 +53,7 @@ impl Widget for WinTitleBar {
             .orientation(gtk::Orientation::Vertical)
             .build();
         let preferences_btn = gtk::ModelButtonBuilder::new().label("Preferences").build();
+        left_align_menu(&preferences_btn);
         relm::connect!(
             self.model.relm,
             &preferences_btn,
@@ -53,6 +64,7 @@ impl Widget for WinTitleBar {
         let shortcuts_btn = gtk::ModelButtonBuilder::new()
             .label("Keyboard Shortcuts")
             .build();
+        left_align_menu(&shortcuts_btn);
         relm::connect!(
             self.model.relm,
             &shortcuts_btn,
@@ -61,6 +73,7 @@ impl Widget for WinTitleBar {
         );
         vbox.add(&shortcuts_btn);
         let about_btn = gtk::ModelButtonBuilder::new().label("About Cigale").build();
+        left_align_menu(&about_btn);
         relm::connect!(
             self.model.relm,
             &about_btn,

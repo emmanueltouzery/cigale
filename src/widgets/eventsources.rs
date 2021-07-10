@@ -1,4 +1,5 @@
 use super::eventsource::{EventSourceListItem, EventSourceListItemInfo, EventSourceListItemMsg};
+use super::wintitlebar;
 use crate::config::Config;
 use gtk::prelude::*;
 use relm::ContainerWidget;
@@ -59,7 +60,9 @@ impl Widget for EventSources {
                     .orientation(gtk::Orientation::Vertical)
                     .build();
                 let edit_btn = gtk::ModelButtonBuilder::new().label("Edit").build();
+                wintitlebar::left_align_menu(&edit_btn);
                 let remove_btn = gtk::ModelButtonBuilder::new().label("Remove").build();
+                wintitlebar::left_align_menu(&remove_btn);
                 // my parent is listening to these editeventsource / removeeventsource event.
                 let config_name1 = config_name.clone();
                 relm::connect!(
