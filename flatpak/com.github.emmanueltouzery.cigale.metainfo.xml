@@ -54,7 +54,7 @@ https://hughsie.github.io/oars/index.html
         <ul>some code cleanups</ul>
         <ul>left-align popover menus, as in gnome apps</ul>
         <ul>gitlab: fix MR comments vs issue comments: used to detect MR comments as issue comments by mistake</ul>
-        <ul>git: separate commit header & contents: used to have commit header+contents in the title. now we have only commit header in the title, commit contents separately.</ul>
+        <ul>git: separate commit header &amp; contents: used to have commit header+contents in the title. now we have only commit header in the title, commit contents separately.</ul>
       </description>
     </release>
     <release version="0.5.2" date="2020-05-26">
