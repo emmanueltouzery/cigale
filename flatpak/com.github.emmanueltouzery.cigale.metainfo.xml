@@ -44,6 +44,19 @@ https://hughsie.github.io/oars/index.html
 -->
   <content_rating type="oars-1.0" />
   <releases>
+    <release version="0.5.3" date="2021-07-10">
+      <description>
+        <ul>update freedesktop runtime 19.08 to 20.08</ul>
+        <ul>upgrade dependencies, including gtk-rs and relm</ul>
+        <ul>drop the ":" from some labels, in gnome style there are no ":"</ul>
+        <ul>center the preferences window on the parent+make it modal.</ul>
+        <ul>rename some menu items </ul>
+        <ul>some code cleanups</ul>
+        <ul>left-align popover menus, as in gnome apps</ul>
+        <ul>gitlab: fix MR comments vs issue comments: used to detect MR comments as issue comments by mistake</ul>
+        <ul>git: separate commit header & contents: used to have commit header+contents in the title. now we have only commit header in the title, commit contents separately.</ul>
+      </description>
+    </release>
     <release version="0.5.2" date="2020-05-26">
       <description>
         <ul>git: would fail importing events for https github repos</ul>
