@@ -156,18 +156,26 @@ impl Git {
     ) -> Event {
         let commit_date = Git::git2_time_to_datetime(c.time());
         let diff = Git::get_commit_diff(repo, &c);
-        let contents_header = c.message().unwrap_or("").to_string();
+        let contents_header = c.summary().unwrap_or("").to_string();
+        let base_msg = c.message().unwrap_or("");
+        let message_contents =
+            glib::markup_escape_text(base_msg.strip_prefix(&contents_header).unwrap_or(base_msg))
+                .to_string();
         let open_in_browser = match commit_display_url {
             Some(cdu) => format!("<a href=\"{}/{}\">Open in browser</a>", cdu, c.id()),
             None => "".to_string(),
         };
         let (contents, extra_details) = match diff {
-            None => (format!("{}\n{}", open_in_browser, branch), None),
+            None => (
+                format!("{}\n{}\n{}", open_in_browser, branch, message_contents),
+                None,
+            ),
             Some(d) => (
                 format!(
-                    "{}\n\n<span font-family=\"monospace\">{}\n\n{}</span>",
+                    "{}\n\n{}\n<span font-family=\"monospace\">{}\n\n{}</span>",
                     open_in_browser,
                     branch,
+                    message_contents,
                     &Git::get_commit_full_diffstr(&d).unwrap_or_else(|| "".to_string())
                 ),
                 Git::get_commit_extra_info(&d),
