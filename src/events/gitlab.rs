@@ -87,18 +87,16 @@ impl Gitlab {
             join(
                 evts.iter().map(|evt| {
                     let note = evt.note.as_ref().unwrap();
-                    format!(
-                        "<b>{}</b>:{}\n    {}",
-                        glib::markup_escape_text(
-                            &note
-                                .position
-                                .as_ref()
-                                .map(|p| p.new_path.as_str())
-                                .unwrap_or("")
-                        ),
-                        note.position.as_ref().and_then(|p| p.new_line).unwrap_or(0),
-                        glib::markup_escape_text(&note.body)
-                    )
+                    if let Some(pos) = note.position.as_ref() {
+                        format!(
+                            "<b>{}</b>:{}\n    {}",
+                            glib::markup_escape_text(&pos.new_path.as_str()),
+                            pos.new_line.unwrap_or(0),
+                            glib::markup_escape_text(&note.body)
+                        )
+                    } else {
+                        glib::markup_escape_text(&note.body).to_string()
+                    }
                 }),
                 "\n\n",
             )
@@ -151,7 +149,12 @@ impl Gitlab {
             .filter(|evt| {
                 evt.note.is_some()
                     && evt.target_title.is_some()
-                    && evt.target_type.as_deref() == Some("DiffNote")
+                    && (evt.target_type.as_deref() == Some("DiffNote")
+                        || evt
+                            .note
+                            .as_ref()
+                            .filter(|n| &n.noteable_type == "MergeRequest")
+                            .is_some())
             })
             .group_by(|evt| evt.target_title.as_ref().unwrap())
         {
@@ -256,6 +259,11 @@ impl Gitlab {
                 evt.action_name == "commented on"
                     && evt.target_type.as_deref() == Some("Note")
                     && evt.note.is_some()
+                    && evt
+                        .note
+                        .as_ref()
+                        .filter(|n| &n.noteable_type != "MergeRequest")
+                        .is_some()
             })
             .map(|g_evt| {
                 let title = if let Some(iid) = g_evt.note.as_ref().unwrap().noteable_iid {
