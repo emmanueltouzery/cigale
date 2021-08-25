@@ -434,9 +434,7 @@ fn it_parses_slovenian_dates_correctly() {
     let sl = &Redmine::redmine_locales()["sl"];
     assert_eq!(
         NaiveDate::from_ymd(2020, 3, 23),
-        Redmine::parse_date(sl, "23.03.2020")
-            .unwrap()
-            .naive_local()
+        Redmine::parse_date(sl, "23.03.2020").unwrap().naive_local()
     );
 }
 
