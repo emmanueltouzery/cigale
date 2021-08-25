@@ -71,9 +71,9 @@ impl Redmine {
     fn parse_time(time_str: &str) -> Result<NaiveTime> {
         log::debug!("parse_time: parsing {}", time_str);
         Ok(if time_str.contains(' ') {
-            NaiveTime::parse_from_str(&time_str, "%I:%M %p")?
+            NaiveTime::parse_from_str(time_str, "%I:%M %p")?
         } else {
-            NaiveTime::parse_from_str(&time_str, "%H:%M")?
+            NaiveTime::parse_from_str(time_str, "%H:%M")?
         })
     }
 
@@ -248,7 +248,7 @@ impl Redmine {
         day: Date<Local>,
         activity_html: &str,
     ) -> Result<ActivityData> {
-        let doc = scraper::Html::parse_document(&activity_html);
+        let doc = scraper::Html::parse_document(activity_html);
         let locale_str = doc
             .root_element()
             .value()
@@ -268,7 +268,7 @@ impl Redmine {
             let contents = it_contents.next();
             match (next_day, contents) {
                 (Some(day_elt), Some(contents_elt)) => {
-                    let cur_date = Self::parse_date(&locale, &day_elt.inner_html())?;
+                    let cur_date = Self::parse_date(locale, &day_elt.inner_html())?;
                     if cur_date < day {
                         // passed the day, won't be any events this time.
                         return Ok(ActivityData::Done(vec![]));
@@ -411,7 +411,7 @@ impl EventProvider for Redmine {
         let (client, activity_html) =
             match Config::get_cached_contents(&Redmine, config_name, &next_day_start)? {
                 Some(t) => Ok((None, t)),
-                None => Self::fetch_activity_html(config_name, &redmine_config)
+                None => Self::fetch_activity_html(config_name, redmine_config)
                     .map(|(a, b)| (Some(a), b)),
             }?;
         Self::get_events_with_paging(day, activity_html, redmine_config, &redmine_locales, client)
@@ -423,7 +423,7 @@ fn it_parses_us_dates_correctly() {
     let en_gb = &Redmine::redmine_locales()["en"];
     assert_eq!(
         NaiveDate::from_ymd(2020, 3, 23),
-        Redmine::parse_date(&en_gb, "03/23/2020")
+        Redmine::parse_date(en_gb, "03/23/2020")
             .unwrap()
             .naive_local()
     );
@@ -434,7 +434,7 @@ fn it_parses_slovenian_dates_correctly() {
     let sl = &Redmine::redmine_locales()["sl"];
     assert_eq!(
         NaiveDate::from_ymd(2020, 3, 23),
-        Redmine::parse_date(&sl, "23.03.2020")
+        Redmine::parse_date(sl, "23.03.2020")
             .unwrap()
             .naive_local()
     );
@@ -445,7 +445,7 @@ fn it_parses_iso_dates_correctly() {
     let en_gb = &Redmine::redmine_locales()["en-GB"];
     assert_eq!(
         NaiveDate::from_ymd(2020, 3, 23),
-        Redmine::parse_date(&en_gb, "2020-03-23")
+        Redmine::parse_date(en_gb, "2020-03-23")
             .unwrap()
             .naive_local()
     );

@@ -174,8 +174,8 @@ impl EventBody {
 
     pub fn as_str(&self) -> &str {
         match self {
-            EventBody::Markup(str, _) => &str,
-            EventBody::PlainText(str) => &str,
+            EventBody::Markup(str, _) => str,
+            EventBody::PlainText(str) => str,
         }
     }
 

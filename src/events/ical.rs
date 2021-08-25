@@ -61,9 +61,9 @@ impl Ical {
         next_day_start: &DateTime<Local>,
         result: &mut Vec<Event>,
     ) {
-        let start = Ical::get_property_value(&event, "DTSTART");
-        let end = Ical::get_property_value(&event, "DTEND");
-        let summary = Ical::get_property_value_any(&event, &["SUMMARY", "DESCRIPTION", "LOCATION"]);
+        let start = Ical::get_property_value(event, "DTSTART");
+        let end = Ical::get_property_value(event, "DTEND");
+        let summary = Ical::get_property_value_any(event, &["SUMMARY", "DESCRIPTION", "LOCATION"]);
         match (
             start.and_then(Ical::parse_ical_date),
             end.and_then(Ical::parse_ical_date),

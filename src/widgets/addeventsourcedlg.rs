@@ -149,7 +149,7 @@ impl Widget for AddEventSourceDialog {
             existing_source_names_sanitized: dialog_params
                 .existing_source_names
                 .iter()
-                .map(|s| Config::sanitize_for_filename(&s).to_string())
+                .map(|s| Config::sanitize_for_filename(s).to_string())
                 .collect(),
             existing_source_names: dialog_params.existing_source_names,
             next_btn: dialog_params.next_btn,
@@ -307,7 +307,7 @@ impl Widget for AddEventSourceDialog {
             .event_provider
             .as_ref()
             .expect("reading event provider from model")
-            .field_values(&entry_values, field_name)
+            .field_values(entry_values, field_name)
             .unwrap_or_else(|e| {
                 println!("fetching field values failed: {}", e);
                 Vec::new()
@@ -350,7 +350,7 @@ impl Widget for AddEventSourceDialog {
             );
             let entry_widget = &match field.1 {
                 ConfigType::Text(def) => gtk::EntryBuilder::new()
-                    .text(field_val.unwrap_or(&def))
+                    .text(field_val.unwrap_or(def))
                     .build()
                     .upcast::<gtk::Widget>(),
                 ConfigType::File => {
