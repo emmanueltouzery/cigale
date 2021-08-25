@@ -161,7 +161,7 @@ impl Widget for WinTitleBar {
             &self.model.existing_source_names,
             None,
         );
-        relm::connect!(dialog_contents@AddEventSourceDialogMsg::AddConfig(ref providername, ref name, ref cfg),
+        relm::connect!(dialog_contents@AddEventSourceDialogMsg::AddConfig(providername, ref name, ref cfg),
                                self.model.relm, Msg::AddConfig(providername, name.clone(), cfg.clone()));
         let resp = dialog.run();
         match resp {

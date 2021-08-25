@@ -125,7 +125,7 @@ impl Email {
     }
 
     fn parse_email_date(dt_str: &str) -> Option<DateTime<Local>> {
-        DateTime::parse_from_rfc2822(&dt_str)
+        DateTime::parse_from_rfc2822(dt_str)
             .ok()
             .or_else(|| {
                 DateTime::parse_from_str(

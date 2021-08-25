@@ -131,7 +131,7 @@ impl StackExchange {
             .connection_verbose(true)
             .build()?;
 
-        let html = Self::login(&client, &stackexchange_config)?;
+        let html = Self::login(&client, stackexchange_config)?;
 
         let userpage_link = Self::get_user_page_url(&html)?;
 
@@ -299,12 +299,12 @@ impl EventProvider for StackExchange {
         let votes_page_html =
             match Config::get_cached_contents(&StackExchange, config_name, &next_day_start)? {
                 Some(t) => Ok(t),
-                None => Self::get_votes_page_html(config_name, &stackexchange_config),
+                None => Self::get_votes_page_html(config_name, stackexchange_config),
             }?;
 
         Self::get_votes(
             &votes_page_html,
-            &stackexchange_config,
+            stackexchange_config,
             day_start,
             next_day_start,
         )

@@ -120,7 +120,7 @@ impl Git {
 
         // git@gitlab.lit-transit.com:afc/afc.git => afc/afc [keep between ':' and '.git']
         let gitlab_projectname_regex = Regex::new(r":(.*?)\.git").unwrap();
-        let gitlab_project_name = match gitlab_projectname_regex.captures_iter(&origin_url).next() {
+        let gitlab_project_name = match gitlab_projectname_regex.captures_iter(origin_url).next() {
             Some(v) => v[1].to_string(),
             None => return Ok(None),
         };
@@ -140,7 +140,7 @@ impl Git {
         let github_projectname_regex =
             Regex::new(r"^git@github\.com:(?P<reponame1>.*)\.git$|^https://github\.com/(?P<reponame2>.*)\.git$").unwrap();
         let github_project_name = github_projectname_regex
-            .captures_iter(&origin_url)
+            .captures_iter(origin_url)
             .next()
             .and_then(|v| v.name("reponame1").or_else(|| v.name("reponame2")))
             .map(|m| m.as_str());
@@ -155,7 +155,7 @@ impl Git {
         commit_display_url: &Option<String>,
     ) -> Event {
         let commit_date = Git::git2_time_to_datetime(c.time());
-        let diff = Git::get_commit_diff(repo, &c);
+        let diff = Git::get_commit_diff(repo, c);
         let contents_header = c.summary().unwrap_or("").to_string();
         let base_msg = c.message().unwrap_or("");
         let message_contents =
@@ -367,7 +367,7 @@ impl EventProvider for Git {
                 commits
                     .iter()
                     .filter(move |c| branch == "master" || !master_commit_ids.contains(&c.id()))
-                    .map(move |c| Self::build_event(&c, rrepo, branch, cdu))
+                    .map(move |c| Self::build_event(c, rrepo, branch, cdu))
             })
             .collect::<Vec<Event>>();
         result.sort_by_key(|e| e.event_time); // need to sort for the dedup to work

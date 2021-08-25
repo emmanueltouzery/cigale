@@ -46,14 +46,14 @@ impl Widget for Win {
         titlebar.emit(super::wintitlebar::Msg::MainWindowStackReady(
             self.widgets.main_window_stack.clone(),
         ));
-        relm::connect!(titlebar@WinTitleBarMsg::AddConfig(ref providername, ref name, ref cfg),
+        relm::connect!(titlebar@WinTitleBarMsg::AddConfig(providername, ref name, ref cfg),
                                self.model.relm, Msg::AddConfig(providername, name.clone(), cfg.clone()));
         relm::connect!(titlebar@WinTitleBarMsg::ConfigUpdated(ref cfg),
                        self.model.relm, Msg::ConfigUpdated(cfg.clone()));
         let event_sources = &self.components.event_sources;
-        relm::connect!(event_sources@EventSourcesMsg::RemoveEventSource(ref providername, ref name),
+        relm::connect!(event_sources@EventSourcesMsg::RemoveEventSource(providername, ref name),
                                self.model.relm, Msg::RemoveEventSource(providername, name.clone()));
-        relm::connect!(event_sources@EventSourcesMsg::EditEventSource(ref providername, ref name),
+        relm::connect!(event_sources@EventSourcesMsg::EditEventSource(providername, ref name),
                                self.model.relm, Msg::EditEventSource(providername, name.clone()));
         self.update_event_sources_need_attention();
     }
@@ -198,7 +198,7 @@ impl Widget for Win {
                         event_source_values,
                     }),
                 );
-                relm::connect!(dialog_contents@AddEventSourceDialogMsg::EditConfig(ref configname, ref providername, ref name, ref cfg),
+                relm::connect!(dialog_contents@AddEventSourceDialogMsg::EditConfig(ref configname, providername, ref name, ref cfg),
                                self.model.relm, Msg::EditConfig(configname.clone(), providername, name.clone(), cfg.clone()));
                 let resp = dialog.run();
                 match resp {

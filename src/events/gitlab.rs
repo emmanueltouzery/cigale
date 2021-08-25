@@ -90,7 +90,7 @@ impl Gitlab {
                     if let Some(pos) = note.position.as_ref() {
                         format!(
                             "<b>{}</b>:{}\n    {}",
-                            glib::markup_escape_text(&pos.new_path.as_str()),
+                            glib::markup_escape_text(pos.new_path.as_str()),
                             pos.new_line.unwrap_or(0),
                             glib::markup_escape_text(&note.body)
                         )
@@ -491,7 +491,7 @@ impl EventProvider for Gitlab {
                 ("after", &day.pred().format("%F").to_string()),
                 ("before", &day.succ().format("%F").to_string()),
             ],
-            &gitlab_config,
+            gitlab_config,
         )?
         .into_iter()
         .filter(|e| e.created_at >= day_start && e.created_at < next_day_start)
@@ -499,7 +499,7 @@ impl EventProvider for Gitlab {
 
         let project_infos = Self::get_projects_info(
             config_name,
-            &gitlab_config,
+            gitlab_config,
             &gitlab_events.iter().map(|e| e.project_id).collect(),
         )?;
         log::debug!("project infos: {:?}", project_infos);
