@@ -45,7 +45,7 @@ You must [install the rust compiler](https://www.rust-lang.org/tools/install), t
 
     brew install gtk+3
     brew install adwaita-icon-theme
-    brew install librsvg [may not be needed anymore, please report]
+    brew install librsvg # may not be needed anymore, please report
 
 Finally you can compile and run the application:
 
