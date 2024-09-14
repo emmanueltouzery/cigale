@@ -5,3 +5,4 @@ Name=Cigale
 Exec=cigale
 Type=Application
 Icon=com.github.emmanueltouzery.cigale
+Categories=Utility
