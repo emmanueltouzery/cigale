@@ -5,6 +5,7 @@ use crate::config::Config;
 use crate::events::events::Event;
 use crate::icons::*;
 use chrono::prelude::*;
+use gtk::builders::*;
 use gtk::prelude::*;
 use relm::{Channel, ContainerWidget, Widget};
 use relm_derive::{widget, Msg};
@@ -84,7 +85,7 @@ impl Widget for EventView {
                 }
                 log::error!("Fetched events: errors present: {}", err.to_string());
                 info_contents.add(
-                    &gtk::LabelBuilder::new()
+                    &LabelBuilder::new()
                         .label(err.to_string().as_str())
                         .ellipsize(pango::EllipsizeMode::End)
                         .build(),

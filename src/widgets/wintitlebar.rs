@@ -6,6 +6,7 @@ use super::preferences::Msg as PreferencesMsg;
 use super::preferences::Preferences;
 use crate::config::Config;
 use crate::icons::*;
+use gtk::builders::*;
 use gtk::prelude::*;
 use relm::{init, Component, Widget};
 use relm_derive::{widget, Msg};
@@ -48,11 +49,11 @@ pub fn left_align_menu(menu: &gtk::ModelButton) {
 #[widget]
 impl Widget for WinTitleBar {
     fn init_view(&mut self) {
-        let vbox = gtk::BoxBuilder::new()
+        let vbox = BoxBuilder::new()
             .margin(10)
             .orientation(gtk::Orientation::Vertical)
             .build();
-        let preferences_btn = gtk::ModelButtonBuilder::new().label("Preferences").build();
+        let preferences_btn = ModelButtonBuilder::new().label("Preferences").build();
         left_align_menu(&preferences_btn);
         relm::connect!(
             self.model.relm,
@@ -61,7 +62,7 @@ impl Widget for WinTitleBar {
             Msg::DisplayPreferences
         );
         vbox.add(&preferences_btn);
-        let shortcuts_btn = gtk::ModelButtonBuilder::new()
+        let shortcuts_btn = ModelButtonBuilder::new()
             .label("Keyboard Shortcuts")
             .build();
         left_align_menu(&shortcuts_btn);
@@ -72,7 +73,7 @@ impl Widget for WinTitleBar {
             Msg::DisplayShortcuts
         );
         vbox.add(&shortcuts_btn);
-        let about_btn = gtk::ModelButtonBuilder::new().label("About Cigale").build();
+        let about_btn = ModelButtonBuilder::new().label("About Cigale").build();
         left_align_menu(&about_btn);
         relm::connect!(
             self.model.relm,
@@ -104,7 +105,7 @@ impl Widget for WinTitleBar {
         existing_source_names: &HashSet<String>,
         edit_model: Option<EventSourceEditModel>,
     ) -> (gtk::Dialog, Component<AddEventSourceDialog>) {
-        let dialog = gtk::DialogBuilder::new()
+        let dialog = DialogBuilder::new()
             .use_header_bar(1)
             .default_width(400)
             .default_height(250)
@@ -171,7 +172,7 @@ impl Widget for WinTitleBar {
     }
 
     fn display_about() {
-        let dlg = gtk::AboutDialogBuilder::new()
+        let dlg = AboutDialogBuilder::new()
             .name("Cigale")
             .version(env!("CARGO_PKG_VERSION"))
             .logo_icon_name(Icon::APP_ICON.name())

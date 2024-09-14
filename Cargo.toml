@@ -11,14 +11,14 @@ tar = "0.4.35"
 includedir_codegen = "0.6.0"
 
 [dependencies]
-glib = "0.14.0"
-gio = "0.14.0"
-gdk = "0.14.0"
-relm = "0.22.0"
-relm-derive = "0.22.0"
+glib = "0.16.0"
+gio = "0.16.0"
+gdk = "0.16.0"
+relm = { git = "https://github.com/antoyo/relm.git", rev = "66b0f189440e9a9c40f2765134a1054e5e0fd291" }
+relm-derive = { git = "https://github.com/antoyo/relm.git", rev = "66b0f189440e9a9c40f2765134a1054e5e0fd291" }
 chrono = { version = "0.4.19", features = ["serde"] }
 git2 = "0.13.20"
-pango = "0.14.0"
+pango = "0.16.0"
 mailparse = "0.13.4"
 toml = "0.5.8"
 dirs = "3.0.2"
@@ -39,5 +39,4 @@ default-features = false
 features = ["ical"]
 
 [dependencies.gtk]
-version = "0.14.0"
-features = ["v3_22_29"]
+version = "0.16.0"

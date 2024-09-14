@@ -1,6 +1,7 @@
 use crate::config::Config;
 use crate::events::events::{get_event_providers, ConfigType, EventProvider};
 use crate::icons::*;
+use gtk::builders::*;
 use gtk::prelude::*;
 use relm::{ContainerWidget, Widget};
 use relm_derive::{widget, Msg};
@@ -339,7 +340,7 @@ impl Widget for AddEventSourceDialog {
         for field in p.get_config_fields() {
             let field_val = event_source_values.get(field.0).map(|s| s.as_str());
             self.widgets.config_fields_grid.attach(
-                &gtk::LabelBuilder::new()
+                &LabelBuilder::new()
                     .label(field.0)
                     .halign(gtk::Align::End)
                     .build(),
@@ -349,7 +350,7 @@ impl Widget for AddEventSourceDialog {
                 1,
             );
             let entry_widget = &match field.1 {
-                ConfigType::Text(def) => gtk::EntryBuilder::new()
+                ConfigType::Text(def) => EntryBuilder::new()
                     .text(field_val.unwrap_or(def))
                     .build()
                     .upcast::<gtk::Widget>(),
@@ -373,7 +374,7 @@ impl Widget for AddEventSourceDialog {
                     relm::connect!(self.model.relm, btn, connect_file_set(_), Msg::FormChanged);
                     btn.upcast::<gtk::Widget>()
                 }
-                ConfigType::Password => gtk::EntryBuilder::new()
+                ConfigType::Password => EntryBuilder::new()
                     .text(field_val.unwrap_or(""))
                     .visibility(false) // password field
                     .secondary_icon_name(Icon::EXCLAMATION_TRIANGLE.name())

@@ -1,6 +1,7 @@
 use super::eventsource::{EventSourceListItem, EventSourceListItemInfo, EventSourceListItemMsg};
 use super::wintitlebar;
 use crate::config::Config;
+use gtk::builders::*;
 use gtk::prelude::*;
 use relm::ContainerWidget;
 use relm::Widget;
@@ -32,7 +33,7 @@ impl Widget for EventSources {
         Model {
             config,
             relm: relm.clone(),
-            eventsource_action_popover: gtk::PopoverBuilder::new()
+            eventsource_action_popover: PopoverBuilder::new()
                 .position(gtk::PositionType::Bottom)
                 .build(),
             eventsource_list_items: vec![],
@@ -55,13 +56,13 @@ impl Widget for EventSources {
                     popover.remove(&child);
                 }
                 popover.set_relative_to(Some(&btn));
-                let vbox = gtk::BoxBuilder::new()
+                let vbox = BoxBuilder::new()
                     .margin(10)
                     .orientation(gtk::Orientation::Vertical)
                     .build();
-                let edit_btn = gtk::ModelButtonBuilder::new().label("Edit").build();
+                let edit_btn = ModelButtonBuilder::new().label("Edit").build();
                 wintitlebar::left_align_menu(&edit_btn);
-                let remove_btn = gtk::ModelButtonBuilder::new().label("Remove").build();
+                let remove_btn = ModelButtonBuilder::new().label("Remove").build();
                 wintitlebar::left_align_menu(&remove_btn);
                 // my parent is listening to these editeventsource / removeeventsource event.
                 let config_name1 = config_name.clone();

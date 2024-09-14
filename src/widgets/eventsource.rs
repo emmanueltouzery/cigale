@@ -1,5 +1,6 @@
 use crate::events::events::{get_event_providers, ConfigType};
 use crate::icons::*;
+use gtk::builders::*;
 use gtk::prelude::*;
 use relm::Widget;
 use relm_derive::{widget, Msg};
@@ -44,11 +45,11 @@ impl Widget for EventSourceListItem {
                 .find(|(fname, _)| fname == kv.0)
                 .unwrap()
                 .1;
-            let desc = gtk::LabelBuilder::new().label(kv.0).xalign(0.0).build();
+            let desc = LabelBuilder::new().label(kv.0).xalign(0.0).build();
             desc.style_context().add_class("event_source_config_label");
             self.widgets.items_box.attach(&desc, 0, i, 1, 1);
             self.widgets.items_box.attach(
-                &gtk::LabelBuilder::new()
+                &LabelBuilder::new()
                     .label(if field_type == ConfigType::Password {
                         "●●●●●"
                     } else {
