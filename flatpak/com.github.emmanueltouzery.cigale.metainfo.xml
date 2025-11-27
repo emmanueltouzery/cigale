@@ -148,4 +148,9 @@ https://hughsie.github.io/oars/index.html
   <update_contact>etouzery@gmail.com</update_contact>
   <launchable type="desktop-id">
   com.github.emmanueltouzery.cigale.desktop</launchable>
+  <keywords>
+    <keyword>timesheet</keyword>
+    <keyword>activity tracker</keyword>
+    <keyword>past activity review</keyword>
+  </keywords>
 </component>
