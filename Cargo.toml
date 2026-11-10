@@ -17,7 +17,7 @@ gdk = "0.16.0"
 relm = { git = "https://github.com/antoyo/relm.git", rev = "66b0f189440e9a9c40f2765134a1054e5e0fd291" }
 relm-derive = { git = "https://github.com/antoyo/relm.git", rev = "66b0f189440e9a9c40f2765134a1054e5e0fd291" }
 chrono = { version = "0.4.19", features = ["serde"] }
-git2 = "0.13.20"
+git2 = "0.20.0"
 pango = "0.16.0"
 mailparse = "0.13.4"
 toml = "0.5.8"
